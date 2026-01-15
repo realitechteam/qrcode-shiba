@@ -1,0 +1,8 @@
+/** @type {import("eslint").Linter.Config} */
+module.exports = {
+    extends: ["./base.js"],
+    rules: {
+        "@typescript-eslint/interface-name-prefix": "off",
+        "@typescript-eslint/explicit-module-boundary-types": "off",
+    },
+};

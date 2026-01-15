@@ -1,0 +1,364 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  FACEBOOK
+  ZALO
+}
+
+enum QRType {
+  URL
+  TEXT
+  VCARD
+  WIFI
+  EMAIL
+  SMS
+  PHONE
+  LOCATION
+  PDF
+  IMAGE
+  VIDEO
+  MENU
+  LANDING_PAGE
+  SOCIAL_LINKS
+  APP_STORE
+  EVENT
+}
+
+enum QRStatus {
+  ACTIVE
+  EXPIRED
+  ARCHIVED
+  DISABLED
+}
+
+enum ContentType {
+  URL
+  TEXT
+  VCARD
+  WIFI
+  FILE
+  GALLERY
+  MENU
+  LANDING
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+  TRIALING
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  passwordHash  String?
+  name          String?
+  avatarUrl     String?
+  authProvider  AuthProvider @default(EMAIL)
+  providerId    String?
+  emailVerified Boolean      @default(false)
+  tier          String       @default("FREE") // FREE, PRO, BUSINESS, ENTERPRISE
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relations
+  qrCodes      QRCode[]
+  subscription Subscription?
+  folders      Folder[]
+  apiKeys      ApiKey[]
+  teamMembers  TeamMember[]
+  ownedTeams   Team[]        @relation("TeamOwner")
+
+  @@index([email])
+  @@index([authProvider, providerId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ============================================
+// QR CODES
+// ============================================
+
+model QRCode {
+  id             String   @id @default(uuid())
+  userId         String
+  shortCode      String   @unique
+  name           String?
+  type           QRType
+  status         QRStatus @default(ACTIVE)
+  styling        Json     @default("{}")
+  destinationUrl String?
+  isDynamic      Boolean  @default(false)
+  expiresAt      DateTime?
+  passwordHash   String?
+  scanCount      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content  QRContent?
+  folder   Folder?    @relation(fields: [folderId], references: [id])
+  folderId String?
+  scans    Scan[]
+
+  @@index([userId])
+  @@index([shortCode])
+  @@index([createdAt(sort: Desc)])
+  @@index([type])
+  @@index([status])
+}
+
+model QRContent {
+  id          String      @id @default(uuid())
+  qrId        String      @unique
+  contentType ContentType
+  data        Json
+  fileUrl     String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  qrCode QRCode @relation(fields: [qrId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// ANALYTICS
+// ============================================
+
+model Scan {
+  id             String   @id @default(uuid())
+  qrId           String
+  ip             String?
+  userAgent      String?
+  country        String?
+  city           String?
+  region         String?
+  latitude       Float?
+  longitude      Float?
+  deviceType     String?
+  os             String?
+  osVersion      String?
+  browser        String?
+  browserVersion String?
+  referer        String?
+  language       String?
+  scannedAt      DateTime @default(now())
+
+  // Relations
+  qr QRCode @relation(fields: [qrId], references: [id], onDelete: Cascade)
+
+  @@index([qrId])
+  @@index([scannedAt(sort: Desc)])
+  @@index([country])
+}
+
+// ============================================
+// BILLING & SUBSCRIPTIONS
+// ============================================
+
+model Plan {
+  id             String  @id @default(uuid())
+  name           String  @unique
+  slug           String  @unique
+  description    String?
+  priceMonthly   Int     // in VND
+  priceYearly    Int     // in VND
+  dynamicQrLimit Int
+  scanLimit      Int     // per month
+  bulkLimit      Int     // per batch
+  apiAccess      Boolean @default(false)
+  teamMembers    Int     @default(1)
+  features       Json    @default("[]")
+  isActive       Boolean @default(true)
+  sortOrder      Int     @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  subscriptions Subscription[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Subscription {
+  id                     String             @id @default(uuid())
+  userId                 String             @unique
+  planId                 String
+  status                 SubscriptionStatus @default(ACTIVE)
+  startDate              DateTime           @default(now())
+  endDate                DateTime
+  billingCycle           String?            // monthly, yearly
+  paymentProvider        String?
+  providerSubscriptionId String?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  cancelledAt            DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     Plan?     @relation(fields: [planId], references: [id])
+  payments Payment[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id             String   @id @default(uuid())
+  subscriptionId String
+  amount         Int      // in VND
+  currency       String   @default("VND")
+  status         String   // pending, completed, failed, refunded
+  provider       String   // vnpay, momo
+  providerTxnId  String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId])
+  @@index([providerTxnId])
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  userId          String
+  planId          String
+  billingCycle    String   // monthly, yearly
+  amount          Int      // in VND
+  currency        String   @default("VND")
+  status          String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  paymentProvider String   // VNPAY, MOMO
+  transactionId   String?
+  paidAt          DateTime?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================
+// ORGANIZATION
+// ============================================
+
+model Folder {
+  id        String   @id @default(uuid())
+  userId    String
+  parentId  String?
+  name      String
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children Folder[] @relation("FolderHierarchy")
+  qrCodes  QRCode[]
+
+  @@index([userId])
+  @@index([parentId])
+}
+
+// ============================================
+// TEAMS
+// ============================================
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  owner   User         @relation("TeamOwner", fields: [ownerId], references: [id])
+  members TeamMember[]
+
+  @@index([ownerId])
+  @@index([slug])
+}
+
+model TeamMember {
+  id       String   @id @default(uuid())
+  teamId   String
+  userId   String
+  role     TeamRole @default(VIEWER)
+  joinedAt DateTime @default(now())
+
+  // Relations
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+// ============================================
+// API KEYS
+// ============================================
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  name       String
+  keyHash    String    @unique
+  keyPrefix  String    // first 8 chars for display
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyHash])
+}

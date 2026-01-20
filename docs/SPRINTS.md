@@ -96,7 +96,7 @@
 
 ## ✅ Sprint 5: Folder Management (14/01 - 15/01)
 
-**Goal**: Quản lý QR codes theo thư mục
+**Goal**: Quản lý QR codes theo thư mục + Firebase Auth
 
 | Story | Points | Assignee | Status |
 |-------|--------|----------|--------|
@@ -106,8 +106,13 @@
 | FolderSidebar component | 5 | Frontend Dev | ✅ Done |
 | Folder filtering in QR list | 3 | Frontend Dev | ✅ Done |
 | Create folder UI | 2 | Frontend Dev | ✅ Done |
+| Firebase Google Auth | 3 | Frontend Dev | ✅ Done |
+| Firebase sync endpoint | 3 | Backend Dev | ✅ Done |
+| Session persistence fix | 2 | Frontend Dev | ✅ Done |
+| QR Actions Menu | 3 | Frontend Dev | ✅ Done |
+| QR Naming Feature | 2 | Frontend Dev | ✅ Done |
 
-**Total**: 21 points | **Completed**: 21 points | **Velocity**: 100%
+**Total**: 34 points | **Completed**: 34 points | **Velocity**: 100%
 
 ---
 

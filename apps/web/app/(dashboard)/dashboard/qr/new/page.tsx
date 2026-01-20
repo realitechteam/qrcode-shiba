@@ -17,10 +17,13 @@ import {
     Download,
     Loader2,
     Check,
+    Lock,
+    Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth-store";
+import qrApi from "@/lib/qr-api";
 import { QRTypeSelector } from "./components/qr-type-selector";
 import { QRDataForm } from "./components/qr-data-form";
 import { QRStyling } from "./components/qr-styling";
@@ -48,6 +51,7 @@ export default function NewQRPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
+    const { canUseDynamicQR, canDownloadSVG, isPaidUser } = useAuthStore();
 
     const [currentStep, setCurrentStep] = useState(1);
     const [selectedType, setSelectedType] = useState<string>(
@@ -65,6 +69,7 @@ export default function NewQRPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [savedQR, setSavedQR] = useState<any>(null);
+    const [qrName, setQrName] = useState("");
 
     // Generate preview
     const generatePreview = useCallback(async () => {
@@ -72,7 +77,7 @@ export default function NewQRPage() {
 
         setIsLoading(true);
         try {
-            const response = await api.post("/qr/preview", {
+            const response = await qrApi.post("/qr/preview", {
                 type: selectedType,
                 data: formData,
                 styling,
@@ -112,11 +117,12 @@ export default function NewQRPage() {
     const handleSave = async (isDynamic: boolean = false) => {
         setIsSaving(true);
         try {
-            const response = await api.post("/qr", {
+            const response = await qrApi.post("/qr", {
                 type: selectedType,
                 data: formData,
                 styling,
                 isDynamic,
+                name: qrName.trim() || undefined, // Send name if provided
             });
             setSavedQR(response.data);
             toast({
@@ -138,7 +144,7 @@ export default function NewQRPage() {
         if (!savedQR) return;
 
         try {
-            const response = await api.get(`/qr/${savedQR.id}/download`, {
+            const response = await qrApi.get(`/qr/${savedQR.id}/download`, {
                 params: { format, size: 1024 },
                 responseType: "blob",
             });
@@ -215,10 +221,10 @@ export default function NewQRPage() {
                         >
                             <div
                                 className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${currentStep > step.id
-                                        ? "bg-shiba-500 border-shiba-500 text-white"
-                                        : currentStep === step.id
-                                            ? "border-shiba-500 text-shiba-500"
-                                            : "border-muted-foreground/30 text-muted-foreground/50"
+                                    ? "bg-shiba-500 border-shiba-500 text-white"
+                                    : currentStep === step.id
+                                        ? "border-shiba-500 text-shiba-500"
+                                        : "border-muted-foreground/30 text-muted-foreground/50"
                                     }`}
                             >
                                 {currentStep > step.id ? (
@@ -230,8 +236,8 @@ export default function NewQRPage() {
                             {index < steps.length - 1 && (
                                 <div
                                     className={`flex-1 h-0.5 mx-2 ${currentStep > step.id
-                                            ? "bg-shiba-500"
-                                            : "bg-muted-foreground/30"
+                                        ? "bg-shiba-500"
+                                        : "bg-muted-foreground/30"
                                         }`}
                                 />
                             )}
@@ -243,8 +249,8 @@ export default function NewQRPage() {
                         <span
                             key={step.id}
                             className={`text-xs ${currentStep >= step.id
-                                    ? "text-foreground"
-                                    : "text-muted-foreground/50"
+                                ? "text-foreground"
+                                : "text-muted-foreground/50"
                                 }`}
                         >
                             {step.name}
@@ -269,11 +275,29 @@ export default function NewQRPage() {
                     )}
 
                     {currentStep === 2 && (
-                        <QRDataForm
-                            type={selectedType}
-                            data={formData}
-                            onChange={setFormData}
-                        />
+                        <div className="space-y-6">
+                            {/* QR Name Input */}
+                            <div className="space-y-2">
+                                <label htmlFor="qr-name" className="block text-sm font-medium">
+                                    Tên QR Code <span className="text-muted-foreground">(tùy chọn)</span>
+                                </label>
+                                <input
+                                    id="qr-name"
+                                    type="text"
+                                    value={qrName}
+                                    onChange={(e) => setQrName(e.target.value)}
+                                    placeholder="VD: QR website công ty, Link Facebook..."
+                                    className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                                />
+                            </div>
+
+                            {/* Existing Data Form */}
+                            <QRDataForm
+                                type={selectedType}
+                                data={formData}
+                                onChange={setFormData}
+                            />
+                        </div>
                     )}
 
                     {currentStep === 3 && (
@@ -298,6 +322,7 @@ export default function NewQRPage() {
 
                             {!savedQR ? (
                                 <div className="grid gap-4">
+                                    {/* Static QR - Available to all */}
                                     <button
                                         onClick={() => handleSave(false)}
                                         disabled={isSaving}
@@ -308,24 +333,50 @@ export default function NewQRPage() {
                                             Nội dung cố định, không thể thay đổi sau khi tạo. Miễn phí.
                                         </p>
                                     </button>
-                                    <button
-                                        onClick={() => handleSave(true)}
-                                        disabled={isSaving}
-                                        className="p-4 rounded-xl border hover:border-shiba-500 hover:bg-shiba-50 dark:hover:bg-shiba-900/10 transition-all text-left"
-                                    >
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-semibold">QR Code động</h3>
-                                            <span className="px-2 py-0.5 rounded-full bg-shiba-100 text-shiba-700 text-xs font-medium">
-                                                PRO
-                                            </span>
+
+                                    {/* Dynamic QR - PRO only */}
+                                    {canUseDynamicQR() ? (
+                                        <button
+                                            onClick={() => handleSave(true)}
+                                            disabled={isSaving}
+                                            className="p-4 rounded-xl border border-shiba-200 bg-gradient-to-r from-shiba-50 to-orange-50 hover:border-shiba-500 transition-all text-left"
+                                        >
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h3 className="font-semibold">QR Code động</h3>
+                                                <span className="px-2 py-0.5 rounded-full bg-shiba-500 text-white text-xs font-medium flex items-center gap-1">
+                                                    <Crown className="h-3 w-3" /> PRO
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                Thay đổi URL bất cứ lúc nào, theo dõi lượt quét, analytics chi tiết.
+                                            </p>
+                                        </button>
+                                    ) : (
+                                        <div className="p-4 rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 text-left relative">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h3 className="font-semibold text-muted-foreground">QR Code động</h3>
+                                                <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-shiba-500 to-orange-500 text-white text-xs font-medium flex items-center gap-1">
+                                                    <Crown className="h-3 w-3" /> PRO
+                                                </span>
+                                                <Lock className="h-4 w-4 text-muted-foreground ml-auto" />
+                                            </div>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                Thay đổi URL bất cứ lúc nào, theo dõi lượt quét, analytics chi tiết.
+                                            </p>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => router.push("/dashboard/billing")}
+                                                className="bg-gradient-to-r from-shiba-500 to-orange-500 hover:from-shiba-600 hover:to-orange-600"
+                                            >
+                                                <Crown className="h-4 w-4 mr-1" />
+                                                Nâng cấp để dùng
+                                            </Button>
                                         </div>
-                                        <p className="text-sm text-muted-foreground">
-                                            Thay đổi nội dung bất cứ lúc nào, theo dõi lượt quét chi tiết.
-                                        </p>
-                                    </button>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="grid gap-3">
+                                    {/* PNG Download - Available to all */}
                                     <Button
                                         onClick={() => handleDownload("png")}
                                         className="w-full bg-shiba-500 hover:bg-shiba-600 gap-2"
@@ -333,14 +384,31 @@ export default function NewQRPage() {
                                         <Download className="h-4 w-4" />
                                         Tải PNG (1024px)
                                     </Button>
-                                    <Button
-                                        onClick={() => handleDownload("svg")}
-                                        variant="outline"
-                                        className="w-full gap-2"
-                                    >
-                                        <Download className="h-4 w-4" />
-                                        Tải SVG (Vector)
-                                    </Button>
+
+                                    {/* SVG Download - PRO only */}
+                                    {canDownloadSVG() ? (
+                                        <Button
+                                            onClick={() => handleDownload("svg")}
+                                            variant="outline"
+                                            className="w-full gap-2"
+                                        >
+                                            <Download className="h-4 w-4" />
+                                            Tải SVG (Vector)
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="outline"
+                                            className="w-full gap-2 opacity-60"
+                                            onClick={() => router.push("/dashboard/billing")}
+                                        >
+                                            <Lock className="h-4 w-4" />
+                                            Tải SVG (Vector)
+                                            <span className="px-2 py-0.5 rounded-full bg-shiba-100 text-shiba-700 text-xs font-medium ml-auto">
+                                                PRO
+                                            </span>
+                                        </Button>
+                                    )}
+
                                     <Button
                                         variant="ghost"
                                         onClick={() => router.push("/dashboard/qr")}

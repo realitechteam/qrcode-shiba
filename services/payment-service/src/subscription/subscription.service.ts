@@ -163,7 +163,7 @@ export class SubscriptionService {
     /**
      * Get user's order history
      */
-    async getOrderHistory(userId: string, page: number = 1, limit: number = 10) {
+    async getOrderHistory(userId: string, page: number = 1, limit: number = 10): Promise<any> {
         const skip = (page - 1) * limit;
 
         const [orders, total] = await Promise.all([
@@ -200,7 +200,7 @@ export class SubscriptionService {
         await this.prisma.subscription.update({
             where: { userId },
             data: {
-                status: "CANCELLED",
+                status: "CANCELED",
                 cancelledAt: new Date(),
             },
         });

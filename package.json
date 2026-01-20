@@ -5,14 +5,21 @@
   "packageManager": "pnpm@8.15.0",
   "scripts": {
     "dev": "turbo dev",
+    "dev:web": "turbo dev --filter=@qrcode-shiba/web",
+    "dev:services": "turbo dev --filter='./services/*'",
     "build": "turbo build",
+    "build:services": "turbo build --filter='./services/*'",
+    "start:services": "node scripts/start-services.js",
     "test": "turbo test",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "turbo clean && rimraf node_modules",
     "db:generate": "turbo db:generate",
     "db:push": "turbo db:push",
-    "db:studio": "pnpm --filter @qrcode-shiba/database studio"
+    "db:studio": "pnpm --filter @qrcode-shiba/database studio",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "setup": "node scripts/setup-env.js && pnpm install && pnpm db:generate"
   },
   "devDependencies": {
     "@qrcode-shiba/eslint-config": "workspace:*",

@@ -39,7 +39,7 @@ export class SubscriptionController {
         @Headers("x-user-id") userId: string,
         @Query("page") page?: number,
         @Query("limit") limit?: number
-    ) {
+    ): Promise<any> {
         if (!userId) {
             throw new BadRequestException("User ID required");
         }

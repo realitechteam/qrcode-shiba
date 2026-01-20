@@ -44,3 +44,5 @@ prisma/*.db-journal
 # Misc
 *.tsbuildinfo
 .cache
+.vercel
+.env*.local

@@ -15,30 +15,46 @@ export class StylerService {
         const moduleSize = size / (matrix.size + 4); // Add margin
         const margin = moduleSize * 2;
 
+        // Calculate frame dimensions
+        const hasFrame = style.frameStyle && style.frameStyle !== "none";
+        const framePadding = hasFrame ? 15 : 0;
+        const frameTextHeight = hasFrame && style.frameText ? 35 : 0;
+
+        // Total SVG dimensions (expanded for frame)
+        const totalWidth = size + framePadding * 2;
+        const totalHeight = size + framePadding * 2 + frameTextHeight;
+
         const svgParts: string[] = [
-            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">`,
+            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}" width="${totalWidth}" height="${totalHeight}">`,
         ];
 
-        // Background
-        svgParts.push(this.generateBackground(size, style));
+        // Background (covers entire area including frame)
+        svgParts.push(`<rect width="${totalWidth}" height="${totalHeight}" fill="${style.backgroundColor}"/>`);
 
         // Defs for gradients and patterns
         if (style.gradientType !== "none" && style.gradientColors?.length) {
             svgParts.push(this.generateGradientDefs(style));
         }
 
-        // Generate QR modules
+        // Frame border if enabled (draw before QR so it's behind)
+        if (hasFrame) {
+            svgParts.push(this.generateFrame(totalWidth, totalHeight, framePadding, style));
+        }
+
+        // Generate QR modules (offset by frame padding)
         const modulesGroup = this.generateModules(
             matrix,
             moduleSize,
             margin,
-            style
+            style,
+            framePadding // Pass offset
         );
         svgParts.push(modulesGroup);
 
-        // Frame if enabled
-        if (style.frameStyle && style.frameStyle !== "none") {
-            svgParts.push(this.generateFrame(size, style));
+        // Frame text if enabled
+        if (hasFrame && style.frameText) {
+            const textColor = style.frameTextColor || style.frameColor || style.foregroundColor;
+            svgParts.push(`<text x="${totalWidth / 2}" y="${totalHeight - 10}" text-anchor="middle" fill="${textColor}" font-size="14" font-weight="bold" font-family="Arial, sans-serif">${style.frameText}</text>`);
         }
 
         svgParts.push("</svg>");
@@ -77,7 +93,8 @@ export class StylerService {
         matrix: QRMatrix,
         moduleSize: number,
         margin: number,
-        style: QRStyling
+        style: QRStyling,
+        offset: number = 0 // Frame padding offset
     ): string {
         const fillColor =
             style.gradientType !== "none" && style.gradientColors?.length
@@ -90,8 +107,9 @@ export class StylerService {
             for (let col = 0; col < matrix.size; col++) {
                 if (!matrix.data[row][col]) continue;
 
-                const x = margin + col * moduleSize;
-                const y = margin + row * moduleSize;
+                // Add offset to position QR inside the frame
+                const x = offset + margin + col * moduleSize;
+                const y = offset + margin + row * moduleSize;
 
                 // Check if this is a corner finder pattern
                 const isCorner = this.isFinderPattern(row, col, matrix.size);
@@ -232,22 +250,15 @@ export class StylerService {
         }
     }
 
-    private generateFrame(size: number, style: QRStyling): string {
+    private generateFrame(totalWidth: number, totalHeight: number, padding: number, style: QRStyling): string {
         if (!style.frameStyle || style.frameStyle === "none") return "";
 
         const frameColor = style.frameColor || style.foregroundColor;
-        const padding = 10;
-        const frameWidth = size + padding * 2;
-        const frameHeight = size + padding * 2 + (style.frameText ? 30 : 0);
-        const radius = style.frameStyle === "rounded" ? 10 : 0;
+        const radius = style.frameStyle === "rounded" ? 12 : 0;
+        const strokeWidth = 3;
+        const inset = strokeWidth / 2; // So stroke doesn't clip
 
-        let frameSvg = `<rect x="${-padding}" y="${-padding}" width="${frameWidth}" height="${frameHeight}" rx="${radius}" fill="none" stroke="${frameColor}" stroke-width="2"/>`;
-
-        if (style.frameText) {
-            const textColor = style.frameTextColor || frameColor;
-            frameSvg += `<text x="${size / 2}" y="${size + padding + 20}" text-anchor="middle" fill="${textColor}" font-size="14" font-family="Arial, sans-serif">${style.frameText}</text>`;
-        }
-
-        return frameSvg;
+        // Draw frame border inside the SVG bounds
+        return `<rect x="${inset}" y="${inset}" width="${totalWidth - strokeWidth}" height="${totalHeight - strokeWidth}" rx="${radius}" fill="none" stroke="${frameColor}" stroke-width="${strokeWidth}"/>`;
     }
 }

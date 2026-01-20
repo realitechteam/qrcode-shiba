@@ -126,6 +126,7 @@ model QRCode {
   status         QRStatus @default(ACTIVE)
   styling        Json     @default("{}")
   destinationUrl String?
+  imageUrl       String?  @db.Text // Store QR image as base64 dataUrl
   isDynamic      Boolean  @default(false)
   expiresAt      DateTime?
   passwordHash   String?

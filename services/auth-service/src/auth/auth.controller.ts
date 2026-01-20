@@ -90,4 +90,16 @@ export class AuthController {
     async verifyEmail(@Body("token") token: string) {
         return this.authService.verifyEmail(token);
     }
+
+    // Firebase Auth - sync user with backend database
+    @Post("firebase/sync")
+    @HttpCode(HttpStatus.OK)
+    async firebaseSync(
+        @Body("email") email: string,
+        @Body("name") name: string | null,
+        @Body("firebaseUid") firebaseUid: string,
+        @Body("photoUrl") photoUrl: string | null
+    ) {
+        return this.authService.syncFirebaseUser(email, name, firebaseUid, photoUrl);
+    }
 }

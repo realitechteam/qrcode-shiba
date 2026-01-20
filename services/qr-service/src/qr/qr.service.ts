@@ -26,7 +26,7 @@ export class QrService {
      */
     async generatePreview(dto: GeneratePreviewDto) {
         const size = dto.size || 300;
-        const dataString = this.generator.generateDataString(dto.type, dto.data);
+        const dataString = this.generator.generateDataString(dto.type.toLowerCase(), dto.data);
 
         // Generate QR matrix
         const matrix = await this.generator.generateMatrix(dataString, {
@@ -53,17 +53,17 @@ export class QrService {
      */
     async create(userId: string, dto: CreateQRDto): Promise<any> {
         const shortCode = nanoid(8);
-        const dataString = this.generator.generateDataString(dto.type, dto.data);
+        const dataString = this.generator.generateDataString(dto.type.toLowerCase(), dto.data);
 
         // Generate QR preview
         const preview = await this.generatePreview({
             type: dto.type,
             data: dto.data,
             styling: dto.styling,
-            size: 300,
+            size: 400, // Higher quality for storage
         });
 
-        // Create in database
+        // Create in database with image saved
         const qr = await this.prisma.qRCode.create({
             data: {
                 userId,
@@ -72,6 +72,7 @@ export class QrService {
                 type: dto.type as QRType,
                 isDynamic: dto.isDynamic || false,
                 destinationUrl: dto.type === "URL" ? dto.data.url : null,
+                imageUrl: preview.dataUrl, // Save QR image for later display
                 styling: dto.styling as any || {},
                 folderId: dto.folderId,
                 content: {
@@ -248,6 +249,48 @@ export class QrService {
     }
 
     /**
+     * Regenerate images for all QR codes missing imageUrl
+     */
+    async regenerateAllImages(): Promise<{ updated: number; failed: number }> {
+        // Find all QR codes without imageUrl
+        const qrCodes = await this.prisma.qRCode.findMany({
+            where: {
+                OR: [
+                    { imageUrl: null },
+                    { imageUrl: "" },
+                ],
+            },
+            include: { content: true },
+        });
+
+        let updated = 0;
+        let failed = 0;
+
+        for (const qr of qrCodes) {
+            try {
+                const preview = await this.generatePreview({
+                    type: qr.type as any,
+                    data: qr.content?.data as Record<string, any> || {},
+                    styling: qr.styling as any,
+                    size: 400,
+                });
+
+                await this.prisma.qRCode.update({
+                    where: { id: qr.id },
+                    data: { imageUrl: preview.dataUrl },
+                });
+
+                updated++;
+            } catch (error) {
+                console.error(`Failed to regenerate image for QR ${qr.id}:`, error);
+                failed++;
+            }
+        }
+
+        return { updated, failed };
+    }
+
+    /**
      * Download QR code in specified format
      */
     async download(
@@ -258,16 +301,26 @@ export class QrService {
     ): Promise<{ buffer: Buffer; mimeType: string; filename: string }> {
         const qr = await this.findOne(id, userId);
 
+        let buffer: Buffer;
+        let mimeType: string;
+        let filename: string;
+
+        // For PNG format, try to use saved imageUrl first for faster response
+        if (format === "png" && qr.imageUrl && qr.imageUrl.startsWith("data:image/png;base64,")) {
+            const base64Data = qr.imageUrl.replace("data:image/png;base64,", "");
+            buffer = Buffer.from(base64Data, "base64");
+            mimeType = "image/png";
+            filename = `${qr.shortCode}.png`;
+            return { buffer, mimeType, filename };
+        }
+
+        // Regenerate for specific format or size
         const preview = await this.generatePreview({
             type: qr.type as any,
             data: qr.content?.data as Record<string, any> || {},
             styling: qr.styling as any,
             size,
         });
-
-        let buffer: Buffer;
-        let mimeType: string;
-        let filename: string;
 
         switch (format) {
             case "svg":

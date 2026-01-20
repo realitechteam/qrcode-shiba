@@ -41,6 +41,9 @@ Enterprise      [░░░░░░░░░░░░░░░░░░░░]  
 | Folder tree structure | ✅ Deployed |
 | FolderSidebar component | ✅ Deployed |
 | Folder filtering | ✅ Deployed |
+| Firebase Google Auth | ✅ Deployed |
+| QR Actions Menu | ✅ Deployed |
+| QR Naming Feature | ✅ Deployed |
 
 ### Bug Fixes
 | Issue | Resolution |
@@ -49,6 +52,8 @@ Enterprise      [░░░░░░░░░░░░░░░░░░░░]  
 | TypeScript moduleResolution error | ✅ Fixed - Changed to "node" |
 | Sharp import error | ✅ Fixed - Default import |
 | QR service TS2742 error | ✅ Fixed - Explicit types |
+| Session lost on navigation | ✅ Fixed - Zustand hydration |
+| Firebase UID mismatch | ✅ Fixed - Firebase sync endpoint |
 
 ---
 

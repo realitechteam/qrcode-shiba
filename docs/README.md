@@ -13,6 +13,8 @@
 | [🎯 Milestones](./MILESTONES.md) | Các mốc dự án quan trọng |
 | [📊 Status](./STATUS.md) | Trạng thái dự án hiện tại |
 | [🔌 API](./API.md) | Tài liệu API |
+| [🚀 Setup](./SETUP.md) | Hướng dẫn cài đặt môi trường |
+| [📝 Changelog](./CHANGELOG.md) | Lịch sử thay đổi |
 
 ---
 

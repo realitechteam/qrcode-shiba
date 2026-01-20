@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -20,12 +20,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { processPendingQR } from "@/lib/pending-qr";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "QR Codes", href: "/dashboard/qr", icon: QrCode },
     { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-    { name: "Folders", href: "/dashboard/folders", icon: FolderOpen },
 ];
 
 const bottomNavigation = [
@@ -40,24 +41,58 @@ export default function DashboardLayout({
 }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { user, isAuthenticated, logout, fetchUser } = useAuthStore();
+    const { user, isAuthenticated, logout, fetchUser, _hasHydrated } = useAuthStore();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
 
     useEffect(() => {
+        // Wait for hydration before checking auth
+        if (!_hasHydrated) return;
+
         if (!isAuthenticated) {
             router.push("/login");
         } else if (!user) {
             fetchUser();
         }
-    }, [isAuthenticated, user, router, fetchUser]);
+    }, [_hasHydrated, isAuthenticated, user, router, fetchUser]);
+
+    // Process pending QR from homepage after auth
+    const { toast } = useToast();
+    const pendingProcessed = useRef(false);
+
+    useEffect(() => {
+        if (!_hasHydrated || !isAuthenticated || !user) return;
+        if (pendingProcessed.current) return; // Already processed
+
+        const processPending = async () => {
+            // Mark as processed immediately to prevent duplicate calls
+            pendingProcessed.current = true;
+
+            const result = await processPendingQR();
+            if (result.success && result.qrName) {
+                toast({
+                    title: "🎉 QR Code đã được tạo!",
+                    description: `"${result.qrName}" đã được thêm vào danh sách của bạn.`,
+                });
+                // Force reload the page to refresh QR list
+                if (pathname === "/dashboard/qr") {
+                    window.location.reload();
+                } else {
+                    router.push("/dashboard/qr");
+                }
+            }
+        };
+
+        processPending();
+    }, [_hasHydrated, isAuthenticated, user, toast, pathname, router]);
 
     const handleLogout = async () => {
         await logout();
         router.push("/login");
     };
 
-    if (!isAuthenticated) {
+    // Show loading while hydrating OR if not authenticated yet
+    if (!_hasHydrated || !isAuthenticated) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-pulse text-muted-foreground">Đang tải...</div>

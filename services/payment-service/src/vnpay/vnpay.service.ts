@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as crypto from "crypto";
 import * as qs from "qs";
-import * as dayjs from "dayjs";
+import dayjs from "dayjs";
 
 export interface VnpayPaymentParams {
     orderId: string;

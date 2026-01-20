@@ -169,6 +169,50 @@ export class AuthService {
         throw new BadRequestException("Not implemented");
     }
 
+    // Sync Firebase user with backend database
+    async syncFirebaseUser(
+        email: string,
+        name: string | null,
+        firebaseUid: string,
+        photoUrl: string | null
+    ) {
+        // Try to find existing user by email
+        let user = await this.usersService.findByEmail(email);
+
+        if (!user) {
+            // Create new user with Firebase provider
+            user = await this.usersService.create({
+                email,
+                name: name || undefined,
+                providerId: firebaseUid,
+                authProvider: AuthProvider.GOOGLE,
+                emailVerified: true,
+                avatarUrl: photoUrl || undefined,
+            });
+        } else {
+            // Update existing user's Firebase info if needed
+            if (!user.providerId) {
+                user = await this.prisma.user.update({
+                    where: { id: user.id },
+                    data: {
+                        providerId: firebaseUid,
+                        authProvider: AuthProvider.GOOGLE,
+                        avatarUrl: photoUrl || user.avatarUrl,
+                        name: name || user.name,
+                    },
+                });
+            }
+        }
+
+        // Generate tokens for this user
+        const tokens = await this.generateTokens(user);
+
+        return {
+            user: this.sanitizeUser(user),
+            ...tokens,
+        };
+    }
+
     private async generateTokens(user: User) {
         const payload = { sub: user.id, email: user.email };
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
     Plus,
     Search,
@@ -14,19 +15,133 @@ import {
     Download,
     ExternalLink,
     Filter,
+    Loader2,
+    AlertTriangle,
+    X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FolderSidebar } from "@/components/folders/FolderSidebar";
+import { useToast } from "@/hooks/use-toast";
+import qrApi from "@/lib/qr-api";
 
-// Mock data - will be replaced with API call
-const mockQRCodes: any[] = [];
+interface QRCode {
+    id: string;
+    shortCode: string;
+    name: string | null;
+    type: string;
+    status: string;
+    isDynamic: boolean;
+    destinationUrl: string | null;
+    imageUrl: string | null;
+    scanCount: number;
+    createdAt: string;
+}
 
 export default function QRCodesPage() {
+    const router = useRouter();
+    const { toast } = useToast();
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+    const [qrCodes, setQrCodes] = useState<QRCode[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const filteredQRCodes = mockQRCodes.filter(
+    // Modal and action states
+    const [deleteTarget, setDeleteTarget] = useState<QRCode | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+    const fetchQRCodes = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const response = await qrApi.get("/qr", {
+                params: {
+                    folder: selectedFolderId || undefined,
+                    search: searchQuery || undefined,
+                },
+            });
+            const data = Array.isArray(response.data) ? response.data : response.data.items || [];
+            setQrCodes(data);
+        } catch (err: any) {
+            console.error("Failed to fetch QR codes:", err);
+            setError(err.response?.data?.message || "Không thể tải danh sách QR codes");
+            setQrCodes([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [selectedFolderId, searchQuery]);
+
+    useEffect(() => {
+        fetchQRCodes();
+    }, [fetchQRCodes]);
+
+    // Open confirm modal instead of browser confirm
+    const handleDelete = (qr: QRCode) => {
+        setDeleteTarget(qr);
+    };
+
+    // Actually delete after confirmation
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+
+        setIsDeleting(true);
+        try {
+            await qrApi.delete(`/qr/${deleteTarget.id}`);
+            toast({ title: "Đã xóa QR code", description: deleteTarget.name || deleteTarget.shortCode });
+            fetchQRCodes();
+        } catch (err: any) {
+            toast({
+                title: "Lỗi xóa QR",
+                description: err.response?.data?.message || "Không thể xóa QR code",
+                variant: "destructive",
+            });
+        } finally {
+            setIsDeleting(false);
+            setDeleteTarget(null);
+        }
+    };
+
+    const handleDownload = async (qr: QRCode) => {
+        setDownloadingId(qr.id);
+        try {
+            const response = await qrApi.get(`/qr/${qr.id}/download`, {
+                responseType: "blob",
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${qr.name || qr.shortCode}.png`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            toast({ title: "Đã tải xuống", description: qr.name || qr.shortCode });
+        } catch (err: any) {
+            toast({
+                title: "Lỗi tải xuống",
+                description: err.response?.data?.message || "Không thể tải QR code",
+                variant: "destructive",
+            });
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
+    const handleOpenLink = (qr: QRCode) => {
+        const baseUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "http://localhost:3003";
+        const url = qr.isDynamic
+            ? `${baseUrl}/${qr.shortCode}`
+            : qr.destinationUrl;
+        if (url) window.open(url, "_blank");
+    };
+
+    const handleEdit = (qr: QRCode) => {
+        router.push(`/dashboard/qr/${qr.id}/edit`);
+    };
+
+    const filteredQRCodes = qrCodes.filter(
         (qr) =>
             qr.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             qr.destinationUrl?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -38,7 +153,7 @@ export default function QRCodesPage() {
             <FolderSidebar
                 selectedFolderId={selectedFolderId}
                 onSelectFolder={setSelectedFolderId}
-                className="hidden md:block flex-shrink-0"
+                className="flex-shrink-0"
             />
 
             {/* Main Content */}
@@ -103,12 +218,35 @@ export default function QRCodesPage() {
                 </div>
 
                 {/* Content */}
-                {filteredQRCodes.length === 0 ? (
+                {isLoading ? (
+                    <div className="rounded-xl border bg-card p-12 text-center">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto text-shiba-500" />
+                        <p className="mt-4 text-muted-foreground">Đang tải QR codes...</p>
+                    </div>
+                ) : error ? (
+                    <div className="rounded-xl border bg-card p-12 text-center">
+                        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 mb-4">
+                            <QrCode className="h-8 w-8 text-destructive" />
+                        </div>
+                        <h2 className="text-lg font-semibold mb-2">Lỗi tải dữ liệu</h2>
+                        <p className="text-muted-foreground mb-4">{error}</p>
+                        <Button onClick={() => window.location.reload()} variant="outline">
+                            Thử lại
+                        </Button>
+                    </div>
+                ) : filteredQRCodes.length === 0 ? (
                     <EmptyState />
                 ) : viewMode === "grid" ? (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {filteredQRCodes.map((qr) => (
-                            <QRCardGrid key={qr.id} qr={qr} />
+                            <QRCardGrid
+                                key={qr.id}
+                                qr={qr}
+                                onOpenLink={handleOpenLink}
+                                onDownload={handleDownload}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                            />
                         ))}
                     </div>
                 ) : (
@@ -125,13 +263,84 @@ export default function QRCodesPage() {
                             </thead>
                             <tbody>
                                 {filteredQRCodes.map((qr) => (
-                                    <QRRowList key={qr.id} qr={qr} />
+                                    <QRRowList
+                                        key={qr.id}
+                                        qr={qr}
+                                        onOpenLink={handleOpenLink}
+                                        onDownload={handleDownload}
+                                        onEdit={handleEdit}
+                                        onDelete={handleDelete}
+                                    />
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+                        onClick={() => !isDeleting && setDeleteTarget(null)}
+                    />
+
+                    {/* Modal */}
+                    <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-200">
+                        <button
+                            onClick={() => !isDeleting && setDeleteTarget(null)}
+                            className="absolute top-4 right-4 p-1 rounded-lg hover:bg-muted transition-colors"
+                            disabled={isDeleting}
+                        >
+                            <X className="h-5 w-5 text-muted-foreground" />
+                        </button>
+
+                        <div className="flex flex-col items-center text-center">
+                            <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+                                <AlertTriangle className="h-8 w-8 text-destructive" />
+                            </div>
+
+                            <h3 className="text-xl font-semibold mb-2">Xác nhận xóa</h3>
+                            <p className="text-muted-foreground mb-6">
+                                Bạn có chắc muốn xóa QR code <strong>&quot;{deleteTarget.name || deleteTarget.shortCode}&quot;</strong>?
+                                <br />
+                                <span className="text-sm">Hành động này không thể hoàn tác.</span>
+                            </p>
+
+                            <div className="flex gap-3 w-full">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => setDeleteTarget(null)}
+                                    disabled={isDeleting}
+                                >
+                                    Hủy
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    className="flex-1 gap-2"
+                                    onClick={confirmDelete}
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Đang xóa...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="h-4 w-4" />
+                                            Xóa
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -156,12 +365,28 @@ function EmptyState() {
     );
 }
 
-function QRCardGrid({ qr }: { qr: any }) {
+interface QRCardProps {
+    qr: QRCode;
+    onOpenLink: (qr: QRCode) => void;
+    onDownload: (qr: QRCode) => void;
+    onEdit: (qr: QRCode) => void;
+    onDelete: (qr: QRCode) => void;
+}
+
+function QRCardGrid({ qr, onOpenLink, onDownload, onEdit, onDelete }: QRCardProps) {
     return (
-        <div className="rounded-xl border bg-card p-4 hover:shadow-lg transition-shadow group">
+        <div className="rounded-xl border bg-card p-4 hover:shadow-lg transition-all duration-200 group">
             {/* QR Preview */}
-            <div className="aspect-square rounded-lg bg-muted mb-4 flex items-center justify-center">
-                <QrCode className="h-16 w-16 text-muted-foreground/50" />
+            <div className="aspect-square rounded-lg bg-muted mb-4 flex items-center justify-center overflow-hidden">
+                {qr.imageUrl ? (
+                    <img
+                        src={qr.imageUrl}
+                        alt={qr.name || "QR Code"}
+                        className="w-full h-full object-contain p-2"
+                    />
+                ) : (
+                    <QrCode className="h-16 w-16 text-muted-foreground/50" />
+                )}
             </div>
 
             {/* Info */}
@@ -173,7 +398,13 @@ function QRCardGrid({ qr }: { qr: any }) {
                             {qr.destinationUrl}
                         </p>
                     </div>
-                    <DropdownMenu />
+                    <DropdownMenu
+                        qr={qr}
+                        onOpenLink={onOpenLink}
+                        onDownload={onDownload}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                    />
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
@@ -194,13 +425,21 @@ function QRCardGrid({ qr }: { qr: any }) {
     );
 }
 
-function QRRowList({ qr }: { qr: any }) {
+function QRRowList({ qr, onOpenLink, onDownload, onEdit, onDelete }: QRCardProps) {
     return (
         <tr className="border-t hover:bg-muted/50 transition-colors">
             <td className="p-4">
                 <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                        <QrCode className="h-6 w-6 text-muted-foreground" />
+                    <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {qr.imageUrl ? (
+                            <img
+                                src={qr.imageUrl}
+                                alt={qr.name || "QR Code"}
+                                className="w-full h-full object-contain"
+                            />
+                        ) : (
+                            <QrCode className="h-6 w-6 text-muted-foreground" />
+                        )}
                     </div>
                     <div className="min-w-0">
                         <p className="font-medium truncate">{qr.name || "Untitled"}</p>
@@ -218,20 +457,46 @@ function QRRowList({ qr }: { qr: any }) {
                 {new Date(qr.createdAt).toLocaleDateString("vi-VN")}
             </td>
             <td className="p-4">
-                <DropdownMenu />
+                <DropdownMenu
+                    qr={qr}
+                    onOpenLink={onOpenLink}
+                    onDownload={onDownload}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                />
             </td>
         </tr>
     );
 }
 
-function DropdownMenu() {
+function DropdownMenu({
+    qr,
+    onOpenLink,
+    onDownload,
+    onEdit,
+    onDelete
+}: {
+    qr: QRCode;
+    onOpenLink: (qr: QRCode) => void;
+    onDownload: (qr: QRCode) => void;
+    onEdit: (qr: QRCode) => void;
+    onDelete: (qr: QRCode) => void;
+}) {
     const [isOpen, setIsOpen] = useState(false);
+
+    const handleAction = (action: (qr: QRCode) => void) => {
+        setIsOpen(false);
+        action(qr);
+    };
 
     return (
         <div className="relative">
             <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="p-1 rounded hover:bg-muted"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(!isOpen);
+                }}
+                className="p-2 rounded-lg hover:bg-muted transition-colors duration-200"
             >
                 <MoreVertical className="h-4 w-4 text-muted-foreground" />
             </button>
@@ -242,23 +507,35 @@ function DropdownMenu() {
                         className="fixed inset-0 z-10"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border bg-card shadow-lg py-1 z-20">
-                        <button className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-muted">
-                            <ExternalLink className="h-4 w-4" />
-                            Mở liên kết
+                    <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border bg-card shadow-xl py-2 z-20 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150">
+                        <button
+                            onClick={() => handleAction(onOpenLink)}
+                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm hover:bg-muted transition-colors duration-150"
+                        >
+                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                            <span>Mở liên kết</span>
                         </button>
-                        <button className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-muted">
-                            <Download className="h-4 w-4" />
-                            Tải xuống
+                        <button
+                            onClick={() => handleAction(onDownload)}
+                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm hover:bg-muted transition-colors duration-150"
+                        >
+                            <Download className="h-4 w-4 text-muted-foreground" />
+                            <span>Tải xuống</span>
                         </button>
-                        <button className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-muted">
-                            <Pencil className="h-4 w-4" />
-                            Chỉnh sửa
+                        <button
+                            onClick={() => handleAction(onEdit)}
+                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm hover:bg-muted transition-colors duration-150"
+                        >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                            <span>Chỉnh sửa</span>
                         </button>
-                        <hr className="my-1" />
-                        <button className="flex items-center gap-2 w-full px-4 py-2 text-sm text-destructive hover:bg-muted">
+                        <hr className="my-2 border-border" />
+                        <button
+                            onClick={() => handleAction(onDelete)}
+                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors duration-150"
+                        >
                             <Trash2 className="h-4 w-4" />
-                            Xóa
+                            <span>Xóa</span>
                         </button>
                     </div>
                 </>

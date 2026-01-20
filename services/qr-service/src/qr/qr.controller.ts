@@ -143,6 +143,14 @@ export class QrController {
     }
 
     /**
+     * Regenerate images for all QR codes (admin/migration)
+     */
+    @Post("regenerate-images")
+    async regenerateAllImages() {
+        return this.qrService.regenerateAllImages();
+    }
+
+    /**
      * Get QR code stats
      */
     @Get(":id/stats")

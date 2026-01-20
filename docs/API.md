@@ -74,6 +74,35 @@ GET /auth/google
 # Redirects to Google login
 ```
 
+### Firebase Sync
+Sync Firebase-authenticated user with backend database to get database UUID.
+
+```http
+POST /auth/firebase/sync
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "name": "Nguyen Van A",
+  "firebaseUid": "firebase_uid_string",
+  "photoUrl": "https://photo.url"
+}
+```
+
+**Response** `200 OK`:
+```json
+{
+  "user": {
+    "id": "database-uuid",
+    "email": "user@example.com",
+    "name": "Nguyen Van A",
+    "authProvider": "GOOGLE"
+  },
+  "accessToken": "jwt...",
+  "refreshToken": "jwt..."
+}
+```
+
 ---
 
 ## 📁 Folder Endpoints

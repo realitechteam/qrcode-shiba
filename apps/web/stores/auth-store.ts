@@ -1,6 +1,13 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { api } from "@/lib/api";
+
+export type PlanType = 'free' | 'pro' | 'business';
+
+interface Subscription {
+    plan: PlanType;
+    expiresAt: string | null;
+}
 
 interface User {
     id: string;
@@ -9,6 +16,7 @@ interface User {
     avatarUrl: string | null;
     emailVerified: boolean;
     createdAt: string;
+    subscription?: Subscription;
 }
 
 interface AuthState {
@@ -17,6 +25,13 @@ interface AuthState {
     refreshToken: string | null;
     isLoading: boolean;
     isAuthenticated: boolean;
+    _hasHydrated: boolean;
+
+    // Plan helpers
+    getUserPlan: () => PlanType;
+    canUseDynamicQR: () => boolean;
+    canDownloadSVG: () => boolean;
+    isPaidUser: () => boolean;
 
     // Actions
     login: (email: string, password: string) => Promise<void>;
@@ -26,6 +41,7 @@ interface AuthState {
     setTokens: (accessToken: string, refreshToken: string) => void;
     setUser: (user: User) => void;
     fetchUser: () => Promise<void>;
+    setHasHydrated: (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -36,6 +52,32 @@ export const useAuthStore = create<AuthState>()(
             refreshToken: null,
             isLoading: false,
             isAuthenticated: false,
+            _hasHydrated: false,
+
+            setHasHydrated: (state: boolean) => {
+                set({ _hasHydrated: state });
+            },
+
+            // Plan helpers
+            getUserPlan: () => {
+                const { user } = get();
+                return user?.subscription?.plan || 'free';
+            },
+
+            canUseDynamicQR: () => {
+                const plan = get().getUserPlan();
+                return plan === 'pro' || plan === 'business';
+            },
+
+            canDownloadSVG: () => {
+                const plan = get().getUserPlan();
+                return plan === 'pro' || plan === 'business';
+            },
+
+            isPaidUser: () => {
+                const plan = get().getUserPlan();
+                return plan !== 'free';
+            },
 
             login: async (email: string, password: string) => {
                 set({ isLoading: true });
@@ -154,6 +196,9 @@ export const useAuthStore = create<AuthState>()(
                 user: state.user,
                 isAuthenticated: state.isAuthenticated,
             }),
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
         }
     )
 );

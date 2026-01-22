@@ -233,8 +233,8 @@ export default function EditQRPage() {
                             <div>
                                 <p className="text-sm text-muted-foreground">Trạng thái</p>
                                 <span className={`inline-flex px-2 py-0.5 rounded-full text-xs ${qr.status === "ACTIVE"
-                                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                        : "bg-red-100 text-red-700"
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                    : "bg-red-100 text-red-700"
                                     }`}>
                                     {qr.status === "ACTIVE" ? "Hoạt động" : qr.status}
                                 </span>
@@ -304,7 +304,7 @@ export default function EditQRPage() {
                         <h2 className="font-semibold mb-4">Liên kết nhanh</h2>
                         <div className="space-y-2">
                             <a
-                                href={`${process.env.NEXT_PUBLIC_REDIRECT_URL || 'http://localhost:3003'}/${qr.shortCode}`}
+                                href={`${process.env.NEXT_PUBLIC_REDIRECT_URL || 'https://redirect-service-production-0d4b.up.railway.app'}/${qr.shortCode}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 text-sm text-shiba-600 hover:underline"

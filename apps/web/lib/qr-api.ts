@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const QR_API_URL = process.env.NEXT_PUBLIC_QR_API_URL || "http://localhost:3002/api/v1";
+const QR_API_URL = process.env.NEXT_PUBLIC_QR_API_URL || "https://qr-service-production-f6fd.up.railway.app/api/v1";
 
 export const qrApi = axios.create({
     baseURL: QR_API_URL,

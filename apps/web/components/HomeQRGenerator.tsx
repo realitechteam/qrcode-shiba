@@ -191,7 +191,7 @@ export function HomeQRGenerator() {
         setIsGenerating(true);
         try {
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_QR_API_URL || "http://localhost:3002/api/v1"}/qr/preview`,
+                `${process.env.NEXT_PUBLIC_QR_API_URL || "https://qr-service-production-f6fd.up.railway.app/api/v1"}/qr/preview`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

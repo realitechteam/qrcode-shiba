@@ -130,7 +130,7 @@ export default function QRCodesPage() {
     };
 
     const handleOpenLink = (qr: QRCode) => {
-        const baseUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "http://localhost:3003";
+        const baseUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "https://redirect-service-production-0d4b.up.railway.app";
         const url = qr.isDynamic
             ? `${baseUrl}/${qr.shortCode}`
             : qr.destinationUrl;

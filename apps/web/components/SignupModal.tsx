@@ -33,7 +33,7 @@ export function SignupModal({ isOpen, onClose, qrPreview }: SignupModalProps) {
             const firebaseUser = await signInWithGoogle();
 
             // 2. Sync Firebase user with backend to get database user ID and tokens
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+            const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
             const syncResponse = await fetch(`${API_URL}/auth/firebase/sync`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

@@ -8,10 +8,20 @@ FROM base AS builder
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
-COPY packages ./packages
-COPY services/payment-service ./services/payment-service
+# Copy all package.json files to satisfy pnpm workspace requirements
+COPY packages/database/package.json ./packages/database/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+COPY services/auth-service/package.json ./services/auth-service/
+COPY services/qr-service/package.json ./services/qr-service/
+COPY services/payment-service/package.json ./services/payment-service/
+COPY services/redirect-service/package.json ./services/redirect-service/
+COPY apps/web/package.json ./apps/web/
 
 RUN pnpm install --no-frozen-lockfile
+
+# Now copy the actual source code
+COPY packages ./packages
+COPY services/payment-service ./services/payment-service
 RUN pnpm --filter @qrcode-shiba/database db:generate
 RUN pnpm --filter @qrcode-shiba/database build
 RUN pnpm --filter @qrcode-shiba/payment-service build

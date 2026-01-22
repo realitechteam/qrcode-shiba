@@ -8,10 +8,19 @@ FROM base AS builder
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY packages/database/package.json ./packages/database/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+COPY services/auth-service/package.json ./services/auth-service/
+COPY services/qr-service/package.json ./services/qr-service/
+COPY services/payment-service/package.json ./services/payment-service/
+COPY services/redirect-service/package.json ./services/redirect-service/
+COPY apps/web/package.json ./apps/web/
+
+RUN pnpm install --no-frozen-lockfile
+
 COPY packages ./packages
 COPY services/qr-service ./services/qr-service
 
-RUN pnpm install --no-frozen-lockfile
 RUN pnpm --filter @qrcode-shiba/database db:generate
 RUN pnpm --filter @qrcode-shiba/database build
 RUN pnpm --filter @qrcode-shiba/qr-service build

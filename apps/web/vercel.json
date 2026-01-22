@@ -1,5 +1,5 @@
 {
-    "buildCommand": "cd ../.. && pnpm turbo build --filter=@qrcode-shiba/web",
+    "buildCommand": "next build",
     "installCommand": "cd ../.. && pnpm install",
     "framework": "nextjs",
     "outputDirectory": ".next"

@@ -34,6 +34,7 @@ export function SignupModal({ isOpen, onClose, qrPreview }: SignupModalProps) {
 
             // 2. Sync Firebase user with backend to get database user ID and tokens
             const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://auth-service-production-431d.up.railway.app/api/v1";
+            console.log("🚀 Sync API URL (Signup):", API_URL);
             const syncResponse = await fetch(`${API_URL}/auth/firebase/sync`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

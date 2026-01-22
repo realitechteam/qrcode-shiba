@@ -153,9 +153,6 @@ importers:
       '@prisma/client':
         specifier: ^5.10.0
         version: 5.22.0(prisma@5.22.0)
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
     devDependencies:
       '@qrcode-shiba/typescript-config':
         specifier: workspace:*
@@ -169,6 +166,9 @@ importers:
       tsx:
         specifier: ^4.7.0
         version: 4.21.0
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
 
   packages/eslint-config:
     devDependencies:
@@ -10323,6 +10323,7 @@ packages:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
+    dev: true
 
   /ua-parser-js@1.0.41:
     resolution: {integrity: sha512-LbBDqdIC5s8iROCUjMbW1f5dJQTEFB1+KO9ogbvlb3nm9n4YHa5p4KTvFPWvh2Hs8gZMBuiB1/8+pdfe/tDPug==}

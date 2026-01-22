@@ -18,7 +18,11 @@ async function bootstrap() {
     );
 
     app.enableCors({
-        origin: configService.get<string>("FRONTEND_URL", "http://localhost:3000"),
+        origin: [
+            "http://localhost:3000",
+            "https://www.shiba.pw",
+            configService.get<string>("FRONTEND_URL"),
+        ].filter(Boolean),
         credentials: true,
     });
 

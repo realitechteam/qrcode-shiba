@@ -10,6 +10,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 # Copy all package.json files to satisfy pnpm workspace requirements
 COPY packages/database/package.json ./packages/database/
+COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 COPY services/auth-service/package.json ./services/auth-service/
 COPY services/qr-service/package.json ./services/qr-service/

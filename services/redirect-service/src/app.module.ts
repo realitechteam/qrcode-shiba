@@ -7,7 +7,12 @@ import { PrismaModule } from "./prisma/prisma.module";
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            envFilePath: [".env.local", ".env"],
+            envFilePath: [
+                "../../.env.local",
+                "../../.env",
+                ".env.local",
+                ".env"
+            ],
         }),
         PrismaModule,
         RedirectModule,

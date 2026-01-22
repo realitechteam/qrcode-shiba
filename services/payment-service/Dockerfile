@@ -16,14 +16,15 @@ RUN pnpm install --frozen-lockfile
 # --- builder layer ---
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages ./packages
-COPY --from=deps /app/services/payment-service ./services/payment-service
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY --from=deps /app ./
 COPY packages ./packages
 COPY services/payment-service ./services/payment-service
 
+# Build database package first
 RUN pnpm --filter @qrcode-shiba/database db:generate
+RUN pnpm --filter @qrcode-shiba/database build
+
+# Build payment service
 RUN pnpm --filter @qrcode-shiba/payment-service build
 
 # --- runner layer ---

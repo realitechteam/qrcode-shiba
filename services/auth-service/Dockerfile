@@ -6,6 +6,7 @@ RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
 # --- dependencies layer ---
 FROM base AS deps
 WORKDIR /app
+# Copy all package.json files for workspace resolution
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
@@ -16,14 +17,17 @@ RUN pnpm install --frozen-lockfile
 # --- builder layer ---
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages ./packages
-COPY --from=deps /app/services/auth-service ./services/auth-service
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+# Copy all from deps
+COPY --from=deps /app ./
+# Copy source files
 COPY packages ./packages
 COPY services/auth-service ./services/auth-service
 
+# Build database package first (generates Prisma client AND builds TypeScript)
 RUN pnpm --filter @qrcode-shiba/database db:generate
+RUN pnpm --filter @qrcode-shiba/database build
+
+# Build auth service
 RUN pnpm --filter @qrcode-shiba/auth-service build
 
 # --- runner layer ---

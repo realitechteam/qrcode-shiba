@@ -1,6 +1,0 @@
-{
-    "buildCommand": "pnpm --filter @qrcode-shiba/web build",
-    "installCommand": "cd ../.. && pnpm install",
-    "framework": "nextjs",
-    "outputDirectory": ".next"
-}

@@ -1,6 +1,6 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
-    "buildCommand": "next build",
-    "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
+    "buildCommand": "pnpm --filter @qrcode-shiba/web exec next build",
+    "installCommand": "pnpm install --no-frozen-lockfile",
     "framework": "nextjs"
 }

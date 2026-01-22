@@ -13,7 +13,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY packages ./packages
 COPY services/auth-service ./services/auth-service
 
-RUN pnpm install
+RUN pnpm install --no-frozen-lockfile
 RUN pnpm --filter @qrcode-shiba/database db:generate
 RUN pnpm --filter @qrcode-shiba/database build
 RUN pnpm --filter @qrcode-shiba/auth-service build

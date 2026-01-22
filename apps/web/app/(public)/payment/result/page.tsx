@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, XCircle, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function PaymentResultPage() {
+function PaymentResultContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [status, setStatus] = useState<"loading" | "success" | "failed" | "invalid">("loading");
@@ -115,5 +115,20 @@ export default function PaymentResultPage() {
                 </p>
             </div>
         </div>
+    );
+}
+
+export default function PaymentResultPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="h-12 w-12 animate-spin mx-auto text-shiba-500" />
+                    <p className="mt-4 text-muted-foreground">Đang tải...</p>
+                </div>
+            </div>
+        }>
+            <PaymentResultContent />
+        </Suspense>
     );
 }

@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-interface StylingOptions {
+export interface StylingOptions {
     foregroundColor: string;
     backgroundColor: string;
     dotsStyle: "square" | "rounded" | "dots" | "classy" | "classy-rounded";

@@ -18,7 +18,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import qrApi from "@/lib/qr-api";
 import { QRTypeSelector } from "./components/qr-type-selector";
 import { QRDataForm } from "./components/qr-data-form";
-import { QRStyling } from "./components/qr-styling";
+import { QRStyling, StylingOptions } from "./components/qr-styling";
 import { QRPreview } from "./components/qr-preview";
 import { qrTypes, steps } from "./constants";
 
@@ -33,12 +33,12 @@ export default function NewQRPage() {
         searchParams.get("type")?.toUpperCase() || "URL"
     );
     const [formData, setFormData] = useState<Record<string, any>>({});
-    const [styling, setStyling] = useState({
+    const [styling, setStyling] = useState<StylingOptions>({
         foregroundColor: "#000000",
         backgroundColor: "#FFFFFF",
-        dotsStyle: "square" as const,
-        cornersSquareStyle: "square" as const,
-        cornersDotStyle: "square" as const,
+        dotsStyle: "square",
+        cornersSquareStyle: "square",
+        cornersDotStyle: "square",
     });
     const [preview, setPreview] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -180,7 +180,7 @@ export default function NewQRPage() {
                 <div>
                     <h1 className="text-2xl font-bold">Tạo QR Code mới</h1>
                     <p className="text-muted-foreground">
-                        {steps[currentStep - 1].description}
+                        {steps[currentStep - 1]?.description}
                     </p>
                 </div>
             </div>

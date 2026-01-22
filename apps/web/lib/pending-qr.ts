@@ -14,6 +14,9 @@ export interface PendingQR {
     styling: {
         foregroundColor: string;
         backgroundColor?: string;
+        dotsStyle?: string;
+        frameStyle?: string;
+        frameText?: string;
     };
     preview?: string;
     createdAt: number;

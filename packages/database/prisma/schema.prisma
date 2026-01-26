@@ -113,6 +113,17 @@ model RefreshToken {
   @@index([token])
 }
 
+model MagicLink {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
+}
+
 // ============================================
 // QR CODES
 // ============================================

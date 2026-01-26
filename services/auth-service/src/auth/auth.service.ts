@@ -8,8 +8,10 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
+import { nanoid } from "nanoid";
 import { UsersService } from "../users/users.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { EmailService } from "./email.service";
 import { RegisterDto } from "./dto/register.dto";
 import { User, AuthProvider } from "@qrcode-shiba/database";
 
@@ -19,7 +21,8 @@ export class AuthService {
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
-        private readonly prisma: PrismaService
+        private readonly prisma: PrismaService,
+        private readonly emailService: EmailService
     ) { }
 
     async register(registerDto: RegisterDto) {
@@ -167,6 +170,78 @@ export class AuthService {
     async verifyEmail(token: string) {
         // TODO: Validate token and mark email as verified
         throw new BadRequestException("Not implemented");
+    }
+
+    /**
+     * Request magic link for passwordless login/registration
+     */
+    async requestMagicLink(email: string) {
+        // Generate a unique token
+        const token = nanoid(32);
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+        // Store magic link token in database
+        await this.prisma.magicLink.upsert({
+            where: { email },
+            update: { token, expiresAt },
+            create: { email, token, expiresAt },
+        });
+
+        // Send email with magic link
+        await this.emailService.sendMagicLink(email, token);
+
+        return { message: "Magic link sent to your email" };
+    }
+
+    /**
+     * Verify magic link and login/register user
+     */
+    async verifyMagicLink(token: string) {
+        // Find the magic link
+        const magicLink = await this.prisma.magicLink.findUnique({
+            where: { token },
+        });
+
+        if (!magicLink) {
+            throw new BadRequestException("Invalid or expired magic link");
+        }
+
+        if (magicLink.expiresAt < new Date()) {
+            // Delete expired token
+            await this.prisma.magicLink.delete({ where: { token } });
+            throw new BadRequestException("Magic link has expired");
+        }
+
+        // Find or create user
+        let user = await this.usersService.findByEmail(magicLink.email);
+
+        if (!user) {
+            // Create new user with magic link provider
+            user = await this.usersService.create({
+                email: magicLink.email,
+                authProvider: AuthProvider.EMAIL,
+                emailVerified: true,
+            });
+        } else {
+            // Mark email as verified if not already
+            if (!user.emailVerified) {
+                user = await this.prisma.user.update({
+                    where: { id: user.id },
+                    data: { emailVerified: true },
+                });
+            }
+        }
+
+        // Delete used magic link
+        await this.prisma.magicLink.delete({ where: { token } });
+
+        // Generate tokens
+        const tokens = await this.generateTokens(user);
+
+        return {
+            user: this.sanitizeUser(user),
+            ...tokens,
+        };
     }
 
     // Sync Firebase user with backend database

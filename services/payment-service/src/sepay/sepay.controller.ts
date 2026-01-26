@@ -2,13 +2,15 @@ import { Controller, Post, Body, Headers, HttpCode, HttpStatus, BadRequestExcept
 import { ConfigService } from "@nestjs/config";
 import { SepayService, SepayWebhookPayload } from "./sepay.service";
 import { SubscriptionService } from "../subscription/subscription.service";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Controller("sepay")
 export class SepayController {
     constructor(
         private readonly sepayService: SepayService,
         private readonly subscriptionService: SubscriptionService,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly prisma: PrismaService
     ) { }
 
     /**
@@ -41,8 +43,19 @@ export class SepayController {
             orderInfo: `Nâng cấp gói ${planId} - ${billingCycle}`,
         });
 
-        // TODO: Save order to database for tracking
-        // await this.orderService.create({ orderId, userId, planId, billingCycle, amount });
+        // Save order to database
+        await this.prisma.order.create({
+            data: {
+                id: orderId,
+                userId,
+                planId,
+                billingCycle,
+                amount,
+                currency: "VND",
+                status: "PENDING",
+                paymentProvider: "SEPAY",
+            },
+        });
 
         return {
             success: true,
@@ -95,17 +108,89 @@ export class SepayController {
 
         console.log(`✅ Payment received for order ${orderId}: ${payload.transferAmount} VND`);
 
-        // TODO: Activate subscription
-        // 1. Find order by orderId
-        // 2. Verify amount matches
-        // 3. Update order status to COMPLETED
-        // 4. Create/update subscription for user
+        try {
+            // Activate subscription
+            const order = await this.prisma.order.findUnique({
+                where: { id: orderId },
+            });
 
-        return {
-            success: true,
-            message: "Webhook processed successfully",
-            orderId,
-            amount: payload.transferAmount,
-        };
+            if (!order) {
+                console.log(`Order ${orderId} not found`);
+                return { success: true, message: "Order not found" };
+            }
+
+            if (order.status === "COMPLETED") {
+                console.log(`Order ${orderId} already completed`);
+                return { success: true, message: "Order already completed" };
+            }
+
+            // Verify amount (simple check)
+            if (payload.transferAmount < order.amount) {
+                console.log(`Insufficient amount: ${payload.transferAmount} < ${order.amount}`);
+                return { success: true, message: "Insufficient amount" };
+            }
+
+            // Update order status
+            await this.prisma.order.update({
+                where: { id: orderId },
+                data: {
+                    status: "COMPLETED",
+                    paidAt: new Date(),
+                    transactionId: payload.transactionDate, // Using transaction date as ID equivalent for now
+                },
+            });
+
+            // Calculate subscription end date
+            const startDate = new Date();
+            const endDate = new Date(startDate);
+            if (order.billingCycle === "monthly") {
+                endDate.setMonth(endDate.getMonth() + 1);
+            } else {
+                endDate.setFullYear(endDate.getFullYear() + 1);
+            }
+
+            // Upsert subscription
+            await this.prisma.subscription.upsert({
+                where: { userId: order.userId },
+                update: {
+                    status: "ACTIVE",
+                    planId: order.planId,
+                    billingCycle: order.billingCycle,
+                    startDate: startDate,
+                    endDate: endDate,
+                    updatedAt: new Date(),
+                },
+                create: {
+                    userId: order.userId,
+                    status: "ACTIVE",
+                    planId: order.planId,
+                    billingCycle: order.billingCycle,
+                    startDate: startDate,
+                    endDate: endDate,
+                },
+            });
+
+            // Update user tier
+            await this.prisma.user.update({
+                where: { id: order.userId },
+                data: { tier: order.planId.toUpperCase() },
+            });
+
+            console.log(`Activated ${order.planId} subscription for user ${order.userId}`);
+
+            return {
+                success: true,
+                message: "Webhook processed successfully",
+                orderId,
+                amount: payload.transferAmount,
+            };
+        } catch (error) {
+            console.error("Error processing webhook:", error);
+            return {
+                success: false,
+                message: "Error processing webhook",
+                error: String(error),
+            };
+        }
     }
 }

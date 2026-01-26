@@ -36,6 +36,8 @@ interface AuthState {
     // Actions
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string, name?: string) => Promise<void>;
+    requestMagicLink: (email: string) => Promise<void>;
+    verifyMagicLink: (token: string) => Promise<void>;
     logout: () => Promise<void>;
     refreshTokens: () => Promise<void>;
     setTokens: (accessToken: string, refreshToken: string) => void;
@@ -101,7 +103,7 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            register: async (email: string, password: string, name?: string) => {
+    register: async (email: string, password: string, name?: string) => {
                 set({ isLoading: true });
                 try {
                     const response = await api.post<{
@@ -109,6 +111,39 @@ export const useAuthStore = create<AuthState>()(
                         accessToken: string;
                         refreshToken: string;
                     }>("/auth/register", { email, password, name });
+
+                    set({
+                        user: response.data.user,
+                        accessToken: response.data.accessToken,
+                        refreshToken: response.data.refreshToken,
+                        isAuthenticated: true,
+                        isLoading: false,
+                    });
+                } catch (error) {
+                    set({ isLoading: false });
+                    throw error;
+                }
+            },
+
+            requestMagicLink: async (email: string) => {
+                set({ isLoading: true });
+                try {
+                    await api.post("/auth/magic-link", { email });
+                    set({ isLoading: false });
+                } catch (error) {
+                    set({ isLoading: false });
+                    throw error;
+                }
+            },
+
+            verifyMagicLink: async (token: string) => {
+                set({ isLoading: true });
+                try {
+                    const response = await api.post<{
+                        user: User;
+                        accessToken: string;
+                        refreshToken: string;
+                    }>("/auth/verify-magic-link", { token });
 
                     set({
                         user: response.data.user,

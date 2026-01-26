@@ -91,6 +91,19 @@ export class AuthController {
         return this.authService.verifyEmail(token);
     }
 
+    // Magic Link
+    @Post("magic-link")
+    @HttpCode(HttpStatus.OK)
+    async requestMagicLink(@Body("email") email: string) {
+        return this.authService.requestMagicLink(email);
+    }
+
+    @Post("verify-magic-link")
+    @HttpCode(HttpStatus.OK)
+    async verifyMagicLink(@Body("token") token: string) {
+        return this.authService.verifyMagicLink(token);
+    }
+
     // Firebase Auth - sync user with backend database
     @Post("firebase/sync")
     @HttpCode(HttpStatus.OK)

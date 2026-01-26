@@ -195,9 +195,17 @@ export default function DashboardLayout({
                                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                                 className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted transition-colors"
                             >
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-shiba-100 text-shiba-700 font-semibold">
-                                    {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
-                                </div>
+                                {user?.avatarUrl ? (
+                                    <img
+                                        src={user.avatarUrl}
+                                        alt={user.name || "User"}
+                                        className="h-9 w-9 rounded-full object-cover border"
+                                    />
+                                ) : (
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-shiba-500 to-shiba-600 text-white font-semibold shadow-sm">
+                                        {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                                    </div>
+                                )}
                                 <div className="flex-1 text-left">
                                     <p className="text-sm font-medium truncate">
                                         {user?.name || "User"}
@@ -261,8 +269,50 @@ export default function DashboardLayout({
                 </header>
 
                 {/* Page content */}
-                <main className="p-4 lg:p-6">{children}</main>
+                <main className="p-4 lg:p-6 pb-24 lg:pb-6">{children}</main>
             </div>
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-t pb-safe">
+                <div className="flex items-center justify-around h-16">
+                    {[
+                        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+                        { name: "QR Codes", href: "/dashboard/qr", icon: QrCode },
+                        { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+                        { name: "Cài đặt", href: "/dashboard/settings", icon: Settings },
+                    ].map((item) => {
+                        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                        return (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                className={cn(
+                                    "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[64px]",
+                                    isActive
+                                        ? "text-shiba-600 dark:text-shiba-400"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <item.icon
+                                    className={cn(
+                                        "h-5 w-5 transition-transform duration-200",
+                                        isActive && "scale-110"
+                                    )}
+                                />
+                                <span className={cn(
+                                    "text-[10px] font-medium transition-all duration-200",
+                                    isActive ? "opacity-100" : "opacity-70"
+                                )}>
+                                    {item.name}
+                                </span>
+                                {isActive && (
+                                    <div className="absolute bottom-1 w-1 h-1 rounded-full bg-shiba-500" />
+                                )}
+                            </Link>
+                        );
+                    })}
+                </div>
+            </nav>
         </div>
     );
 }

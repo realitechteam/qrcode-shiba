@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default function VerifyPage() {
+function VerifyContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
@@ -86,5 +86,22 @@ export default function VerifyPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function VerifyPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+                <div className="w-full max-w-md bg-card rounded-2xl border shadow-lg p-8 text-center">
+                     <div className="mx-auto w-16 h-16 bg-shiba-100 rounded-full flex items-center justify-center mb-6">
+                        <Loader2 className="w-8 h-8 text-shiba-600 animate-spin" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-2">Đang tải...</h2>
+                </div>
+            </div>
+        }>
+            <VerifyContent />
+        </Suspense>
     );
 }

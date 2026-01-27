@@ -84,24 +84,7 @@ export default function RegisterPage() {
 
     return (
         <div className="min-h-screen flex">
-            {/* Left side - Illustration */}
-            <div className="hidden lg:flex flex-1 bg-gradient-to-br from-shiba-500 to-shiba-600 items-center justify-center p-12">
-                <div className="max-w-md text-white text-center">
-                    <div className="mb-8 flex justify-center">
-                        <div className="h-32 w-32 rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center animate-float">
-                            <QrCode className="h-20 w-20" />
-                        </div>
-                    </div>
-                    <h2 className="text-3xl font-bold mb-4">
-                        Đăng nhập không cần mật khẩu
-                    </h2>
-                    <p className="text-shiba-100 text-lg leading-relaxed">
-                        Chỉ cần nhập email, chúng tôi sẽ gửi cho bạn một đường link đăng nhập an toàn. Không cần nhớ mật khẩu phức tạp.
-                    </p>
-                </div>
-            </div>
-
-            {/* Right side - Form */}
+            {/* Left side - Form */}
             <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-background">
                 <div className="w-full max-w-md space-y-8">
                     {/* Logo */}
@@ -214,6 +197,23 @@ export default function RegisterPage() {
                             </Link>
                         </p>
                     </div>
+                </div>
+            </div>
+
+            {/* Right side - Illustration */}
+            <div className="hidden lg:flex flex-1 bg-gradient-to-br from-shiba-500 to-shiba-600 items-center justify-center p-12">
+                <div className="max-w-md text-white text-center">
+                    <div className="mb-8 flex justify-center">
+                        <div className="h-32 w-32 rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center animate-float">
+                            <QrCode className="h-20 w-20" />
+                        </div>
+                    </div>
+                    <h2 className="text-3xl font-bold mb-4">
+                        Đăng nhập không cần mật khẩu
+                    </h2>
+                    <p className="text-shiba-100 text-lg leading-relaxed">
+                        Chỉ cần nhập email, chúng tôi sẽ gửi cho bạn một đường link đăng nhập an toàn. Không cần nhớ mật khẩu phức tạp.
+                    </p>
                 </div>
             </div>
         </div>

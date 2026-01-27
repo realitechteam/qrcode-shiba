@@ -1,10 +1,12 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+import { LoadingBar } from "@/components/loading-bar";
+
 
 const inter = Inter({ subsets: ["latin", "vietnamese"] });
 
@@ -46,6 +48,7 @@ export const metadata: Metadata = {
     },
 };
 
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -61,9 +64,11 @@ export default function RootLayout({
                     disableTransitionOnChange
                 >
                     <QueryProvider>
+                        <Suspense fallback={null}>
+                            <LoadingBar />
+                        </Suspense>
                         {children}
                         <Toaster />
-                        <SpeedInsights />
                     </QueryProvider>
                 </ThemeProvider>
             </body>

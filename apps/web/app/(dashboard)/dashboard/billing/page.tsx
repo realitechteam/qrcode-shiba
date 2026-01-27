@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
     CreditCard,
@@ -14,9 +14,12 @@ import {
     Smartphone,
     ArrowRight,
     ArrowLeft,
+    Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
+import { useToast } from "@/hooks/use-toast";
+import { paymentService } from "@/services/payment-service";
 
 const plans = [
     {
@@ -76,11 +79,6 @@ const plans = [
     },
 ];
 
-// VietQR Bank info
-const BANK_CODE = "VPB";
-const ACCOUNT_NO = "60016028888";
-const ACCOUNT_NAME = "NGUYEN PHAM QUOC DAT";
-
 // Timer component
 function CountdownTimer({ onExpire }: { onExpire: () => void }) {
     const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes
@@ -114,8 +112,10 @@ function CountdownTimer({ onExpire }: { onExpire: () => void }) {
 
 export default function BillingPage() {
     const { user, getUserPlan } = useAuthStore();
+    const { toast } = useToast();
     const currentPlan = getUserPlan();
     const [isLoading, setIsLoading] = useState(false);
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
     // Modal state
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -123,12 +123,27 @@ export default function BillingPage() {
     const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
     const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
     const [orderId, setOrderId] = useState("");
+    const [qrData, setQrData] = useState<{ qrUrl: string; amount: number; bankCode: string; accountNo: string; content: string } | null>(null);
 
-    // Generate VietQR URL
-    const generateQRUrl = (amount: number, orderIdParam: string) => {
-        const content = encodeURIComponent(`QRS ${orderIdParam}`);
-        return `https://img.vietqr.io/image/${BANK_CODE}-${ACCOUNT_NO}-compact2.png?amount=${amount}&addInfo=${content}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
-    };
+    // Polling interval ref
+    const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+
+    // Cleanup polling on unmount or modal close
+    useEffect(() => {
+        return () => {
+            if (pollingInterval.current) {
+                clearInterval(pollingInterval.current);
+            }
+        };
+    }, []);
+
+    // Stop polling when modal closes
+    useEffect(() => {
+        if (!showPaymentModal && pollingInterval.current) {
+            clearInterval(pollingInterval.current);
+            pollingInterval.current = null;
+        }
+    }, [showPaymentModal]);
 
     const handleUpgrade = (plan: typeof plans[0]) => {
         if (plan.id === "free") return;
@@ -138,33 +153,81 @@ export default function BillingPage() {
         setShowPaymentModal(true);
     };
 
-    const handleConfirmPlan = () => {
-        // Generate order ID when user confirms plan selection
-        setOrderId(`ORD-${Date.now()}-${user?.id?.slice(0, 8) || "guest"}`);
-        setModalStep(2);
+    const handleConfirmPlan = async () => {
+        if (!selectedPlan) return;
+
+        setIsCreatingOrder(true);
+        try {
+            const response = await paymentService.createPayment(selectedPlan.id, billingCycle);
+            
+            if (response.success) {
+                setOrderId(response.data.orderId);
+                setQrData({
+                    qrUrl: response.data.qrUrl,
+                    amount: response.data.amount,
+                    bankCode: response.data.bankCode,
+                    accountNo: response.data.accountNo,
+                    content: response.data.content,
+                });
+                setModalStep(2);
+
+                // Start polling
+                startPolling(response.data.orderId);
+            }
+        } catch (error: any) {
+            console.error("Failed to create order:", error);
+            toast({
+                title: "Lỗi tạo đơn hàng",
+                description: "Không thể tạo đơn hàng, vui lòng thử lại sau.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsCreatingOrder(false);
+        }
+    };
+
+    const startPolling = (currentOrderId: string) => {
+        if (pollingInterval.current) clearInterval(pollingInterval.current);
+
+        pollingInterval.current = setInterval(async () => {
+            try {
+                const response = await paymentService.checkOrderStatus(currentOrderId);
+                if (response.success && response.data.status === "COMPLETED") {
+                    // Payment successful
+                    if (pollingInterval.current) clearInterval(pollingInterval.current);
+                    
+                    toast({
+                        title: "Thanh toán thành công!",
+                        description: `Đã nâng cấp lên gói ${selectedPlan?.name}`,
+                    });
+                    
+                    setShowPaymentModal(false);
+                    // Refresh user data (reload page for now as a simple way to refresh everything)
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (error) {
+                console.error("Error checking order status:", error);
+            }
+        }, 3000); // Check every 3 seconds
     };
 
     const handleCloseModal = () => {
         setShowPaymentModal(false);
         setSelectedPlan(null);
         setModalStep(1);
+        setQrData(null);
+        if (pollingInterval.current) {
+            clearInterval(pollingInterval.current);
+            pollingInterval.current = null;
+        }
     };
 
     const handleBack = () => {
         setModalStep(1);
-    };
-
-    const getAmount = () => {
-        if (!selectedPlan) return 0;
-        return billingCycle === "yearly" ? selectedPlan.priceYearly : selectedPlan.priceMonthly;
-    };
-
-    const getMonthlyEquivalent = () => {
-        if (!selectedPlan) return 0;
-        if (billingCycle === "yearly") {
-            return Math.round(selectedPlan.priceYearly / 12);
+        if (pollingInterval.current) {
+            clearInterval(pollingInterval.current);
+            pollingInterval.current = null;
         }
-        return selectedPlan.priceMonthly;
     };
 
     return (
@@ -367,15 +430,25 @@ export default function BillingPage() {
                                 <Button
                                     onClick={handleConfirmPlan}
                                     className="w-full bg-shiba-500 hover:bg-shiba-600 h-12 text-base"
+                                    disabled={isCreatingOrder}
                                 >
-                                    Tiếp tục thanh toán
-                                    <ArrowRight className="h-5 w-5 ml-2" />
+                                    {isCreatingOrder ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Đang tạo đơn...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Tiếp tục thanh toán
+                                            <ArrowRight className="h-5 w-5 ml-2" />
+                                        </>
+                                    )}
                                 </Button>
                             </div>
                         )}
 
                         {/* Step 2: Show QR Code */}
-                        {modalStep === 2 && (
+                        {modalStep === 2 && qrData && (
                             <div className="p-5 space-y-4">
                                 {/* Order Summary */}
                                 <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
@@ -383,28 +456,34 @@ export default function BillingPage() {
                                         <p className="font-medium">Gói {selectedPlan.name} - {billingCycle === "monthly" ? "Tháng" : "Năm"}</p>
                                         <p className="text-xs text-muted-foreground">Mã đơn: {orderId}</p>
                                     </div>
-                                    <p className="text-xl font-bold text-shiba-600">{getAmount().toLocaleString()}đ</p>
+                                    <p className="text-xl font-bold text-shiba-600">{qrData.amount.toLocaleString()}đ</p>
                                 </div>
 
                                 {/* Timer */}
                                 <CountdownTimer onExpire={handleCloseModal} />
 
                                 {/* QR Code */}
-                                <div className="bg-white rounded-xl p-4 mx-auto w-fit shadow-sm">
+                                <div className="bg-white rounded-xl p-4 mx-auto w-fit shadow-sm relative">
                                     <Image
-                                        src={generateQRUrl(getAmount(), orderId)}
+                                        src={qrData.qrUrl}
                                         alt="VietQR"
                                         width={200}
                                         height={200}
                                         className="rounded-lg"
                                         unoptimized
                                     />
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-white/80 rounded-lg">
+                                        <p className="text-sm font-medium text-black">Đang chờ thanh toán...</p>
+                                    </div>
                                 </div>
+                                <p className="text-center text-xs text-muted-foreground animate-pulse">
+                                    Đang chờ thanh toán...
+                                </p>
 
                                 {/* Bank info */}
                                 <div className="text-center">
-                                    <p className="font-semibold text-foreground">{ACCOUNT_NAME}</p>
-                                    <p className="text-sm text-muted-foreground">{BANK_CODE} • {ACCOUNT_NO}</p>
+                                    <p className="font-semibold text-foreground">NGUYEN PHAM QUOC DAT</p>
+                                    <p className="text-sm text-muted-foreground">{qrData.bankCode} • {qrData.accountNo}</p>
                                 </div>
 
                                 {/* Instructions */}

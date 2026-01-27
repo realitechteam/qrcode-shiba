@@ -186,6 +186,21 @@ export class SubscriptionService {
     }
 
     /**
+     * Get single order by ID
+     */
+    async getOrderById(orderId: string): Promise<any> {
+        const order = await this.prisma.order.findUnique({
+            where: { id: orderId },
+        });
+
+        if (!order) {
+            throw new NotFoundException("Order not found");
+        }
+
+        return order;
+    }
+
+    /**
      * Cancel subscription
      */
     async cancelSubscription(userId: string) {

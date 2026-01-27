@@ -31,13 +31,17 @@ export class SepayService {
     private readonly webhookSecret: string;
     private readonly apiUrl = "https://my.sepay.vn/userapi";
 
-    // Default bank account for receiving payments
-    private readonly bankCode = "MB"; // MB Bank
-    private readonly accountNo = "0344449999"; // TODO: Replace with actual account
+    // Bank account for receiving payments
+    private readonly bankCode: string;
+    private readonly accountNo: string;
 
     constructor(private configService: ConfigService) {
         this.apiToken = this.configService.get<string>("SEPAY_API_TOKEN", "");
         this.webhookSecret = this.configService.get<string>("SEPAY_WEBHOOK_SECRET", "");
+        
+        // Load bank info from env or use default/fallback
+        this.bankCode = this.configService.get<string>("SEPAY_BANK_CODE", "MB");
+        this.accountNo = this.configService.get<string>("SEPAY_ACCOUNT_NO", "0344449999");
     }
 
     /**

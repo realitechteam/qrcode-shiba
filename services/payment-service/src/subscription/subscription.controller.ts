@@ -5,6 +5,7 @@ import {
     Headers,
     Query,
     BadRequestException,
+    Param,
 } from "@nestjs/common";
 import { SubscriptionService } from "./subscription.service";
 
@@ -48,6 +49,14 @@ export class SubscriptionController {
             page || 1,
             limit || 10
         );
+    }
+
+    /**
+     * Get single order
+     */
+    @Get("orders/:id")
+    async getOrder(@Param("id") id: string) {
+        return this.subscriptionService.getOrderById(id);
     }
 
     /**

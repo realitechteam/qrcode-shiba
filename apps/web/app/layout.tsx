@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/toaster";
@@ -62,6 +63,7 @@ export default function RootLayout({
                     <QueryProvider>
                         {children}
                         <Toaster />
+                        <SpeedInsights />
                     </QueryProvider>
                 </ThemeProvider>
             </body>

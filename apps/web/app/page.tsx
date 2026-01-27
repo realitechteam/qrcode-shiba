@@ -120,7 +120,7 @@ export default function HomePage() {
                         <p className="text-shiba-100 mb-8 max-w-2xl mx-auto">
                             Đăng ký miễn phí để tạo Dynamic QR Code với analytics chi tiết.
                         </p>
-                        <Link href="/register">
+                        <Link href="/login">
                             <Button
                                 size="lg"
                                 variant="secondary"

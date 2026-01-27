@@ -263,7 +263,7 @@ export default function PricingPage() {
                                     <Button
                                         variant="outline"
                                         className="w-full"
-                                        onClick={() => router.push("/register")}
+                                        onClick={() => router.push("/login")}
                                     >
                                         Bắt đầu miễn phí
                                     </Button>

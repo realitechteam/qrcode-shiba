@@ -250,13 +250,6 @@ export default function LoginPage() {
                             {isGoogleLoading ? "Đang đăng nhập..." : "Đăng nhập với Google"}
                         </Button>
 
-                        {/* Register link */}
-                        <p className="mt-6 text-center text-sm text-muted-foreground">
-                            Chưa có tài khoản?{" "}
-                            <Link href="/register" className="text-shiba-500 hover:text-shiba-600 font-medium">
-                                Đăng ký ngay
-                            </Link>
-                        </p>
                     </div>
                 </div>
             </div>

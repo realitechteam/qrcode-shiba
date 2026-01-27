@@ -65,11 +65,6 @@ export function AuthHeader() {
                                     Đăng nhập
                                 </Button>
                             </Link>
-                            <Link href="/register">
-                                <Button size="sm" className="bg-shiba-500 hover:bg-shiba-600">
-                                    Bắt đầu miễn phí
-                                </Button>
-                            </Link>
                         </>
                     )}
                 </div>

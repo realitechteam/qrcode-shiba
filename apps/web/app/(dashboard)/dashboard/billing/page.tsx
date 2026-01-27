@@ -196,14 +196,16 @@ export default function BillingPage() {
                     // Payment successful
                     if (pollingInterval.current) clearInterval(pollingInterval.current);
                     
+                    // Refresh user data immediately
+                    await useAuthStore.getState().fetchUser();
+                    
+                    // Show success toast
                     toast({
                         title: "Thanh toán thành công!",
                         description: `Đã nâng cấp lên gói ${selectedPlan?.name}`,
                     });
                     
                     setShowPaymentModal(false);
-                    // Refresh user data (reload page for now as a simple way to refresh everything)
-                    setTimeout(() => window.location.reload(), 1500);
                 }
             } catch (error) {
                 console.error("Error checking order status:", error);

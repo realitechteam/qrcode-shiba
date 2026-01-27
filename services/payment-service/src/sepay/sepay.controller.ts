@@ -34,7 +34,7 @@ export class SepayController {
         }
 
         const amount = billingCycle === "yearly" ? prices.yearly : prices.monthly;
-        const orderId = `ORD-${Date.now()}-${userId.slice(0, 8)}`;
+        const orderId = `ORD${Date.now()}${userId.slice(0, 8)}`;
 
         // Generate QR payment data
         const qrData = this.sepayService.generateQRData({

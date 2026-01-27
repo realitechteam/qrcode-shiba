@@ -14,7 +14,6 @@ import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "./email.service";
 import { RegisterDto } from "./dto/register.dto";
 import { User, AuthProvider } from "@qrcode-shiba/database";
-import { RecaptchaEnterpriseServiceClient } from "@google-cloud/recaptcha-enterprise";
 
 @Injectable()
 export class AuthService {
@@ -333,40 +332,43 @@ export class AuthService {
         try {
             const projectID = "realitech-qrshiba";
             const recaptchaKey = "6LdocFcsAAAAABtW-7f7X04RvzmRjBuZjv5lF2Jn";
+            // Use Firebase API Key or separate Recaptcha Key
+            const apiKey = this.configService.get<string>("NEXT_PUBLIC_FIREBASE_API_KEY") || "AIzaSyCA1Bbe27Y4t9sjD_Z4zcCJ6kFhyXOwybw";
 
-            // Create the reCAPTCHA client.
-            const client = new RecaptchaEnterpriseServiceClient();
-            const projectPath = client.projectPath(projectID);
+            const url = `https://recaptchaenterprise.googleapis.com/v1/projects/${projectID}/assessments?key=${apiKey}`;
 
-            // Build the assessment request.
-            const request = {
-                assessment: {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
                     event: {
                         token: token,
                         siteKey: recaptchaKey,
+                        expectedAction: action,
                     },
-                },
-                parent: projectPath,
-            };
+                }),
+            });
 
-            const [response] = await client.createAssessment(request);
+            const data = await response.json();
 
             // Check if the token is valid.
-            if (!response.tokenProperties?.valid) {
-                 this.emailService['logger'].warn(`The CreateAssessment call failed because the token was: ${response.tokenProperties?.invalidReason}`);
+            if (!data.tokenProperties?.valid) {
+                 this.emailService['logger'].warn(`Recaptcha validation failed: ${data.tokenProperties?.invalidReason}`);
                 return false;
             }
 
             // Check if the expected action was executed.
-            if (response.tokenProperties.action === action) {
+            if (data.tokenProperties.action === action) {
                 // Check score (0.0 - 1.0)
-                const score = response.riskAnalysis?.score || 0;
+                const score = data.riskAnalysis?.score || 0;
                 this.emailService['logger'].log(`The reCAPTCHA score is: ${score}`);
                 
                 // Allow if score is reasonable (e.g. > 0.5)
                 return score >= 0.5;
             } else {
-                 this.emailService['logger'].warn("The action attribute in your reCAPTCHA tag does not match the action you are expecting to score");
+                 this.emailService['logger'].warn("Recaptcha action mismatch");
                 return false;
             }
         } catch (error) {

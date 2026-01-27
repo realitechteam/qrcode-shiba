@@ -44,37 +44,7 @@ export default function LoginPage() {
 
     const onSubmit = async (data: LoginFormData) => {
         try {
-            // Execute reCAPTCHA
-            const token = await new Promise<string>((resolve) => {
-                if (window.grecaptcha?.enterprise) {
-                    window.grecaptcha.enterprise.ready(async () => {
-                        try {
-                            const token = await window.grecaptcha.enterprise.execute(
-                                process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
-                                { action: "LOGIN" }
-                            );
-                            resolve(token);
-                        } catch (error) {
-                            console.error("reCAPTCHA execute error:", error);
-                            resolve("");
-                        }
-                    });
-                } else {
-                    console.log("reCAPTCHA not loaded");
-                    resolve("");
-                }
-            });
-
-            if (!token) {
-                toast({
-                    title: "Lỗi bảo mật",
-                    description: "Không thể xác thực reCAPTCHA. Vui lòng thử lại.",
-                    variant: "destructive",
-                });
-                return;
-            }
-
-            await requestMagicLink(data.email, token);
+            await requestMagicLink(data.email);
             setSentEmail(data.email);
             setIsSuccess(true);
             toast({
@@ -247,13 +217,6 @@ export default function LoginPage() {
                             <div className="flex-1 border-t" />
                         </div>
 
-                        <Script
-                            src={`https://www.google.com/recaptcha/enterprise.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
-                            strategy="afterInteractive"
-                            onLoad={() => {
-                                console.log("reCAPTCHA script loaded");
-                            }}
-                        />
 
                         {/* Social Login */}
                         <Button

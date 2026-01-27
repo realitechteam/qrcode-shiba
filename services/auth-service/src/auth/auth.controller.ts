@@ -94,11 +94,8 @@ export class AuthController {
     // Magic Link
     @Post("magic-link")
     @HttpCode(HttpStatus.OK)
-    async requestMagicLink(
-        @Body("email") email: string,
-        @Body("recaptchaToken") recaptchaToken?: string
-    ) {
-        return this.authService.requestMagicLink(email, recaptchaToken);
+    async requestMagicLink(@Body("email") email: string) {
+        return this.authService.requestMagicLink(email);
     }
 
     @Post("verify-magic-link")

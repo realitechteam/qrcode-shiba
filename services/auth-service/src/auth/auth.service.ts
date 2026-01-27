@@ -175,17 +175,7 @@ export class AuthService {
     /**
      * Request magic link for passwordless login/registration
      */
-    async requestMagicLink(email: string, recaptchaToken?: string) {
-        // Verify reCAPTCHA if token is provided or enforced
-        if (recaptchaToken) {
-            const isValid = await this.verifyRecaptchaToken(recaptchaToken, "LOGIN");
-            if (!isValid) {
-                // In strict mode we might throw, but for user UX we might just log and fail if score is too low
-                // For now, let's treat invalid token as a block
-                throw new BadRequestException("Phát hiện bất thường. Vui lòng thử lại.");
-            }
-        }
-
+    async requestMagicLink(email: string) {
         // Generate a unique token
         const token = nanoid(32);
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
@@ -328,52 +318,4 @@ export class AuthService {
         return sanitized;
     }
 
-    private async verifyRecaptchaToken(token: string, action: string): Promise<boolean> {
-        try {
-            const projectID = "realitech-qrshiba";
-            const recaptchaKey = "6LdocFcsAAAAABtW-7f7X04RvzmRjBuZjv5lF2Jn";
-            // Use Firebase API Key or separate Recaptcha Key
-            const apiKey = this.configService.get<string>("NEXT_PUBLIC_FIREBASE_API_KEY") || "AIzaSyCA1Bbe27Y4t9sjD_Z4zcCJ6kFhyXOwybw";
-
-            const url = `https://recaptchaenterprise.googleapis.com/v1/projects/${projectID}/assessments?key=${apiKey}`;
-
-            const response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    event: {
-                        token: token,
-                        siteKey: recaptchaKey,
-                        expectedAction: action,
-                    },
-                }),
-            });
-
-            const data: any = await response.json();
-
-            // Check if the token is valid.
-            if (!data.tokenProperties?.valid) {
-                 this.emailService['logger'].warn(`Recaptcha validation failed: ${data.tokenProperties?.invalidReason}`);
-                return false;
-            }
-
-            // Check if the expected action was executed.
-            if (data.tokenProperties.action === action) {
-                // Check score (0.0 - 1.0)
-                const score = data.riskAnalysis?.score || 0;
-                this.emailService['logger'].log(`The reCAPTCHA score is: ${score}`);
-                
-                // Allow if score is reasonable (e.g. > 0.5)
-                return score >= 0.5;
-            } else {
-                 this.emailService['logger'].warn("Recaptcha action mismatch");
-                return false;
-            }
-        } catch (error) {
-             console.error("Recaptcha verification error:", error);
-             return false;
-        }
-    }
 }

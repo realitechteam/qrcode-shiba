@@ -351,7 +351,7 @@ export class AuthService {
                 }),
             });
 
-            const data = await response.json();
+            const data: any = await response.json();
 
             // Check if the token is valid.
             if (!data.tokenProperties?.valid) {

@@ -46,15 +46,21 @@ export default function LoginPage() {
         try {
             // Execute reCAPTCHA
             const token = await new Promise<string>((resolve) => {
-                if (window.grecaptcha) {
+                if (window.grecaptcha?.enterprise) {
                     window.grecaptcha.enterprise.ready(async () => {
-                        const token = await window.grecaptcha.enterprise.execute(
-                            process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
-                            { action: "LOGIN" }
-                        );
-                        resolve(token);
+                        try {
+                            const token = await window.grecaptcha.enterprise.execute(
+                                process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
+                                { action: "LOGIN" }
+                            );
+                            resolve(token);
+                        } catch (error) {
+                            console.error("reCAPTCHA execute error:", error);
+                            resolve("");
+                        }
                     });
                 } else {
+                    console.log("reCAPTCHA not loaded");
                     resolve("");
                 }
             });
@@ -244,6 +250,9 @@ export default function LoginPage() {
                         <Script
                             src={`https://www.google.com/recaptcha/enterprise.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
                             strategy="afterInteractive"
+                            onLoad={() => {
+                                console.log("reCAPTCHA script loaded");
+                            }}
                         />
 
                         {/* Social Login */}

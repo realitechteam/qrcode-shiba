@@ -317,5 +317,4 @@ export class AuthService {
         const { passwordHash, ...sanitized } = user;
         return sanitized;
     }
-
 }

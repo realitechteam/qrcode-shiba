@@ -70,7 +70,6 @@ export function AnalyticsModal({ qr, onClose, onDownload, onOpenLink }: Analytic
     useEffect(() => {
         triggerHaptic("light");
         fetchStats();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [qr.id]);
 
     const fetchStats = async () => {
@@ -121,7 +120,6 @@ export function AnalyticsModal({ qr, onClose, onDownload, onOpenLink }: Analytic
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             {qr.imageUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                     src={qr.imageUrl}
                                     alt={qr.name || "QR Code"}

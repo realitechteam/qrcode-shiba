@@ -1,8 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
-const API_URL = typeof window !== "undefined" 
-    ? "/api/v1" 
-    : (process.env.FRONTEND_URL || "http://localhost:3000") + "/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://auth-service-production-431d.up.railway.app/api/v1";
 
 if (typeof window !== "undefined") {
     console.log("🚀 Auth API URL:", API_URL);

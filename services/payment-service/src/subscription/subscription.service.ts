@@ -197,10 +197,7 @@ export class SubscriptionService {
             throw new NotFoundException("Order not found");
         }
 
-        return {
-            success: true,
-            data: order,
-        };
+        return order;
     }
 
     /**

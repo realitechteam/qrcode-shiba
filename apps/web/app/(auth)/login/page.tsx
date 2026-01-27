@@ -209,7 +209,6 @@ export default function LoginPage() {
                             <div className="flex-1 border-t" />
                         </div>
 
-
                         {/* Social Login */}
                         <Button
                             type="button"

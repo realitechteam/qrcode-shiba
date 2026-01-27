@@ -14,6 +14,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "./email.service";
 import { RegisterDto } from "./dto/register.dto";
 import { User, AuthProvider } from "@qrcode-shiba/database";
+import { RecaptchaEnterpriseServiceClient } from "@google-cloud/recaptcha-enterprise";
 
 @Injectable()
 export class AuthService {
@@ -175,7 +176,17 @@ export class AuthService {
     /**
      * Request magic link for passwordless login/registration
      */
-    async requestMagicLink(email: string) {
+    async requestMagicLink(email: string, recaptchaToken?: string) {
+        // Verify reCAPTCHA if token is provided or enforced
+        if (recaptchaToken) {
+            const isValid = await this.verifyRecaptchaToken(recaptchaToken, "LOGIN");
+            if (!isValid) {
+                // In strict mode we might throw, but for user UX we might just log and fail if score is too low
+                // For now, let's treat invalid token as a block
+                throw new BadRequestException("Phát hiện bất thường. Vui lòng thử lại.");
+            }
+        }
+
         // Generate a unique token
         const token = nanoid(32);
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
@@ -316,5 +327,51 @@ export class AuthService {
     private sanitizeUser(user: User) {
         const { passwordHash, ...sanitized } = user;
         return sanitized;
+    }
+
+    private async verifyRecaptchaToken(token: string, action: string): Promise<boolean> {
+        try {
+            const projectID = "realitech-qrshiba";
+            const recaptchaKey = "6LdocFcsAAAAABtW-7f7X04RvzmRjBuZjv5lF2Jn";
+
+            // Create the reCAPTCHA client.
+            const client = new RecaptchaEnterpriseServiceClient();
+            const projectPath = client.projectPath(projectID);
+
+            // Build the assessment request.
+            const request = {
+                assessment: {
+                    event: {
+                        token: token,
+                        siteKey: recaptchaKey,
+                    },
+                },
+                parent: projectPath,
+            };
+
+            const [response] = await client.createAssessment(request);
+
+            // Check if the token is valid.
+            if (!response.tokenProperties?.valid) {
+                 this.emailService['logger'].warn(`The CreateAssessment call failed because the token was: ${response.tokenProperties?.invalidReason}`);
+                return false;
+            }
+
+            // Check if the expected action was executed.
+            if (response.tokenProperties.action === action) {
+                // Check score (0.0 - 1.0)
+                const score = response.riskAnalysis?.score || 0;
+                this.emailService['logger'].log(`The reCAPTCHA score is: ${score}`);
+                
+                // Allow if score is reasonable (e.g. > 0.5)
+                return score >= 0.5;
+            } else {
+                 this.emailService['logger'].warn("The action attribute in your reCAPTCHA tag does not match the action you are expecting to score");
+                return false;
+            }
+        } catch (error) {
+             console.error("Recaptcha verification error:", error);
+             return false;
+        }
     }
 }

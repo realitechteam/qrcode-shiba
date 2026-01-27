@@ -36,7 +36,7 @@ interface AuthState {
     // Actions
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string, name?: string) => Promise<void>;
-    requestMagicLink: (email: string) => Promise<void>;
+    requestMagicLink: (email: string, recaptchaToken?: string) => Promise<void>;
     verifyMagicLink: (token: string) => Promise<void>;
     logout: () => Promise<void>;
     refreshTokens: () => Promise<void>;
@@ -125,10 +125,10 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            requestMagicLink: async (email: string) => {
+            requestMagicLink: async (email: string, recaptchaToken?: string) => {
                 set({ isLoading: true });
                 try {
-                    await api.post("/auth/magic-link", { email });
+                    await api.post("/auth/magic-link", { email, recaptchaToken });
                     set({ isLoading: false });
                 } catch (error) {
                     set({ isLoading: false });

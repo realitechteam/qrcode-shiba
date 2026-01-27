@@ -1,20 +1,27 @@
 "use client";
 
+import Script from "next/script";
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { QrCode, Eye, EyeOff, Loader2 } from "lucide-react";
+import { QrCode, Loader2, Mail, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/auth-store";
 import { signInWithGoogle } from "@/lib/firebase";
 
+declare global {
+    interface Window {
+        grecaptcha: any;
+    }
+}
+
 const loginSchema = z.object({
     email: z.string().email("Email không hợp lệ"),
-    password: z.string().min(1, "Vui lòng nhập mật khẩu"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -22,9 +29,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const { login, isLoading, setUser, setTokens } = useAuthStore();
-    const [showPassword, setShowPassword] = useState(false);
+    const { requestMagicLink, isLoading, setUser, setTokens } = useAuthStore();
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [sentEmail, setSentEmail] = useState("");
 
     const {
         register,
@@ -36,16 +44,41 @@ export default function LoginPage() {
 
     const onSubmit = async (data: LoginFormData) => {
         try {
-            await login(data.email, data.password);
-            toast({
-                title: "Đăng nhập thành công!",
-                description: "Chào mừng bạn trở lại QRCode-Shiba",
+            // Execute reCAPTCHA
+            const token = await new Promise<string>((resolve) => {
+                if (window.grecaptcha) {
+                    window.grecaptcha.enterprise.ready(async () => {
+                        const token = await window.grecaptcha.enterprise.execute(
+                            process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!,
+                            { action: "LOGIN" }
+                        );
+                        resolve(token);
+                    });
+                } else {
+                    resolve("");
+                }
             });
-            router.push("/dashboard/qr");
+
+            if (!token) {
+                toast({
+                    title: "Lỗi bảo mật",
+                    description: "Không thể xác thực reCAPTCHA. Vui lòng thử lại.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            await requestMagicLink(data.email, token);
+            setSentEmail(data.email);
+            setIsSuccess(true);
+            toast({
+                title: "Đã gửi link đăng nhập",
+                description: "Vui lòng kiểm tra email của bạn",
+            });
         } catch (error: any) {
             toast({
-                title: "Đăng nhập thất bại",
-                description: error.message || "Email hoặc mật khẩu không đúng",
+                title: "Gửi link thất bại",
+                description: error.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại",
                 variant: "destructive",
             });
         }
@@ -107,6 +140,34 @@ export default function LoginPage() {
         }
     };
 
+    if (isSuccess) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+                <div className="w-full max-w-md bg-card rounded-2xl border shadow-lg p-8 text-center animate-scale-in">
+                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                        <CheckCircle2 className="w-8 h-8 text-green-600" />
+                    </div>
+                    
+                    <h2 className="text-2xl font-bold mb-2">Check email của bạn</h2>
+                    <p className="text-muted-foreground mb-6">
+                        Chúng tôi đã gửi link đăng nhập đến <strong>{sentEmail}</strong>.<br/>
+                        Vui lòng click vào link trong email để tiếp tục.
+                    </p>
+
+                    <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 mb-6">
+                        <p className="mb-2">Không nhận được email?</p>
+                        <button 
+                            onClick={() => setIsSuccess(false)}
+                            className="text-shiba-500 hover:text-shiba-600 font-medium hover:underline"
+                        >
+                            Thử lại với email khác
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen flex">
             {/* Left side - Form */}
@@ -129,7 +190,7 @@ export default function LoginPage() {
                         <div className="mb-6">
                             <h1 className="text-2xl font-bold">Chào mừng trở lại!</h1>
                             <p className="text-muted-foreground mt-1">
-                                Đăng nhập để tiếp tục quản lý QR codes của bạn
+                                Nhập email để nhận Magic Link đăng nhập
                             </p>
                         </div>
 
@@ -139,57 +200,20 @@ export default function LoginPage() {
                                 <label htmlFor="email" className="text-sm font-medium">
                                     Email
                                 </label>
-                                <input
-                                    id="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    placeholder="email@example.com"
-                                    className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500 disabled:opacity-50"
-                                    disabled={isLoading}
-                                    {...register("email")}
-                                />
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        autoComplete="email"
+                                        placeholder="email@example.com"
+                                        className="w-full rounded-lg border bg-background pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500 disabled:opacity-50"
+                                        disabled={isLoading}
+                                        {...register("email")}
+                                    />
+                                </div>
                                 {errors.email && (
                                     <p className="text-sm text-destructive">{errors.email.message}</p>
-                                )}
-                            </div>
-
-                            {/* Password */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <label htmlFor="password" className="text-sm font-medium">
-                                        Mật khẩu
-                                    </label>
-                                    <Link
-                                        href="/forgot-password"
-                                        className="text-sm text-shiba-500 hover:text-shiba-600"
-                                    >
-                                        Quên mật khẩu?
-                                    </Link>
-                                </div>
-                                <div className="relative">
-                                    <input
-                                        id="password"
-                                        type={showPassword ? "text" : "password"}
-                                        autoComplete="current-password"
-                                        placeholder="••••••••"
-                                        className="w-full rounded-lg border bg-background px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500 disabled:opacity-50"
-                                        disabled={isLoading}
-                                        {...register("password")}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    >
-                                        {showPassword ? (
-                                            <EyeOff className="h-4 w-4" />
-                                        ) : (
-                                            <Eye className="h-4 w-4" />
-                                        )}
-                                    </button>
-                                </div>
-                                {errors.password && (
-                                    <p className="text-sm text-destructive">{errors.password.message}</p>
                                 )}
                             </div>
 
@@ -202,10 +226,10 @@ export default function LoginPage() {
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Đang đăng nhập...
+                                        Đang gửi link...
                                     </>
                                 ) : (
-                                    "Đăng nhập"
+                                    "Gửi Magic Link"
                                 )}
                             </Button>
                         </form>
@@ -216,6 +240,11 @@ export default function LoginPage() {
                             <span className="text-xs text-muted-foreground">HOẶC</span>
                             <div className="flex-1 border-t" />
                         </div>
+
+                        <Script
+                            src={`https://www.google.com/recaptcha/enterprise.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
+                            strategy="afterInteractive"
+                        />
 
                         {/* Social Login */}
                         <Button

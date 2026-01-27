@@ -56,7 +56,11 @@ export class SubscriptionController {
      */
     @Get("orders/:id")
     async getOrder(@Param("id") id: string) {
-        return this.subscriptionService.getOrderById(id);
+        const order = await this.subscriptionService.getOrderById(id);
+        return {
+            success: true,
+            data: order,
+        };
     }
 
     /**

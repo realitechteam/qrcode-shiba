@@ -40,7 +40,7 @@ export const paymentService = {
             throw new Error("User not found");
         }
 
-        const response = await axios.post(`${API_URL}/payment/sepay/create-payment`, {
+        const response = await axios.post(`${API_URL}/sepay/create-payment`, {
             userId: user.id,
             planId,
             billingCycle,
@@ -53,7 +53,7 @@ export const paymentService = {
      * Check the status of an order
      */
     async checkOrderStatus(orderId: string): Promise<OrderStatusResponse> {
-        const response = await axios.get(`${API_URL}/payment/orders/${orderId}`);
+        const response = await axios.get(`${API_URL}/subscription/orders/${orderId}`);
         return response.data;
     }
 };

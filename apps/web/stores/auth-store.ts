@@ -16,6 +16,7 @@ interface User {
     avatarUrl: string | null;
     emailVerified: boolean;
     createdAt: string;
+    tier: string;
     subscription?: Subscription;
 }
 
@@ -63,6 +64,9 @@ export const useAuthStore = create<AuthState>()(
             // Plan helpers
             getUserPlan: () => {
                 const { user } = get();
+                if (user?.tier) {
+                    return user.tier.toLowerCase() as PlanType;
+                }
                 return user?.subscription?.plan || 'free';
             },
 

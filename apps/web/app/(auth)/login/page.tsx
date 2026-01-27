@@ -1,7 +1,5 @@
 "use client";
 
-import Script from "next/script";
-
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -13,12 +11,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/auth-store";
 import { signInWithGoogle } from "@/lib/firebase";
-
-declare global {
-    interface Window {
-        grecaptcha: any;
-    }
-}
 
 const loginSchema = z.object({
     email: z.string().email("Email không hợp lệ"),

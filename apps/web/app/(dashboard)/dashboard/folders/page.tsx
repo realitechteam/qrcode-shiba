@@ -11,11 +11,24 @@ import {
     Loader2,
     QrCode,
     ChevronRight,
+    Palette,
+    Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { triggerHaptic } from "@/lib/haptic";
 import qrApi from "@/lib/qr-api";
+
+const FOLDER_COLORS = [
+    { name: "Cam", value: "#ff7c10" },
+    { name: "Đỏ", value: "#ef4444" },
+    { name: "Xanh lá", value: "#22c55e" },
+    { name: "Xanh dương", value: "#3b82f6" },
+    { name: "Tím", value: "#8b5cf6" },
+    { name: "Hồng", value: "#ec4899" },
+    { name: "Vàng", value: "#f59e0b" },
+    { name: "Xanh ngọc", value: "#14b8a6" },
+];
 
 interface FolderItem {
     id: string;
@@ -32,6 +45,7 @@ export default function FoldersPage() {
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
+    const [newFolderColor, setNewFolderColor] = useState("#ff7c10");
     const [isCreating, setIsCreating] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<FolderItem | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -60,9 +74,10 @@ export default function FoldersPage() {
         
         setIsCreating(true);
         try {
-            await qrApi.post("/folders", { name: newFolderName.trim() });
+            await qrApi.post("/folders", { name: newFolderName.trim(), color: newFolderColor });
             toast({ title: "Đã tạo thư mục", description: newFolderName });
             setNewFolderName("");
+            setNewFolderColor("#ff7c10");
             setShowCreateModal(false);
             fetchFolders();
         } catch (err: any) {
@@ -156,10 +171,10 @@ export default function FoldersPage() {
                         >
                             <Link href={`/dashboard/folders/${folder.id}`} className="flex items-center gap-3">
                                 <div
-                                    className="flex h-10 w-10 items-center justify-center rounded-lg"
-                                    style={{ backgroundColor: folder.color || "hsl(var(--shiba-100))" }}
+                                    className="flex h-12 w-12 items-center justify-center rounded-xl transition-colors"
+                                    style={{ backgroundColor: (folder.color || "#ff7c10") + "20" }}
                                 >
-                                    <Folder className="h-5 w-5 text-shiba-600" />
+                                    <Folder className="h-6 w-6" style={{ color: folder.color || "#ff7c10" }} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-medium truncate group-hover:text-shiba-500 transition-colors">
@@ -217,24 +232,68 @@ export default function FoldersPage() {
                 </div>
             )}
 
-            {/* Create Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
                     <div className="bg-card rounded-xl shadow-xl w-full max-w-md p-6 animate-scale-in">
                         <h2 className="text-lg font-semibold mb-4">Tạo thư mục mới</h2>
+                        
+                        {/* Preview */}
+                        <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 mb-4">
+                            <div
+                                className="flex h-12 w-12 items-center justify-center rounded-xl transition-colors"
+                                style={{ backgroundColor: newFolderColor + "20" }}
+                            >
+                                <Folder className="h-6 w-6" style={{ color: newFolderColor }} />
+                            </div>
+                            <div>
+                                <p className="font-medium">{newFolderName || "Tên thư mục"}</p>
+                                <p className="text-sm text-muted-foreground">Xem trước</p>
+                            </div>
+                        </div>
+                        
                         <input
                             type="text"
                             placeholder="Tên thư mục"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
-                            className="w-full rounded-lg border bg-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                            className="w-full rounded-lg border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-shiba-500 mb-4"
                             autoFocus
                         />
-                        <div className="flex gap-3 mt-6">
+                        
+                        {/* Color Picker */}
+                        <div className="mb-6">
+                            <label className="text-sm font-medium flex items-center gap-2 mb-3">
+                                <Palette className="h-4 w-4" />
+                                Màu sắc
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {FOLDER_COLORS.map((c) => (
+                                    <button
+                                        key={c.value}
+                                        onClick={() => setNewFolderColor(c.value)}
+                                        className={`relative h-8 w-8 rounded-full transition-transform hover:scale-110 ${
+                                            newFolderColor === c.value ? "ring-2 ring-offset-2 ring-shiba-500" : ""
+                                        }`}
+                                        style={{ backgroundColor: c.value }}
+                                        title={c.name}
+                                    >
+                                        {newFolderColor === c.value && (
+                                            <Check className="h-4 w-4 text-white absolute inset-0 m-auto" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-3">
                             <Button
                                 variant="outline"
                                 className="flex-1"
-                                onClick={() => setShowCreateModal(false)}
+                                onClick={() => {
+                                    setShowCreateModal(false);
+                                    setNewFolderName("");
+                                    setNewFolderColor("#ff7c10");
+                                }}
                             >
                                 Hủy
                             </Button>
@@ -246,7 +305,7 @@ export default function FoldersPage() {
                                 {isCreating ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                    "Tạo"
+                                    "Tạo thư mục"
                                 )}
                             </Button>
                         </div>

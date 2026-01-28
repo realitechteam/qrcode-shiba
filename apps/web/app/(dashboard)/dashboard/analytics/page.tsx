@@ -292,11 +292,49 @@ function StatCard({
 }
 
 function DeviceBreakdown() {
-    const devices = [
-        { name: "Mobile", value: 68, color: "bg-shiba-500" },
-        { name: "Desktop", value: 25, color: "bg-blue-500" },
-        { name: "Tablet", value: 7, color: "bg-green-500" },
-    ];
+    const { accessToken } = useAuthStore();
+    const [devices, setDevices] = useState<{ name: string; value: number; color: string }[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const colorMap: Record<string, string> = {
+        Mobile: "bg-shiba-500",
+        Desktop: "bg-blue-500",
+        Tablet: "bg-green-500",
+    };
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "http://localhost:3002";
+                
+                const response = await fetch(`${redirectUrl}/analytics/device-breakdown?period=30d`, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const formatted = Object.entries(data).map(([name, value]) => ({
+                        name,
+                        value: value as number,
+                        color: colorMap[name] || "bg-gray-500",
+                    }));
+                    setDevices(formatted);
+                } else {
+                    setDevices([]);
+                }
+            } catch (error) {
+                console.error("Failed to fetch device breakdown:", error);
+                setDevices([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [accessToken]);
 
     return (
         <div className="rounded-xl border bg-card p-6">
@@ -304,22 +342,32 @@ function DeviceBreakdown() {
                 <Monitor className="h-5 w-5 text-shiba-500" />
                 Thiết bị
             </h3>
-            <div className="space-y-4">
-                {devices.map((device) => (
-                    <div key={device.name}>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                            <span>{device.name}</span>
-                            <span className="font-medium">{device.value}%</span>
+            {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+            ) : devices.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground text-sm">
+                    Chưa có dữ liệu thiết bị
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {devices.map((device) => (
+                        <div key={device.name}>
+                            <div className="flex items-center justify-between text-sm mb-1">
+                                <span>{device.name}</span>
+                                <span className="font-medium">{Math.round(device.value)}%</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                <div
+                                    className={`h-full ${device.color} rounded-full transition-all`}
+                                    style={{ width: `${device.value}%` }}
+                                />
+                            </div>
                         </div>
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                            <div
-                                className={`h-full ${device.color} rounded-full transition-all`}
-                                style={{ width: `${device.value}%` }}
-                            />
-                        </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

@@ -18,10 +18,13 @@ import {
     TrendingUp,
     Clock,
     BarChart3,
+    GripVertical,
+    FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 import { AnalyticsModal } from "@/components/qr/analytics-modal";
+import { DragDropProvider, DraggableQRCard } from "@/components/dnd";
 import { useToast } from "@/hooks/use-toast";
 import { triggerHaptic } from "@/lib/haptic";
 import qrApi from "@/lib/qr-api";
@@ -68,6 +71,7 @@ export default function QRCodesPage() {
     const [activeActionId, setActiveActionId] = useState<string | null>(null);
     const [analyticsTarget, setAnalyticsTarget] = useState<QRCode | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [showFolderPanel, setShowFolderPanel] = useState(false);
 
     const fetchQRCodes = useCallback(async () => {
         try {
@@ -183,6 +187,11 @@ export default function QRCodesPage() {
     const dynamicCount = qrCodes.filter(qr => qr.isDynamic).length;
 
     return (
+        <DragDropProvider 
+            onQRMovedToFolder={() => fetchQRCodes()}
+            showFolderPanel={showFolderPanel}
+            onToggleFolderPanel={() => setShowFolderPanel(!showFolderPanel)}
+        >
         <div className="relative min-h-[calc(100vh-8rem)] pb-24 lg:pb-6">
             {/* Header - Mobile Optimized */}
             <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 py-4 bg-background/80 backdrop-blur-lg border-b lg:border-none lg:bg-transparent lg:backdrop-blur-none">
@@ -194,13 +203,23 @@ export default function QRCodesPage() {
                         </p>
                     </div>
                     
-                    {/* Desktop Only - Create Button */}
-                    <Link href="/dashboard/qr/new" className="hidden lg:block">
-                        <Button className="bg-shiba-500 hover:bg-shiba-600 gap-2">
-                            <Plus className="h-4 w-4" />
-                            Tạo QR Code
+                    {/* Desktop Only - Buttons */}
+                    <div className="hidden lg:flex items-center gap-2">
+                        <Button
+                            variant={showFolderPanel ? "secondary" : "outline"}
+                            onClick={() => setShowFolderPanel(!showFolderPanel)}
+                            className="gap-2"
+                        >
+                            <FolderOpen className="h-4 w-4" />
+                            Thư mục
                         </Button>
-                    </Link>
+                        <Link href="/dashboard/qr/new">
+                            <Button className="bg-shiba-500 hover:bg-shiba-600 gap-2">
+                                <Plus className="h-4 w-4" />
+                                Tạo QR Code
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Search Bar - Full Width on Mobile */}
@@ -271,21 +290,22 @@ export default function QRCodesPage() {
                     // Empty State
                     <EmptyState />
                 ) : (
-                    // QR Cards List
+                    // QR Cards List - Draggable
                     filteredQRCodes.map((qr, index) => (
-                        <QRCardMobile
-                            key={qr.id}
-                            qr={qr}
-                            index={index}
-                            isActive={activeActionId === qr.id}
-                            isDownloading={downloadingId === qr.id}
-                            onToggleActions={() => setActiveActionId(activeActionId === qr.id ? null : qr.id)}
-                            onOpenLink={() => handleOpenLink(qr)}
-                            onDownload={() => handleDownload(qr)}
-                            onEdit={() => handleEdit(qr)}
-                            onDelete={() => handleDelete(qr)}
-                            onCardClick={() => handleCardClick(qr)}
-                        />
+                        <DraggableQRCard key={qr.id} id={qr.id}>
+                            <QRCardMobile
+                                qr={qr}
+                                index={index}
+                                isActive={activeActionId === qr.id}
+                                isDownloading={downloadingId === qr.id}
+                                onToggleActions={() => setActiveActionId(activeActionId === qr.id ? null : qr.id)}
+                                onOpenLink={() => handleOpenLink(qr)}
+                                onDownload={() => handleDownload(qr)}
+                                onEdit={() => handleEdit(qr)}
+                                onDelete={() => handleDelete(qr)}
+                                onCardClick={() => handleCardClick(qr)}
+                            />
+                        </DraggableQRCard>
                     ))
                 )}
             </div>
@@ -384,6 +404,7 @@ export default function QRCodesPage() {
                 />
             )}
         </div>
+        </DragDropProvider>
     );
 }
 

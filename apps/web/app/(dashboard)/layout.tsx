@@ -26,6 +26,7 @@ import { processPendingQR } from "@/lib/pending-qr";
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "QR Codes", href: "/dashboard/qr", icon: QrCode },
+    { name: "Folders", href: "/dashboard/folders", icon: FolderOpen },
     { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
 ];
 

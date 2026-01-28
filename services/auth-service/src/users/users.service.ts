@@ -6,8 +6,13 @@ import { User, Prisma } from "@qrcode-shiba/database";
 export class UsersService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async create(data: Prisma.UserCreateInput): Promise<User> {
-        return this.prisma.user.create({ data });
+    async create(data: Prisma.UserCreateInput) {
+        return this.prisma.user.create({
+            data,
+            include: {
+                subscription: true,
+            },
+        });
     }
 
     async findById(id: string) {
@@ -19,16 +24,22 @@ export class UsersService {
         });
     }
 
-    async findByEmail(email: string): Promise<User | null> {
+    async findByEmail(email: string) {
         return this.prisma.user.findUnique({
             where: { email },
+            include: {
+                subscription: true,
+            },
         });
     }
 
-    async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+    async update(id: string, data: Prisma.UserUpdateInput) {
         return this.prisma.user.update({
             where: { id },
             data,
+            include: {
+                subscription: true,
+            },
         });
     }
 

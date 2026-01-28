@@ -225,10 +225,7 @@ export class AuthService {
         } else {
             // Mark email as verified if not already
             if (!user.emailVerified) {
-                user = await this.prisma.user.update({
-                    where: { id: user.id },
-                    data: { emailVerified: true },
-                });
+                user = await this.usersService.update(user.id, { emailVerified: true });
             }
         }
 
@@ -267,14 +264,11 @@ export class AuthService {
         } else {
             // Update existing user's Firebase info if needed
             if (!user.providerId) {
-                user = await this.prisma.user.update({
-                    where: { id: user.id },
-                    data: {
-                        providerId: firebaseUid,
-                        authProvider: AuthProvider.GOOGLE,
-                        avatarUrl: photoUrl || user.avatarUrl,
-                        name: name || user.name,
-                    },
+                user = await this.usersService.update(user.id, {
+                    providerId: firebaseUid,
+                    authProvider: AuthProvider.GOOGLE,
+                    avatarUrl: photoUrl || user.avatarUrl,
+                    name: name || user.name,
                 });
             }
         }

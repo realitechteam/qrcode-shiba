@@ -17,8 +17,6 @@ import {
     X,
     TrendingUp,
     Clock,
-    FolderOpen,
-    ChevronRight,
     BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,8 +60,6 @@ export default function QRCodesPage() {
     const [qrCodes, setQrCodes] = useState<QRCode[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [showFolders, setShowFolders] = useState(false);
-    const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
     // Modal and action states
     const [deleteTarget, setDeleteTarget] = useState<QRCode | null>(null);
@@ -79,7 +75,6 @@ export default function QRCodesPage() {
             setError(null);
             const response = await qrApi.get("/qr", {
                 params: {
-                    folder: selectedFolderId || undefined,
                     search: searchQuery || undefined,
                 },
             });
@@ -92,7 +87,7 @@ export default function QRCodesPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [selectedFolderId, searchQuery]);
+    }, [searchQuery]);
 
     useEffect(() => {
         fetchQRCodes();
@@ -206,14 +201,6 @@ export default function QRCodesPage() {
                             Tạo QR Code
                         </Button>
                     </Link>
-
-                    {/* Mobile - Folder Toggle */}
-                    <button
-                        onClick={() => setShowFolders(true)}
-                        className="lg:hidden p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
-                    >
-                        <FolderOpen className="h-5 w-5" />
-                    </button>
                 </div>
 
                 {/* Search Bar - Full Width on Mobile */}
@@ -370,44 +357,7 @@ export default function QRCodesPage() {
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {/* Folder Sheet - Mobile */}
-            {showFolders && (
-                <div className="fixed inset-0 z-50 lg:hidden">
-                    <div
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
-                        onClick={() => setShowFolders(false)}
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl p-6 animate-slide-up pb-safe max-h-[70vh] overflow-auto">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold">Thư mục</h3>
-                            <button
-                                onClick={() => setShowFolders(false)}
-                                className="p-2 rounded-full hover:bg-muted transition-colors"
-                            >
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => {
-                                    setSelectedFolderId(null);
-                                    setShowFolders(false);
-                                }}
-                                className={`w-full flex items-center gap-3 p-4 rounded-xl transition-colors ${
-                                    !selectedFolderId ? "bg-shiba-100 dark:bg-shiba-900/30" : "hover:bg-muted"
-                                }`}
-                            >
-                                <FolderOpen className="h-5 w-5 text-shiba-500" />
-                                <span className="font-medium">Tất cả QR codes</span>
-                                <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            </div>
             )}
 
             {/* Analytics Modal */}

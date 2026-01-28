@@ -1,19 +1,66 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { QrCode, ArrowUpRight } from "lucide-react";
+import { QrCode, ArrowUpRight, Loader2 } from "lucide-react";
+import qrApi from "@/lib/qr-api";
 
-// Mock data
-const topQRCodes = [
-    { id: "1", name: "Menu Quán Cafe", scans: 1234, type: "URL" },
-    { id: "2", name: "WiFi Guest", scans: 987, type: "WIFI" },
-    { id: "3", name: "Danh thiếp CEO", scans: 756, type: "VCARD" },
-    { id: "4", name: "Khuyến mãi Tết", scans: 543, type: "URL" },
-    { id: "5", name: "App Download", scans: 432, type: "URL" },
-];
+interface QRCodeItem {
+    id: string;
+    name: string | null;
+    shortCode: string;
+    scanCount: number;
+    type: string;
+}
 
 export function TopQRCodes() {
-    const maxScans = Math.max(...topQRCodes.map((q) => q.scans));
+    const [qrCodes, setQrCodes] = useState<QRCodeItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchTopQRCodes = async () => {
+            try {
+                setIsLoading(true);
+                const response = await qrApi.get("/qr");
+                const data = Array.isArray(response.data) ? response.data : response.data.items || [];
+                
+                // Sort by scanCount and take top 5
+                const topQRs = data
+                    .sort((a: QRCodeItem, b: QRCodeItem) => (b.scanCount || 0) - (a.scanCount || 0))
+                    .slice(0, 5)
+                    .map((qr: any) => ({
+                        id: qr.id,
+                        name: qr.name || qr.shortCode,
+                        shortCode: qr.shortCode,
+                        scanCount: qr.scanCount || 0,
+                        type: qr.type || "URL",
+                    }));
+                
+                setQrCodes(topQRs);
+            } catch (error) {
+                console.error("Failed to fetch top QR codes:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchTopQRCodes();
+    }, []);
+
+    const maxScans = Math.max(...qrCodes.map((q) => q.scanCount), 1);
+
+    if (isLoading) {
+        return (
+            <div className="rounded-xl border bg-card p-6 h-full">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">Top QR Codes</h3>
+                </div>
+                <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="rounded-xl border bg-card p-6 h-full">
@@ -28,14 +75,14 @@ export function TopQRCodes() {
                 </Link>
             </div>
 
-            {topQRCodes.length === 0 ? (
+            {qrCodes.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                     <QrCode className="h-12 w-12 mx-auto mb-3 opacity-20" />
                     <p>Chưa có dữ liệu</p>
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {topQRCodes.map((qr, index) => (
+                    {qrCodes.map((qr, index) => (
                         <Link
                             key={qr.id}
                             href={`/dashboard/qr/${qr.id}`}
@@ -52,11 +99,11 @@ export function TopQRCodes() {
                                     <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                                         <div
                                             className="h-full bg-shiba-500 rounded-full"
-                                            style={{ width: `${(qr.scans / maxScans) * 100}%` }}
+                                            style={{ width: `${(qr.scanCount / maxScans) * 100}%` }}
                                         />
                                     </div>
                                     <span className="text-xs text-muted-foreground w-12 text-right">
-                                        {qr.scans.toLocaleString()}
+                                        {qr.scanCount.toLocaleString()}
                                     </span>
                                 </div>
                             </div>

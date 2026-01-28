@@ -147,10 +147,12 @@ export default function DashboardLayout({
                         </Link>
                     </div>
 
-                    {/* Navigation */}
                     <nav className="flex-1 px-3 space-y-1">
                         {navigation.map((item) => {
-                            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                            // Dashboard should only be active on exact match
+                            const isActive = item.href === "/dashboard" 
+                                ? pathname === "/dashboard"
+                                : pathname === item.href || pathname.startsWith(`${item.href}/`);
                             return (
                                 <Link
                                     key={item.name}
@@ -322,7 +324,10 @@ export default function DashboardLayout({
                         { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
                         { name: "Cài đặt", href: "/dashboard/settings", icon: Settings },
                     ].map((item) => {
-                        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                        // Dashboard should only be active on exact match
+                        const isActive = item.href === "/dashboard"
+                            ? pathname === "/dashboard"
+                            : pathname === item.href || pathname.startsWith(`${item.href}/`);
                         return (
                             <Link
                                 key={item.name}

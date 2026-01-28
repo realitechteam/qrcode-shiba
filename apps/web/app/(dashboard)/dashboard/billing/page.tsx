@@ -15,6 +15,8 @@ import {
     ArrowRight,
     ArrowLeft,
     Loader2,
+    AlertTriangle,
+    CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
@@ -116,6 +118,32 @@ export default function BillingPage() {
     const currentPlan = getUserPlan();
     const [isLoading, setIsLoading] = useState(false);
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+    // Calculate subscription expiry info
+    const subscription = user?.subscription;
+    const expiresAt = subscription?.expiresAt ? new Date(subscription.expiresAt) : null;
+    const now = new Date();
+    
+    const getDaysRemaining = () => {
+        if (!expiresAt) return null;
+        const diffTime = expiresAt.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    };
+
+    const daysRemaining = getDaysRemaining();
+    const isExpiringSoon = daysRemaining !== null && daysRemaining <= 5 && daysRemaining > 0;
+    const isExpired = daysRemaining !== null && daysRemaining <= 0;
+    const isPaidPlan = currentPlan !== 'free';
+
+    const formatExpiryDate = () => {
+        if (!expiresAt) return null;
+        return expiresAt.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+    };
 
     // Modal state
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -244,20 +272,112 @@ export default function BillingPage() {
 
             {/* Current Plan */}
             <div className="rounded-xl border bg-card p-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-muted-foreground">Gói hiện tại</p>
-                        <p className="text-xl font-semibold capitalize mt-1">
-                            {currentPlan}
-                        </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
+                            isPaidPlan 
+                                ? 'bg-gradient-to-br from-shiba-500 to-orange-500' 
+                                : 'bg-muted'
+                        }`}>
+                            {currentPlan === 'business' ? (
+                                <Building2 className="h-6 w-6 text-white" />
+                            ) : currentPlan === 'pro' ? (
+                                <Crown className="h-6 w-6 text-white" />
+                            ) : (
+                                <Zap className="h-6 w-6 text-muted-foreground" />
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Gói hiện tại</p>
+                            <p className="text-xl font-bold capitalize">
+                                {currentPlan}
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <CreditCard className="h-5 w-5 text-shiba-500" />
-                        <span className="text-sm text-muted-foreground">
-                            Gia hạn: Không giới hạn
-                        </span>
+                    
+                    {/* Expiry Info */}
+                    <div className="flex flex-col items-end gap-1">
+                        {isPaidPlan && expiresAt ? (
+                            <>
+                                <div className="flex items-center gap-2">
+                                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">
+                                        Hết hạn: {formatExpiryDate()}
+                                    </span>
+                                </div>
+                                {daysRemaining !== null && daysRemaining > 0 && (
+                                    <span className={`text-sm font-medium ${
+                                        isExpiringSoon ? 'text-orange-500' : 'text-green-500'
+                                    }`}>
+                                        Còn {daysRemaining} ngày
+                                    </span>
+                                )}
+                                {isExpired && (
+                                    <span className="text-sm font-medium text-red-500">
+                                        Đã hết hạn
+                                    </span>
+                                )}
+                            </>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                    {isPaidPlan ? 'Đang hoạt động' : 'Miễn phí vĩnh viễn'}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                {/* Renewal Warning Banner */}
+                {isPaidPlan && isExpiringSoon && (
+                    <div className="mt-4 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 flex items-center gap-3">
+                        <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                                Gói của bạn sắp hết hạn!
+                            </p>
+                            <p className="text-xs text-orange-600 dark:text-orange-400">
+                                Còn {daysRemaining} ngày. Gia hạn ngay để không bị gián đoạn dịch vụ.
+                            </p>
+                        </div>
+                        <Button 
+                            size="sm" 
+                            className="bg-orange-500 hover:bg-orange-600 text-white"
+                            onClick={() => {
+                                const plan = plans.find(p => p.id === currentPlan);
+                                if (plan) handleUpgrade(plan);
+                            }}
+                        >
+                            Gia hạn
+                        </Button>
+                    </div>
+                )}
+
+                {/* Expired Banner */}
+                {isPaidPlan && isExpired && (
+                    <div className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center gap-3">
+                        <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                                Gói của bạn đã hết hạn!
+                            </p>
+                            <p className="text-xs text-red-600 dark:text-red-400">
+                                Tính năng Pro đã bị giới hạn. Gia hạn để tiếp tục sử dụng.
+                            </p>
+                        </div>
+                        <Button 
+                            size="sm" 
+                            className="bg-red-500 hover:bg-red-600 text-white"
+                            onClick={() => {
+                                const plan = plans.find(p => p.id === currentPlan);
+                                if (plan) handleUpgrade(plan);
+                            }}
+                        >
+                            Gia hạn ngay
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Plans */}

@@ -10,9 +10,12 @@ export class UsersService {
         return this.prisma.user.create({ data });
     }
 
-    async findById(id: string): Promise<User | null> {
+    async findById(id: string) {
         return this.prisma.user.findUnique({
             where: { id },
+            include: {
+                subscription: true,
+            },
         });
     }
 

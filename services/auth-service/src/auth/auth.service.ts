@@ -313,8 +313,27 @@ export class AuthService {
         };
     }
 
-    private sanitizeUser(user: User) {
-        const { passwordHash, ...sanitized } = user;
-        return sanitized;
+    private sanitizeUser(user: any) {
+        const { passwordHash, subscription, tier, ...rest } = user;
+        
+        // Format subscription data for frontend
+        // Frontend expects: { subscription: { plan: 'pro', expiresAt: ... } }
+        const formattedSubscription = subscription 
+            ? {
+                plan: subscription.planId?.toLowerCase() || tier?.toLowerCase() || 'free',
+                expiresAt: subscription.endDate || null,
+                status: subscription.status,
+            }
+            : {
+                plan: tier?.toLowerCase() || 'free',
+                expiresAt: null,
+                status: null,
+            };
+
+        return {
+            ...rest,
+            tier,
+            subscription: formattedSubscription,
+        };
     }
 }

@@ -8,7 +8,7 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
-import { nanoid } from "nanoid";
+import { v4 as uuidv4 } from "uuid";
 import { UsersService } from "../users/users.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "./email.service";
@@ -177,7 +177,7 @@ export class AuthService {
      */
     async requestMagicLink(email: string) {
         // Generate a unique token
-        const token = nanoid(32);
+        const token = uuidv4();
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
         // Store magic link token in database

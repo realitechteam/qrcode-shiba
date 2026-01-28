@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
     BarChart3,
     TrendingUp,
@@ -12,12 +13,16 @@ import {
     Download,
     RefreshCw,
     Loader2,
+    Lock,
+    Crown,
+    Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnalyticsCharts } from "./components/analytics-charts";
 import { TopQRCodes } from "./components/top-qr-codes";
 import { LocationMap } from "./components/location-map";
 import qrApi from "@/lib/qr-api";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface AnalyticsStats {
     totalScans: number;
@@ -38,6 +43,7 @@ const periods = [
 ];
 
 export default function AnalyticsPage() {
+    const { isPaidUser } = useAuthStore();
     const [period, setPeriod] = useState("30d");
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState<AnalyticsStats>({
@@ -90,6 +96,61 @@ export default function AnalyticsPage() {
     const handleRefresh = () => {
         fetchAnalytics();
     };
+
+    // Pro Gate for Free users
+    if (!isPaidUser()) {
+        return (
+            <div className="space-y-6">
+                {/* Header */}
+                <div>
+                    <h1 className="text-2xl font-bold">Analytics</h1>
+                    <p className="text-muted-foreground">
+                        Theo dõi lượt quét và hiệu suất QR codes của bạn
+                    </p>
+                </div>
+
+                {/* Pro Gate Overlay */}
+                <div className="relative rounded-xl border bg-card overflow-hidden">
+                    {/* Blurred Preview */}
+                    <div className="p-6 blur-sm opacity-50 pointer-events-none">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="rounded-xl border bg-muted/50 p-6 h-28" />
+                            ))}
+                        </div>
+                        <div className="h-64 rounded-xl border bg-muted/50" />
+                    </div>
+
+                    {/* Upgrade CTA Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                        <div className="text-center max-w-md px-6">
+                            <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-shiba-500 to-orange-500 flex items-center justify-center mb-4">
+                                <Lock className="h-8 w-8 text-white" />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-2">
+                                Mở khóa Analytics
+                            </h2>
+                            <p className="text-muted-foreground mb-6">
+                                Nâng cấp lên <span className="font-semibold text-shiba-500">Pro</span> để xem thống kê chi tiết về lượt quét, vị trí người dùng, thiết bị và xu hướng thời gian.
+                            </p>
+                            <div className="space-y-3">
+                                <Link href="/dashboard/billing">
+                                    <Button className="w-full bg-gradient-to-r from-shiba-500 to-orange-500 hover:from-shiba-600 hover:to-orange-600 text-white gap-2">
+                                        <Crown className="h-4 w-4" />
+                                        Nâng cấp Pro - 199.000đ/tháng
+                                    </Button>
+                                </Link>
+                                <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground">
+                                    <Sparkles className="h-4 w-4 text-shiba-500" />
+                                    <span>Bao gồm QR Dynamic, Logo, SVG/PDF và hơn nữa</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

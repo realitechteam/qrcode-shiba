@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
     LineChart,
     Line,
@@ -11,32 +12,80 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-
-// Mock data for charts
-const generateChartData = (period: string) => {
-    const days = period === "7d" ? 7 : period === "30d" ? 30 : period === "90d" ? 90 : 365;
-    const data = [];
-    const now = new Date();
-
-    for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        data.push({
-            date: date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
-            scans: Math.floor(Math.random() * 500) + 100,
-            visitors: Math.floor(Math.random() * 300) + 50,
-        });
-    }
-
-    return data;
-};
+import { Loader2 } from "lucide-react";
 
 interface AnalyticsChartsProps {
     period: string;
 }
 
+interface ChartData {
+    date: string;
+    scans: number;
+    visitors: number;
+}
+
 export function AnalyticsCharts({ period }: AnalyticsChartsProps) {
-    const data = generateChartData(period);
+    const [data, setData] = useState<ChartData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "https://redirect-service-production-0d4b.up.railway.app";
+                const token = localStorage.getItem("auth-storage");
+                const parsedToken = token ? JSON.parse(token)?.state?.accessToken : null;
+                
+                const response = await fetch(`${redirectUrl}/analytics/scans-over-time?period=${period}`, {
+                    headers: {
+                        Authorization: `Bearer ${parsedToken}`,
+                    },
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    setData(result.data || []);
+                } else {
+                    // Fallback to empty data
+                    setData([]);
+                }
+            } catch (error) {
+                console.error("Failed to fetch analytics data:", error);
+                setData([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [period]);
+
+    if (isLoading) {
+        return (
+            <div className="rounded-xl border bg-card p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-semibold">Lượt quét theo thời gian</h3>
+                </div>
+                <div className="h-[300px] flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+            </div>
+        );
+    }
+
+    // If no data, show empty state
+    if (data.length === 0) {
+        return (
+            <div className="rounded-xl border bg-card p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-semibold">Lượt quét theo thời gian</h3>
+                </div>
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                    Chưa có dữ liệu để hiển thị
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="rounded-xl border bg-card p-6">

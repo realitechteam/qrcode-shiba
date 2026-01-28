@@ -16,6 +16,7 @@ import {
     FolderOpen,
     ChevronDown,
     User,
+    Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
@@ -45,6 +46,7 @@ export default function DashboardLayout({
     const { user, isAuthenticated, logout, fetchUser, _hasHydrated } = useAuthStore();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
 
     useEffect(() => {
         // Wait for hydration before checking auth
@@ -260,6 +262,44 @@ export default function DashboardLayout({
 
                     {/* Quick actions */}
                     <div className="flex items-center gap-3">
+                        {/* Notification Bell */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowNotifications(!showNotifications)}
+                                className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            >
+                                <Bell className="h-5 w-5" />
+                                {/* Notification badge */}
+                                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-shiba-500" />
+                            </button>
+
+                            {showNotifications && (
+                                <>
+                                    <div 
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setShowNotifications(false)}
+                                    />
+                                    <div className="absolute right-0 top-full mt-2 w-80 bg-card rounded-xl border shadow-lg z-50 animate-scale-in">
+                                        <div className="p-4 border-b">
+                                            <h3 className="font-semibold">Thông báo</h3>
+                                        </div>
+                                        <div className="p-8 text-center text-muted-foreground">
+                                            <Bell className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                                            <p className="text-sm">Chưa có thông báo mới</p>
+                                        </div>
+                                        <div className="p-2 border-t">
+                                            <button 
+                                                className="w-full text-sm text-shiba-500 hover:text-shiba-600 py-2"
+                                                onClick={() => setShowNotifications(false)}
+                                            >
+                                                Xem tất cả thông báo
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
                         <Link href="/dashboard/qr/new">
                             <Button size="sm" className="bg-shiba-500 hover:bg-shiba-600 gap-2">
                                 <Plus className="h-4 w-4" />

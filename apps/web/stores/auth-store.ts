@@ -32,6 +32,7 @@ interface AuthState {
     canUseDynamicQR: () => boolean;
     canDownloadSVG: () => boolean;
     isPaidUser: () => boolean;
+    isBusinessUser: () => boolean;
 
     // Actions
     login: (email: string, password: string) => Promise<void>;
@@ -79,6 +80,11 @@ export const useAuthStore = create<AuthState>()(
             isPaidUser: () => {
                 const plan = get().getUserPlan();
                 return plan !== 'free';
+            },
+
+            isBusinessUser: () => {
+                const plan = get().getUserPlan();
+                return plan === 'business';
             },
 
             login: async (email: string, password: string) => {

@@ -42,8 +42,8 @@ const plans = [
         id: "pro",
         name: "Pro",
         description: "Dành cho freelancers và startups",
-        monthlyPrice: 99000,
-        yearlyPrice: 990000,
+        monthlyPrice: 199000,
+        yearlyPrice: 1990000,
         icon: Sparkles,
         popular: true,
         features: [
@@ -61,8 +61,8 @@ const plans = [
         id: "business",
         name: "Business",
         description: "Dành cho doanh nghiệp vừa và nhỏ",
-        monthlyPrice: 299000,
-        yearlyPrice: 2990000,
+        monthlyPrice: 499000,
+        yearlyPrice: 4990000,
         icon: Building2,
         popular: false,
         features: [
@@ -104,34 +104,13 @@ export default function PricingPage() {
     const router = useRouter();
     const { toast } = useToast();
 
-    const handleSubscribe = async (planId: string, provider: "vnpay" | "momo") => {
+    // Cleaned up handleSubscribe logic which is no longer used for direct payment buttons
+    // Users are now redirected to /dashboard/billing for consistent payment flow or /login if not authenticated
+    const handleSubscribe = () => {
         if (!isAuthenticated) {
             router.push("/login?redirect=/pricing");
-            return;
-        }
-
-        if (planId === "free") {
-            router.push("/dashboard");
-            return;
-        }
-
-        setLoading(`${planId}-${provider}`);
-
-        try {
-            const response = await api.post(`/payment/${provider}/create-payment`, {
-                planId,
-                billingCycle,
-            });
-
-            window.location.href = response.data.paymentUrl;
-        } catch (error: any) {
-            toast({
-                title: "Lỗi thanh toán",
-                description: error.response?.data?.message || "Có lỗi xảy ra",
-                variant: "destructive",
-            });
-        } finally {
-            setLoading(null);
+        } else {
+            router.push("/dashboard/billing");
         }
     };
 
@@ -268,37 +247,18 @@ export default function PricingPage() {
                                         Bắt đầu miễn phí
                                     </Button>
                                 ) : (
-                                    <div className="space-y-2">
-                                        <Button
-                                            className={cn(
-                                                "w-full gap-2",
-                                                plan.popular
-                                                    ? "bg-shiba-500 hover:bg-shiba-600"
-                                                    : ""
-                                            )}
-                                            disabled={loading !== null}
-                                            onClick={() => handleSubscribe(plan.id, "vnpay")}
-                                        >
-                                            {loading === `${plan.id}-vnpay` ? (
-                                                "Đang xử lý..."
-                                            ) : (
-                                                <>
-                                                    Thanh toán VNPay
-                                                    <ArrowRight className="h-4 w-4" />
-                                                </>
-                                            )}
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full gap-2"
-                                            disabled={loading !== null}
-                                            onClick={() => handleSubscribe(plan.id, "momo")}
-                                        >
-                                            {loading === `${plan.id}-momo`
-                                                ? "Đang xử lý..."
-                                                : "Thanh toán MoMo"}
-                                        </Button>
-                                    </div>
+                                    <Button
+                                        className={cn(
+                                            "w-full gap-2",
+                                            plan.popular
+                                                ? "bg-shiba-500 hover:bg-shiba-600"
+                                                : ""
+                                        )}
+                                        onClick={handleSubscribe}
+                                    >
+                                        Đăng ký ngay
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Button>
                                 )}
                             </div>
                         );

@@ -51,12 +51,15 @@ pnpm dev
 
 ### Access the applications
 
-- **Web App**: http://localhost:3000
-- **Auth API**: http://localhost:3001/api/v1
-- **PostgreSQL**: localhost:5432
-- **Redis**: localhost:6379
-- **MinIO Console**: http://localhost:9001
-- **Mailhog UI**: http://localhost:8025
+| Service           | URL / Host                   | Credentials (Default)       |
+| ----------------- | ---------------------------- | --------------------------- |
+| **Web App**       | http://localhost:3000        | -                           |
+| **Auth API**      | http://localhost:3001/api/v1 | -                           |
+| **PostgreSQL**    | localhost:5432               | `postgres` / `postgres`     |
+| **Redis**         | localhost:6379               | -                           |
+| **MinIO Console** | http://localhost:9001        | `minioadmin` / `minioadmin` |
+| **MinIO API**     | http://localhost:9000        | -                           |
+| **Mailhog UI**    | http://localhost:8025        | (Email Testing)             |
 
 ## 📁 Project Structure
 
@@ -80,6 +83,7 @@ qrcode-shiba/
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: TailwindCSS + shadcn/ui
@@ -87,12 +91,14 @@ qrcode-shiba/
 - **Forms**: React Hook Form + Zod
 
 ### Backend
+
 - **Framework**: NestJS
 - **Language**: TypeScript
 - **ORM**: Prisma
 - **Auth**: Passport.js + JWT
 
 ### Infrastructure
+
 - **Database**: PostgreSQL
 - **Cache**: Redis
 - **Storage**: AWS S3 / MinIO
@@ -100,15 +106,15 @@ qrcode-shiba/
 
 ## 📝 Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `pnpm dev` | Start all services in development |
-| `pnpm build` | Build all packages |
-| `pnpm test` | Run tests |
-| `pnpm lint` | Lint all packages |
-| `pnpm db:generate` | Generate Prisma client |
-| `pnpm db:push` | Push schema to database |
-| `pnpm db:studio` | Open Prisma Studio |
+| Script             | Description                       |
+| ------------------ | --------------------------------- |
+| `pnpm dev`         | Start all services in development |
+| `pnpm build`       | Build all packages                |
+| `pnpm test`        | Run tests                         |
+| `pnpm lint`        | Lint all packages                 |
+| `pnpm db:generate` | Generate Prisma client            |
+| `pnpm db:push`     | Push schema to database           |
+| `pnpm db:studio`   | Open Prisma Studio                |
 
 ## 🔐 Environment Variables
 

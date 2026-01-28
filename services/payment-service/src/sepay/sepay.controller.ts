@@ -24,8 +24,8 @@ export class SepayController {
 
         // Calculate amount based on plan
         const planPrices: Record<string, { monthly: number; yearly: number }> = {
-            pro: { monthly: 99000, yearly: 990000 },
-            business: { monthly: 299000, yearly: 2990000 },
+            pro: { monthly: 199000, yearly: 1990000 },
+            business: { monthly: 499000, yearly: 4990000 },
         };
 
         const prices = planPrices[planId];

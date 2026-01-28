@@ -57,8 +57,8 @@ export class SubscriptionService {
                 id: "pro",
                 name: "Pro",
                 description: "Dành cho freelancers và startups",
-                monthlyPrice: 99000,
-                yearlyPrice: 990000,
+                monthlyPrice: 199000,
+                yearlyPrice: 1990000,
                 features: [
                     "50 QR codes động",
                     "Tùy chỉnh logo và kiểu dáng",
@@ -83,8 +83,8 @@ export class SubscriptionService {
                 id: "business",
                 name: "Business",
                 description: "Dành cho doanh nghiệp vừa và nhỏ",
-                monthlyPrice: 299000,
-                yearlyPrice: 2990000,
+                monthlyPrice: 499000,
+                yearlyPrice: 4990000,
                 features: [
                     "500 QR codes động",
                     "Bulk QR generation",

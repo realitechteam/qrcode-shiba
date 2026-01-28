@@ -42,9 +42,9 @@ const plans = [
     {
         id: "pro",
         name: "Pro",
-        price: "99.000đ",
-        priceMonthly: 99000,
-        priceYearly: 990000,
+        price: "199.000đ",
+        priceMonthly: 199000,
+        priceYearly: 1990000,
         period: "/tháng",
         description: "Dành cho freelancer và startup",
         features: [
@@ -61,9 +61,9 @@ const plans = [
     {
         id: "business",
         name: "Business",
-        price: "299.000đ",
-        priceMonthly: 299000,
-        priceYearly: 2990000,
+        price: "499.000đ",
+        priceMonthly: 499000,
+        priceYearly: 4990000,
         period: "/tháng",
         description: "Dành cho doanh nghiệp",
         features: [

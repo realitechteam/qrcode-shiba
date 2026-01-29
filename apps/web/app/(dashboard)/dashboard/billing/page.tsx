@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import {
     CreditCard,
@@ -17,6 +17,10 @@ import {
     Loader2,
     AlertTriangle,
     CalendarDays,
+    Receipt,
+    CheckCircle2,
+    XCircle,
+    Hourglass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
@@ -153,6 +157,18 @@ export default function BillingPage() {
     const [orderId, setOrderId] = useState("");
     const [qrData, setQrData] = useState<{ qrUrl: string; amount: number; bankCode: string; accountNo: string; content: string } | null>(null);
 
+    // Order history state
+    const [orders, setOrders] = useState<Array<{
+        id: string;
+        planId: string;
+        amount: number;
+        status: string;
+        billingCycle: string;
+        createdAt: string;
+        paidAt?: string;
+    }>>([]);
+    const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+
     // Polling interval ref
     const pollingInterval = useRef<NodeJS.Timeout | null>(null);
 
@@ -164,6 +180,25 @@ export default function BillingPage() {
             }
         };
     }, []);
+
+    // Fetch order history
+    const fetchOrders = useCallback(async () => {
+        try {
+            setIsLoadingOrders(true);
+            const result = await paymentService.getOrderHistory(1, 20);
+            setOrders(result.orders || []);
+        } catch (err) {
+            console.error("Failed to fetch orders:", err);
+        } finally {
+            setIsLoadingOrders(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchOrders();
+        }
+    }, [user?.id, fetchOrders]);
 
     // Stop polling when modal closes
     useEffect(() => {
@@ -440,11 +475,75 @@ export default function BillingPage() {
 
             {/* Payment History */}
             <div className="rounded-xl border bg-card p-6">
-                <h3 className="font-semibold mb-4">Lịch sử thanh toán</h3>
-                <div className="text-center py-8 text-muted-foreground">
-                    <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Chưa có giao dịch nào</p>
-                </div>
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Receipt className="h-5 w-5" />
+                    Lịch sử thanh toán
+                </h3>
+                {isLoadingOrders ? (
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                ) : orders.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                        <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p>Chưa có giao dịch nào</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {orders.map((order) => (
+                            <div
+                                key={order.id}
+                                className="flex items-center justify-between p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                                        order.status === "COMPLETED" 
+                                            ? "bg-green-100 dark:bg-green-900/30" 
+                                            : order.status === "PENDING"
+                                            ? "bg-yellow-100 dark:bg-yellow-900/30"
+                                            : "bg-red-100 dark:bg-red-900/30"
+                                    }`}>
+                                        {order.status === "COMPLETED" ? (
+                                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                        ) : order.status === "PENDING" ? (
+                                            <Hourglass className="h-5 w-5 text-yellow-600" />
+                                        ) : (
+                                            <XCircle className="h-5 w-5 text-red-600" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="font-medium">
+                                            Gói {order.planId.charAt(0).toUpperCase() + order.planId.slice(1)} - {order.billingCycle === "monthly" ? "Tháng" : "Năm"}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Mã: {order.id} • {new Date(order.createdAt).toLocaleDateString("vi-VN", {
+                                                day: "2-digit",
+                                                month: "2-digit",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-semibold text-shiba-600">
+                                        {order.amount.toLocaleString()}đ
+                                    </p>
+                                    <p className={`text-xs font-medium ${
+                                        order.status === "COMPLETED" 
+                                            ? "text-green-600" 
+                                            : order.status === "PENDING"
+                                            ? "text-yellow-600"
+                                            : "text-red-600"
+                                    }`}>
+                                        {order.status === "COMPLETED" ? "Thành công" : order.status === "PENDING" ? "Chờ thanh toán" : "Thất bại"}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* 2-Step Payment Modal */}

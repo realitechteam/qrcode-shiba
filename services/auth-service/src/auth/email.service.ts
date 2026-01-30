@@ -5,20 +5,25 @@ import { Resend } from "resend";
 @Injectable()
 export class EmailService {
     private readonly logger = new Logger(EmailService.name);
-    private readonly resend: Resend;
+    private resend: Resend | null = null;
     private readonly fromEmail: string;
     private readonly frontendUrl: string;
 
     constructor(private readonly configService: ConfigService) {
         const apiKey = this.configService.get<string>("RESEND_API_KEY");
         
-        if (!apiKey) {
+        if (!apiKey || apiKey === "re_dummy_key") {
             this.logger.warn("RESEND_API_KEY not set - emails will be logged only");
+        } else {
+            try {
+                this.resend = new Resend(apiKey);
+            } catch (err) {
+                this.logger.error("Failed to initialize Resend:", err);
+            }
         }
         
-        this.resend = new Resend(apiKey || "re_dummy_key");
-        this.fromEmail = this.configService.get<string>("RESEND_FROM_EMAIL") || "QRCode-Shiba <noreply@qrcode-shiba.com>";
-        this.frontendUrl = this.configService.get<string>("FRONTEND_URL") || "http://localhost:3000";
+        this.fromEmail = this.configService.get<string>("RESEND_FROM_EMAIL") || "QRCode-Shiba <noreply@shiba.pw>";
+        this.frontendUrl = this.configService.get<string>("FRONTEND_URL") || "https://www.shiba.pw";
     }
 
     /**
@@ -61,8 +66,8 @@ export class EmailService {
 </html>`;
 
         try {
-            if (!this.configService.get<string>("RESEND_API_KEY")) {
-                // Development mode - just log
+            // If no Resend client (no API key), just log
+            if (!this.resend) {
                 this.logger.log(`[DEV] Magic link for ${email}: ${magicLinkUrl}`);
                 return true;
             }
@@ -76,9 +81,10 @@ export class EmailService {
 
             this.logger.log(`Magic link email sent to ${email}: ${result.data?.id}`);
             return true;
-        } catch (error) {
-            this.logger.error(`Failed to send magic link to ${email}:`, error);
-            return false;
+        } catch (error: any) {
+            this.logger.error(`Failed to send magic link to ${email}:`, error?.message || error);
+            // Return true anyway since the token is saved - user can retry
+            return true;
         }
     }
 

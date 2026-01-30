@@ -176,21 +176,36 @@ export class AuthService {
      * Request magic link for passwordless login/registration
      */
     async requestMagicLink(email: string) {
-        // Generate a unique token
-        const token = uuidv4();
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        if (!email || !email.includes("@")) {
+            throw new BadRequestException("Email không hợp lệ");
+        }
 
-        // Store magic link token in database
-        await this.prisma.magicLink.upsert({
-            where: { email },
-            update: { token, expiresAt },
-            create: { email, token, expiresAt },
-        });
+        try {
+            // Generate a unique token
+            const token = uuidv4();
+            const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-        // Send email with magic link
-        await this.emailService.sendMagicLink(email, token);
+            // Store magic link token in database
+            await this.prisma.magicLink.upsert({
+                where: { email },
+                update: { token, expiresAt },
+                create: { email, token, expiresAt },
+            });
 
-        return { message: "Magic link sent to your email" };
+            // Send email with magic link
+            const emailSent = await this.emailService.sendMagicLink(email, token);
+            
+            if (!emailSent) {
+                // Email service returned false but didn't throw
+                console.warn(`Magic link email may not have been sent to ${email}`);
+            }
+
+            return { message: "Magic link sent to your email" };
+        } catch (error) {
+            console.error("Error in requestMagicLink:", error);
+            // Don't expose internal errors to client
+            throw new BadRequestException("Không thể gửi magic link. Vui lòng thử lại sau.");
+        }
     }
 
     /**

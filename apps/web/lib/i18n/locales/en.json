@@ -1,0 +1,313 @@
+{
+    "common": {
+        "back": "Back",
+        "loading": "Loading...",
+        "save": "Save",
+        "cancel": "Cancel",
+        "submit": "Submit",
+        "send": "Send",
+        "close": "Close",
+        "delete": "Delete",
+        "edit": "Edit",
+        "create": "Create",
+        "search": "Search",
+        "filter": "Filter",
+        "download": "Download",
+        "upload": "Upload",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "yes": "Yes",
+        "no": "No",
+        "ok": "OK",
+        "error": "Error",
+        "success": "Success",
+        "warning": "Warning",
+        "info": "Information"
+    },
+    "nav": {
+        "home": "Home",
+        "pricing": "Pricing",
+        "about": "About",
+        "contact": "Contact",
+        "login": "Login",
+        "logout": "Logout",
+        "dashboard": "Dashboard",
+        "settings": "Settings"
+    },
+    "auth": {
+        "loginTitle": "Welcome back!",
+        "loginSubtitle": "Enter your email to receive a login link",
+        "sendLoginLink": "Send login link",
+        "sendingLink": "Sending link...",
+        "checkEmail": "Check your email",
+        "emailSent": "We've sent a login link to",
+        "clickLink": "Please click the link in the email to continue.",
+        "noEmail": "Didn't receive the email?",
+        "tryAgain": "Try with a different email",
+        "orContinueWith": "OR",
+        "loginWithGoogle": "Login with Google",
+        "loggingIn": "Logging in..."
+    },
+    "home": {
+        "hero": {
+            "badge": "Create QR Code for free - No registration required",
+            "title": "Create professional QR codes",
+            "titleHighlight": "in seconds",
+            "subtitle": "Free QR code platform for everyone. Customize colors, download instantly - no account needed."
+        },
+        "qrTypes": {
+            "link": "Link",
+            "text": "Text",
+            "email": "Email",
+            "phone": "Phone",
+            "sms": "SMS",
+            "wifi": "WiFi",
+            "contact": "Contact",
+            "location": "Location"
+        },
+        "generator": {
+            "enterContent": "Enter content",
+            "placeholder": "https://",
+            "design": "Design QR Code",
+            "frame": "Frame",
+            "style": "Style",
+            "logo": "Logo",
+            "none": "None",
+            "simple": "Simple",
+            "rounded": "Rounded",
+            "scanMe": "Scan Me",
+            "color": "Color",
+            "downloadQR": "Download QR Code",
+            "createQR": "Create QR",
+            "enterContentToCreate": "Enter content to create QR Code",
+            "freeUnlimited": "Free · Unlimited"
+        },
+        "benefits": {
+            "free": {
+                "title": "100% Free",
+                "description": "Create unlimited QR codes, no payment required"
+            },
+            "fast": {
+                "title": "Fast",
+                "description": "Create QR in 3 seconds, realtime preview"
+            },
+            "customize": {
+                "title": "Easy customization",
+                "description": "Add colors and logo to match your brand"
+            }
+        },
+        "features": {
+            "title": "Why choose QRCode-Shiba?",
+            "subtitle": "Comprehensive QR code solution designed for the Vietnamese market",
+            "customization": {
+                "title": "Unlimited customization",
+                "description": "Add logo, colors, patterns to match your brand"
+            },
+            "analytics": {
+                "title": "Real-time analytics",
+                "description": "Track scans, location, device details"
+            },
+            "dynamic": {
+                "title": "Dynamic QR Code",
+                "description": "Change destination without reprinting"
+            },
+            "integration": {
+                "title": "Vietnam integration",
+                "description": "VNPay, MoMo, Zalo and local services"
+            }
+        },
+        "cta": {
+            "title": "Want to track QR scans?",
+            "subtitle": "Register for free to create Dynamic QR Codes with detailed analytics.",
+            "button": "Create free account"
+        }
+    },
+    "about": {
+        "badge": "About us",
+        "title": "Modern QR Code platform",
+        "titleHighlight": "for businesses",
+        "subtitle": "QRCode-Shiba is developed with the mission to provide professional, easy-to-use QR code solutions.",
+        "mission": {
+            "title": "Mission",
+            "description": "Help every business access QR code technology easily and effectively."
+        },
+        "team": {
+            "title": "Team",
+            "description": "A team of engineers and designers passionate about technology, focused on user experience."
+        },
+        "commitment": {
+            "title": "Commitment",
+            "description": "Data security, 99.9% uptime, and dedicated customer support 24/7."
+        },
+        "whyUs": {
+            "title": "Why choose QRCode-Shiba?",
+            "speed": {
+                "title": "Lightning fast",
+                "description": "Create QR codes in seconds, no registration needed for static QR."
+            },
+            "analytics": {
+                "title": "Detailed analytics",
+                "description": "Real-time scan tracking, analysis by location and device."
+            },
+            "customization": {
+                "title": "Flexible customization",
+                "description": "Logo, colors, styles - all at your fingertips."
+            }
+        },
+        "cta": {
+            "title": "Ready to start?",
+            "subtitle": "Create your first QR code for free today.",
+            "button": "Start for free"
+        }
+    },
+    "terms": {
+        "title": "Terms of Service",
+        "lastUpdated": "Last updated",
+        "sections": {
+            "acceptance": {
+                "title": "1. Acceptance of Terms",
+                "content": "By accessing and using QRCode-Shiba services, you agree to comply with the terms and conditions stated in this document. If you do not agree with any terms, please do not use the service."
+            },
+            "description": {
+                "title": "2. Service Description",
+                "content": "QRCode-Shiba provides a QR code creation and management platform, including:",
+                "items": [
+                    "Static and dynamic QR codes",
+                    "QR code customization",
+                    "Scan tracking and analytics",
+                    "API integration for businesses"
+                ]
+            },
+            "account": {
+                "title": "3. User Account",
+                "content": "You are responsible for securing your account information. All activities under your account are your responsibility. Please notify us immediately if you detect unauthorized access."
+            },
+            "prohibited": {
+                "title": "4. Prohibited Content",
+                "content": "You may not use the service to create QR codes containing:",
+                "items": [
+                    "Content violating laws",
+                    "Phishing, fraud, malware",
+                    "Pornographic or violent content",
+                    "Copyright or trademark infringement"
+                ]
+            },
+            "payment": {
+                "title": "5. Payment & Refunds",
+                "content": "Paid plans are billed monthly or annually. We support refunds within 7 days of payment if you are not satisfied with the service."
+            },
+            "contact": {
+                "title": "6. Contact",
+                "content": "If you have questions about terms of service, please contact:"
+            }
+        }
+    },
+    "privacy": {
+        "title": "Privacy Policy",
+        "lastUpdated": "Last updated",
+        "sections": {
+            "collection": {
+                "title": "1. Information We Collect",
+                "content": "When you use QRCode-Shiba, we may collect:",
+                "items": [
+                    "Account information: Email, name, avatar",
+                    "QR code data: Content, design, destination URL",
+                    "Analytics data: Scans, location, device",
+                    "Payment information: Processed through secure payment gateway"
+                ]
+            },
+            "usage": {
+                "title": "2. How We Use Data",
+                "content": "Your data is used to:",
+                "items": [
+                    "Provide and improve services",
+                    "Display statistics and analytics",
+                    "Send important account notifications",
+                    "Customer support"
+                ]
+            },
+            "security": {
+                "title": "3. Data Security",
+                "content": "We apply industry-standard security measures:",
+                "items": [
+                    "SSL/TLS encryption for all connections",
+                    "Encryption of sensitive data at rest",
+                    "Two-factor authentication (optional)",
+                    "Regular security audits"
+                ]
+            },
+            "sharing": {
+                "title": "4. Data Sharing",
+                "content": "We DO NOT sell your personal data. Data is only shared with:",
+                "items": [
+                    "Service providers (hosting, email, payment)",
+                    "Authorities when legally required"
+                ]
+            },
+            "rights": {
+                "title": "5. Your Rights",
+                "content": "You have the right to:",
+                "items": [
+                    "Access and download your data",
+                    "Edit personal information",
+                    "Delete account and related data",
+                    "Unsubscribe from marketing emails"
+                ]
+            },
+            "cookies": {
+                "title": "6. Cookies",
+                "content": "We use cookies to improve user experience, including login session cookies and analytics cookies. You can manage cookies in your browser settings."
+            },
+            "contact": {
+                "title": "7. Contact",
+                "content": "If you have questions about privacy policy, please contact:"
+            }
+        }
+    },
+    "contact": {
+        "title": "Contact us",
+        "subtitle": "Have a question or need support? Our team is always ready to help.",
+        "info": {
+            "title": "Contact Information",
+            "email": "Email",
+            "hotline": "Hotline",
+            "address": "Address",
+            "workingHours": "Working Hours",
+            "weekdays": "Mon - Fri: 8:00 AM - 6:00 PM",
+            "saturday": "Sat: 8:00 AM - 12:00 PM",
+            "sunday": "Sun: Closed"
+        },
+        "form": {
+            "title": "Send a message",
+            "name": "Full name",
+            "namePlaceholder": "John Doe",
+            "email": "Email",
+            "emailPlaceholder": "email@example.com",
+            "subject": "Subject",
+            "subjectPlaceholder": "Select subject",
+            "subjects": {
+                "support": "Technical support",
+                "billing": "Payment & subscription",
+                "partnership": "Business partnership",
+                "feedback": "Feedback & suggestions",
+                "other": "Other"
+            },
+            "message": "Message",
+            "messagePlaceholder": "Describe your issue or request in detail...",
+            "send": "Send message",
+            "sending": "Sending..."
+        },
+        "success": {
+            "title": "Thank you!",
+            "message": "Your message has been sent. Our support team will respond within 24 hours.",
+            "sendAnother": "Send another message"
+        }
+    },
+    "footer": {
+        "description": "Modern QR code platform for Vietnamese businesses",
+        "product": "Product",
+        "company": "Company",
+        "legal": "Legal",
+        "copyright": "© 2024 QRCode-Shiba. All rights reserved."
+    }
+}

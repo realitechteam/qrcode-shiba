@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { LanguageProvider } from "@/lib/i18n/index";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { LoadingBar } from "@/components/loading-bar";
@@ -55,7 +56,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="vi" suppressHydrationWarning>
+        <html lang="en" suppressHydrationWarning>
             <body className={inter.className}>
                 <ThemeProvider
                     attribute="class"
@@ -64,14 +65,17 @@ export default function RootLayout({
                     disableTransitionOnChange
                 >
                     <QueryProvider>
-                        <Suspense fallback={null}>
-                            <LoadingBar />
-                        </Suspense>
-                        {children}
-                        <Toaster />
+                        <LanguageProvider>
+                            <Suspense fallback={null}>
+                                <LoadingBar />
+                            </Suspense>
+                            {children}
+                            <Toaster />
+                        </LanguageProvider>
                     </QueryProvider>
                 </ThemeProvider>
             </body>
         </html>
     );
 }
+

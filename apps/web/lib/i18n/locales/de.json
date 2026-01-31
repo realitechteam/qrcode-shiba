@@ -1,0 +1,313 @@
+{
+    "common": {
+        "back": "Zurück",
+        "loading": "Laden...",
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "submit": "Absenden",
+        "send": "Senden",
+        "close": "Schließen",
+        "delete": "Löschen",
+        "edit": "Bearbeiten",
+        "create": "Erstellen",
+        "search": "Suchen",
+        "filter": "Filtern",
+        "download": "Herunterladen",
+        "upload": "Hochladen",
+        "copy": "Kopieren",
+        "copied": "Kopiert!",
+        "yes": "Ja",
+        "no": "Nein",
+        "ok": "OK",
+        "error": "Fehler",
+        "success": "Erfolg",
+        "warning": "Warnung",
+        "info": "Information"
+    },
+    "nav": {
+        "home": "Startseite",
+        "pricing": "Preise",
+        "about": "Über uns",
+        "contact": "Kontakt",
+        "login": "Anmelden",
+        "logout": "Abmelden",
+        "dashboard": "Dashboard",
+        "settings": "Einstellungen"
+    },
+    "auth": {
+        "loginTitle": "Willkommen zurück!",
+        "loginSubtitle": "Geben Sie Ihre E-Mail ein, um einen Login-Link zu erhalten",
+        "sendLoginLink": "Login-Link senden",
+        "sendingLink": "Link wird gesendet...",
+        "checkEmail": "Überprüfen Sie Ihre E-Mail",
+        "emailSent": "Wir haben einen Login-Link gesendet an",
+        "clickLink": "Bitte klicken Sie auf den Link in der E-Mail, um fortzufahren.",
+        "noEmail": "Keine E-Mail erhalten?",
+        "tryAgain": "Mit einer anderen E-Mail versuchen",
+        "orContinueWith": "ODER",
+        "loginWithGoogle": "Mit Google anmelden",
+        "loggingIn": "Anmeldung läuft..."
+    },
+    "home": {
+        "hero": {
+            "badge": "QR-Code kostenlos erstellen - Keine Registrierung erforderlich",
+            "title": "Professionelle QR-Codes",
+            "titleHighlight": "in Sekunden erstellen",
+            "subtitle": "Kostenlose QR-Code-Plattform für alle. Farben anpassen, sofort herunterladen - kein Konto erforderlich."
+        },
+        "qrTypes": {
+            "link": "Link",
+            "text": "Text",
+            "email": "E-Mail",
+            "phone": "Telefon",
+            "sms": "SMS",
+            "wifi": "WiFi",
+            "contact": "Kontakt",
+            "location": "Standort"
+        },
+        "generator": {
+            "enterContent": "Inhalt eingeben",
+            "placeholder": "https://",
+            "design": "QR-Code gestalten",
+            "frame": "Rahmen",
+            "style": "Stil",
+            "logo": "Logo",
+            "none": "Keins",
+            "simple": "Einfach",
+            "rounded": "Abgerundet",
+            "scanMe": "Scan Me",
+            "color": "Farbe",
+            "downloadQR": "QR-Code herunterladen",
+            "createQR": "QR erstellen",
+            "enterContentToCreate": "Inhalt eingeben, um QR-Code zu erstellen",
+            "freeUnlimited": "Kostenlos · Unbegrenzt"
+        },
+        "benefits": {
+            "free": {
+                "title": "100% Kostenlos",
+                "description": "Unbegrenzt QR-Codes erstellen, keine Zahlung erforderlich"
+            },
+            "fast": {
+                "title": "Schnell",
+                "description": "QR in 3 Sekunden erstellen, Echtzeit-Vorschau"
+            },
+            "customize": {
+                "title": "Einfache Anpassung",
+                "description": "Farben und Logo passend zu Ihrer Marke hinzufügen"
+            }
+        },
+        "features": {
+            "title": "Warum QRCode-Shiba wählen?",
+            "subtitle": "Umfassende QR-Code-Lösung für den vietnamesischen Markt",
+            "customization": {
+                "title": "Unbegrenzte Anpassung",
+                "description": "Logo, Farben, Muster passend zu Ihrer Marke"
+            },
+            "analytics": {
+                "title": "Echtzeit-Analysen",
+                "description": "Scans, Standort, Gerätedetails verfolgen"
+            },
+            "dynamic": {
+                "title": "Dynamischer QR-Code",
+                "description": "Ziel ändern ohne Neudruck"
+            },
+            "integration": {
+                "title": "Vietnam-Integration",
+                "description": "VNPay, MoMo, Zalo und lokale Dienste"
+            }
+        },
+        "cta": {
+            "title": "QR-Scans verfolgen?",
+            "subtitle": "Kostenlos registrieren für dynamische QR-Codes mit detaillierten Analysen.",
+            "button": "Kostenloses Konto erstellen"
+        }
+    },
+    "about": {
+        "badge": "Über uns",
+        "title": "Moderne QR-Code-Plattform",
+        "titleHighlight": "für Unternehmen",
+        "subtitle": "QRCode-Shiba wurde entwickelt, um professionelle, benutzerfreundliche QR-Code-Lösungen anzubieten.",
+        "mission": {
+            "title": "Mission",
+            "description": "Jedem Unternehmen den einfachen und effektiven Zugang zur QR-Code-Technologie ermöglichen."
+        },
+        "team": {
+            "title": "Team",
+            "description": "Ein Team von Ingenieuren und Designern mit Leidenschaft für Technologie, fokussiert auf Benutzererfahrung."
+        },
+        "commitment": {
+            "title": "Engagement",
+            "description": "Datensicherheit, 99,9% Verfügbarkeit und engagierter Kundensupport rund um die Uhr."
+        },
+        "whyUs": {
+            "title": "Warum QRCode-Shiba wählen?",
+            "speed": {
+                "title": "Blitzschnell",
+                "description": "QR-Codes in Sekunden erstellen, keine Registrierung für statische QR erforderlich."
+            },
+            "analytics": {
+                "title": "Detaillierte Analysen",
+                "description": "Echtzeit-Scan-Tracking, Analyse nach Standort und Gerät."
+            },
+            "customization": {
+                "title": "Flexible Anpassung",
+                "description": "Logo, Farben, Stile - alles in Ihrer Hand."
+            }
+        },
+        "cta": {
+            "title": "Bereit anzufangen?",
+            "subtitle": "Erstellen Sie heute Ihren ersten QR-Code kostenlos.",
+            "button": "Kostenlos starten"
+        }
+    },
+    "terms": {
+        "title": "Nutzungsbedingungen",
+        "lastUpdated": "Letzte Aktualisierung",
+        "sections": {
+            "acceptance": {
+                "title": "1. Annahme der Bedingungen",
+                "content": "Durch den Zugriff auf und die Nutzung der QRCode-Shiba-Dienste stimmen Sie den in diesem Dokument genannten Bedingungen zu. Wenn Sie mit einer Bedingung nicht einverstanden sind, nutzen Sie den Dienst bitte nicht."
+            },
+            "description": {
+                "title": "2. Dienstbeschreibung",
+                "content": "QRCode-Shiba bietet eine Plattform zur Erstellung und Verwaltung von QR-Codes, einschließlich:",
+                "items": [
+                    "Statische und dynamische QR-Codes",
+                    "QR-Code-Anpassung",
+                    "Scan-Tracking und Analysen",
+                    "API-Integration für Unternehmen"
+                ]
+            },
+            "account": {
+                "title": "3. Benutzerkonto",
+                "content": "Sie sind für die Sicherheit Ihrer Kontoinformationen verantwortlich. Alle Aktivitäten unter Ihrem Konto liegen in Ihrer Verantwortung. Bitte benachrichtigen Sie uns sofort, wenn Sie unbefugten Zugriff feststellen."
+            },
+            "prohibited": {
+                "title": "4. Verbotene Inhalte",
+                "content": "Sie dürfen den Dienst nicht verwenden, um QR-Codes mit folgenden Inhalten zu erstellen:",
+                "items": [
+                    "Gesetzeswidrige Inhalte",
+                    "Phishing, Betrug, Malware",
+                    "Pornografische oder gewalttätige Inhalte",
+                    "Urheberrechts- oder Markenverletzungen"
+                ]
+            },
+            "payment": {
+                "title": "5. Zahlung und Erstattung",
+                "content": "Kostenpflichtige Pläne werden monatlich oder jährlich abgerechnet. Wir unterstützen Erstattungen innerhalb von 7 Tagen nach der Zahlung, wenn Sie mit dem Service nicht zufrieden sind."
+            },
+            "contact": {
+                "title": "6. Kontakt",
+                "content": "Wenn Sie Fragen zu den Nutzungsbedingungen haben, kontaktieren Sie uns bitte:"
+            }
+        }
+    },
+    "privacy": {
+        "title": "Datenschutzrichtlinie",
+        "lastUpdated": "Letzte Aktualisierung",
+        "sections": {
+            "collection": {
+                "title": "1. Informationen, die wir sammeln",
+                "content": "Wenn Sie QRCode-Shiba verwenden, können wir folgende Informationen sammeln:",
+                "items": [
+                    "Kontoinformationen: E-Mail, Name, Avatar",
+                    "QR-Code-Daten: Inhalt, Design, Ziel-URL",
+                    "Analysedaten: Scans, Standort, Gerät",
+                    "Zahlungsinformationen: Über sicheres Zahlungsgateway verarbeitet"
+                ]
+            },
+            "usage": {
+                "title": "2. Wie wir Daten verwenden",
+                "content": "Ihre Daten werden verwendet für:",
+                "items": [
+                    "Bereitstellung und Verbesserung der Dienste",
+                    "Anzeige von Statistiken und Analysen",
+                    "Senden wichtiger Kontobenachrichtigungen",
+                    "Kundensupport"
+                ]
+            },
+            "security": {
+                "title": "3. Datensicherheit",
+                "content": "Wir wenden branchenübliche Sicherheitsmaßnahmen an:",
+                "items": [
+                    "SSL/TLS-Verschlüsselung für alle Verbindungen",
+                    "Verschlüsselung sensibler Daten bei der Speicherung",
+                    "Zwei-Faktor-Authentifizierung (optional)",
+                    "Regelmäßige Sicherheitsaudits"
+                ]
+            },
+            "sharing": {
+                "title": "4. Datenweitergabe",
+                "content": "Wir verkaufen Ihre persönlichen Daten NICHT. Daten werden nur geteilt mit:",
+                "items": [
+                    "Dienstleistern (Hosting, E-Mail, Zahlung)",
+                    "Behörden bei rechtlicher Anforderung"
+                ]
+            },
+            "rights": {
+                "title": "5. Ihre Rechte",
+                "content": "Sie haben das Recht auf:",
+                "items": [
+                    "Zugriff auf und Download Ihrer Daten",
+                    "Bearbeitung persönlicher Informationen",
+                    "Löschung von Konto und zugehörigen Daten",
+                    "Abmeldung von Marketing-E-Mails"
+                ]
+            },
+            "cookies": {
+                "title": "6. Cookies",
+                "content": "Wir verwenden Cookies, um die Benutzererfahrung zu verbessern, einschließlich Login-Session-Cookies und Analyse-Cookies. Sie können Cookies in Ihren Browsereinstellungen verwalten."
+            },
+            "contact": {
+                "title": "7. Kontakt",
+                "content": "Wenn Sie Fragen zur Datenschutzrichtlinie haben, kontaktieren Sie uns bitte:"
+            }
+        }
+    },
+    "contact": {
+        "title": "Kontaktieren Sie uns",
+        "subtitle": "Haben Sie eine Frage oder brauchen Sie Unterstützung? Unser Team ist immer bereit zu helfen.",
+        "info": {
+            "title": "Kontaktinformationen",
+            "email": "E-Mail",
+            "hotline": "Hotline",
+            "address": "Adresse",
+            "workingHours": "Geschäftszeiten",
+            "weekdays": "Mo - Fr: 8:00 - 18:00",
+            "saturday": "Sa: 8:00 - 12:00",
+            "sunday": "So: Geschlossen"
+        },
+        "form": {
+            "title": "Nachricht senden",
+            "name": "Vollständiger Name",
+            "namePlaceholder": "Max Mustermann",
+            "email": "E-Mail",
+            "emailPlaceholder": "email@example.com",
+            "subject": "Betreff",
+            "subjectPlaceholder": "Betreff auswählen",
+            "subjects": {
+                "support": "Technischer Support",
+                "billing": "Zahlung & Abonnement",
+                "partnership": "Geschäftspartnerschaft",
+                "feedback": "Feedback & Vorschläge",
+                "other": "Sonstiges"
+            },
+            "message": "Nachricht",
+            "messagePlaceholder": "Beschreiben Sie Ihr Problem oder Ihre Anfrage im Detail...",
+            "send": "Nachricht senden",
+            "sending": "Wird gesendet..."
+        },
+        "success": {
+            "title": "Vielen Dank!",
+            "message": "Ihre Nachricht wurde gesendet. Unser Support-Team wird innerhalb von 24 Stunden antworten.",
+            "sendAnother": "Weitere Nachricht senden"
+        }
+    },
+    "footer": {
+        "description": "Moderne QR-Code-Plattform für Unternehmen",
+        "product": "Produkt",
+        "company": "Unternehmen",
+        "legal": "Rechtliches",
+        "copyright": "© 2024 QRCode-Shiba. Alle Rechte vorbehalten."
+    }
+}

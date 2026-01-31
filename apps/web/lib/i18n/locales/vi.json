@@ -1,0 +1,313 @@
+{
+    "common": {
+        "back": "Quay lại",
+        "loading": "Đang tải...",
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "submit": "Gửi",
+        "send": "Gửi",
+        "close": "Đóng",
+        "delete": "Xóa",
+        "edit": "Sửa",
+        "create": "Tạo",
+        "search": "Tìm kiếm",
+        "filter": "Lọc",
+        "download": "Tải xuống",
+        "upload": "Tải lên",
+        "copy": "Sao chép",
+        "copied": "Đã sao chép!",
+        "yes": "Có",
+        "no": "Không",
+        "ok": "OK",
+        "error": "Lỗi",
+        "success": "Thành công",
+        "warning": "Cảnh báo",
+        "info": "Thông tin"
+    },
+    "nav": {
+        "home": "Trang chủ",
+        "pricing": "Bảng giá",
+        "about": "Giới thiệu",
+        "contact": "Liên hệ",
+        "login": "Đăng nhập",
+        "logout": "Đăng xuất",
+        "dashboard": "Bảng điều khiển",
+        "settings": "Cài đặt"
+    },
+    "auth": {
+        "loginTitle": "Chào mừng trở lại!",
+        "loginSubtitle": "Nhập email để nhận link đăng nhập",
+        "sendLoginLink": "Gửi link đăng nhập",
+        "sendingLink": "Đang gửi link...",
+        "checkEmail": "Kiểm tra email của bạn",
+        "emailSent": "Chúng tôi đã gửi link đăng nhập đến",
+        "clickLink": "Vui lòng click vào link trong email để tiếp tục.",
+        "noEmail": "Không nhận được email?",
+        "tryAgain": "Thử lại với email khác",
+        "orContinueWith": "HOẶC",
+        "loginWithGoogle": "Đăng nhập với Google",
+        "loggingIn": "Đang đăng nhập..."
+    },
+    "home": {
+        "hero": {
+            "badge": "Tạo QR Code miễn phí - Không cần đăng ký",
+            "title": "Tạo mã QR chuyên nghiệp",
+            "titleHighlight": "trong vài giây",
+            "subtitle": "Nền tảng tạo QR code miễn phí cho mọi người. Tùy chỉnh màu sắc, tải về ngay - không cần tài khoản."
+        },
+        "qrTypes": {
+            "link": "Link",
+            "text": "Văn bản",
+            "email": "E-mail",
+            "phone": "Gọi điện",
+            "sms": "SMS",
+            "wifi": "WiFi",
+            "contact": "Danh bạ",
+            "location": "Vị trí"
+        },
+        "generator": {
+            "enterContent": "Nhập nội dung",
+            "placeholder": "https://",
+            "design": "Thiết kế QR Code",
+            "frame": "Khung",
+            "style": "Kiểu dáng",
+            "logo": "Logo",
+            "none": "Không",
+            "simple": "Đơn giản",
+            "rounded": "Bo góc",
+            "scanMe": "Scan Me",
+            "color": "Màu",
+            "downloadQR": "Tải QR Code",
+            "createQR": "Tạo mã QR",
+            "enterContentToCreate": "Nhập nội dung để tạo QR Code",
+            "freeUnlimited": "Miễn phí · Không giới hạn"
+        },
+        "benefits": {
+            "free": {
+                "title": "Miễn phí 100%",
+                "description": "Tạo QR code không giới hạn, không cần thanh toán"
+            },
+            "fast": {
+                "title": "Nhanh chóng",
+                "description": "Tạo QR trong 3 giây, preview realtime"
+            },
+            "customize": {
+                "title": "Tùy chỉnh dễ dàng",
+                "description": "Thêm màu sắc, logo theo thương hiệu"
+            }
+        },
+        "features": {
+            "title": "Tại sao chọn QRCode-Shiba?",
+            "subtitle": "Giải pháp QR code toàn diện được thiết kế riêng cho thị trường Việt Nam",
+            "customization": {
+                "title": "Tùy chỉnh không giới hạn",
+                "description": "Thêm logo, màu sắc, patterns theo thương hiệu của bạn"
+            },
+            "analytics": {
+                "title": "Analytics real-time",
+                "description": "Theo dõi lượt quét, vị trí, thiết bị chi tiết"
+            },
+            "dynamic": {
+                "title": "Dynamic QR Code",
+                "description": "Thay đổi đích đến mà không cần in lại"
+            },
+            "integration": {
+                "title": "Tích hợp Việt Nam",
+                "description": "VNPay, MoMo, Zalo và các dịch vụ nội địa"
+            }
+        },
+        "cta": {
+            "title": "Muốn theo dõi lượt quét QR?",
+            "subtitle": "Đăng ký miễn phí để tạo Dynamic QR Code với analytics chi tiết.",
+            "button": "Tạo tài khoản miễn phí"
+        }
+    },
+    "about": {
+        "badge": "Về chúng tôi",
+        "title": "Nền tảng QR Code hiện đại",
+        "titleHighlight": "cho doanh nghiệp Việt Nam",
+        "subtitle": "QRCode-Shiba được phát triển với sứ mệnh mang đến giải pháp QR code chuyên nghiệp, dễ sử dụng.",
+        "mission": {
+            "title": "Sứ mệnh",
+            "description": "Giúp mọi doanh nghiệp Việt Nam tiếp cận công nghệ QR code một cách dễ dàng và hiệu quả."
+        },
+        "team": {
+            "title": "Đội ngũ",
+            "description": "Đội ngũ kỹ sư và designers đam mê công nghệ, tập trung vào trải nghiệm người dùng."
+        },
+        "commitment": {
+            "title": "Cam kết",
+            "description": "Bảo mật dữ liệu, uptime 99.9%, và hỗ trợ khách hàng tận tình 24/7."
+        },
+        "whyUs": {
+            "title": "Tại sao chọn QRCode-Shiba?",
+            "speed": {
+                "title": "Tốc độ nhanh chóng",
+                "description": "Tạo QR code trong vài giây, không cần đăng ký cho QR tĩnh."
+            },
+            "analytics": {
+                "title": "Analytics chi tiết",
+                "description": "Theo dõi lượt quét real-time, phân tích theo vị trí, thiết bị."
+            },
+            "customization": {
+                "title": "Tùy chỉnh linh hoạt",
+                "description": "Logo, màu sắc, kiểu dáng - tất cả trong tầm tay bạn."
+            }
+        },
+        "cta": {
+            "title": "Sẵn sàng bắt đầu?",
+            "subtitle": "Tạo QR code đầu tiên của bạn miễn phí ngay hôm nay.",
+            "button": "Bắt đầu miễn phí"
+        }
+    },
+    "terms": {
+        "title": "Điều khoản sử dụng",
+        "lastUpdated": "Cập nhật lần cuối",
+        "sections": {
+            "acceptance": {
+                "title": "1. Chấp nhận điều khoản",
+                "content": "Bằng việc truy cập và sử dụng dịch vụ QRCode-Shiba, bạn đồng ý tuân thủ các điều khoản và điều kiện được nêu trong tài liệu này. Nếu bạn không đồng ý với bất kỳ điều khoản nào, vui lòng không sử dụng dịch vụ."
+            },
+            "description": {
+                "title": "2. Mô tả dịch vụ",
+                "content": "QRCode-Shiba cung cấp nền tảng tạo và quản lý mã QR code, bao gồm:",
+                "items": [
+                    "Tạo QR code tĩnh và động",
+                    "Tùy chỉnh giao diện QR code",
+                    "Theo dõi và phân tích lượt quét",
+                    "API tích hợp cho doanh nghiệp"
+                ]
+            },
+            "account": {
+                "title": "3. Tài khoản người dùng",
+                "content": "Bạn có trách nhiệm bảo mật thông tin tài khoản của mình. Mọi hoạt động xảy ra dưới tài khoản của bạn là trách nhiệm của bạn. Vui lòng thông báo cho chúng tôi ngay nếu phát hiện truy cập trái phép."
+            },
+            "prohibited": {
+                "title": "4. Nội dung bị cấm",
+                "content": "Bạn không được sử dụng dịch vụ để tạo QR code chứa nội dung:",
+                "items": [
+                    "Vi phạm pháp luật Việt Nam",
+                    "Phishing, lừa đảo, malware",
+                    "Nội dung khiêu dâm, bạo lực",
+                    "Vi phạm bản quyền, nhãn hiệu"
+                ]
+            },
+            "payment": {
+                "title": "5. Thanh toán & hoàn tiền",
+                "content": "Các gói trả phí được thanh toán theo chu kỳ tháng hoặc năm. Chúng tôi hỗ trợ hoàn tiền trong vòng 7 ngày kể từ ngày thanh toán nếu bạn không hài lòng với dịch vụ."
+            },
+            "contact": {
+                "title": "6. Liên hệ",
+                "content": "Nếu có thắc mắc về điều khoản sử dụng, vui lòng liên hệ:"
+            }
+        }
+    },
+    "privacy": {
+        "title": "Chính sách bảo mật",
+        "lastUpdated": "Cập nhật lần cuối",
+        "sections": {
+            "collection": {
+                "title": "1. Thông tin chúng tôi thu thập",
+                "content": "Khi bạn sử dụng QRCode-Shiba, chúng tôi có thể thu thập:",
+                "items": [
+                    "Thông tin tài khoản: Email, tên, ảnh đại diện",
+                    "Dữ liệu QR code: Nội dung, thiết kế, URL đích",
+                    "Dữ liệu analytics: Lượt quét, vị trí, thiết bị",
+                    "Thông tin thanh toán: Được xử lý qua cổng thanh toán bảo mật"
+                ]
+            },
+            "usage": {
+                "title": "2. Cách chúng tôi sử dụng dữ liệu",
+                "content": "Dữ liệu của bạn được sử dụng để:",
+                "items": [
+                    "Cung cấp và cải thiện dịch vụ",
+                    "Hiển thị thống kê và analytics",
+                    "Gửi thông báo quan trọng về tài khoản",
+                    "Hỗ trợ khách hàng"
+                ]
+            },
+            "security": {
+                "title": "3. Bảo mật dữ liệu",
+                "content": "Chúng tôi áp dụng các biện pháp bảo mật tiêu chuẩn ngành:",
+                "items": [
+                    "Mã hóa SSL/TLS cho mọi kết nối",
+                    "Mã hóa dữ liệu nhạy cảm khi lưu trữ",
+                    "Xác thực hai lớp (tùy chọn)",
+                    "Kiểm tra bảo mật định kỳ"
+                ]
+            },
+            "sharing": {
+                "title": "4. Chia sẻ dữ liệu",
+                "content": "Chúng tôi KHÔNG bán dữ liệu cá nhân của bạn. Dữ liệu chỉ được chia sẻ với:",
+                "items": [
+                    "Nhà cung cấp dịch vụ hỗ trợ (hosting, email, thanh toán)",
+                    "Cơ quan chức năng khi có yêu cầu pháp lý"
+                ]
+            },
+            "rights": {
+                "title": "5. Quyền của bạn",
+                "content": "Bạn có quyền:",
+                "items": [
+                    "Truy cập và tải xuống dữ liệu của bạn",
+                    "Chỉnh sửa thông tin cá nhân",
+                    "Xóa tài khoản và dữ liệu liên quan",
+                    "Hủy đăng ký nhận email marketing"
+                ]
+            },
+            "cookies": {
+                "title": "6. Cookies",
+                "content": "Chúng tôi sử dụng cookies để cải thiện trải nghiệm người dùng, bao gồm cookies phiên đăng nhập và cookies analytics. Bạn có thể quản lý cookies trong cài đặt trình duyệt."
+            },
+            "contact": {
+                "title": "7. Liên hệ",
+                "content": "Nếu có thắc mắc về chính sách bảo mật, vui lòng liên hệ:"
+            }
+        }
+    },
+    "contact": {
+        "title": "Liên hệ với chúng tôi",
+        "subtitle": "Bạn có câu hỏi hoặc cần hỗ trợ? Đội ngũ của chúng tôi luôn sẵn sàng giúp đỡ.",
+        "info": {
+            "title": "Thông tin liên hệ",
+            "email": "Email",
+            "hotline": "Hotline",
+            "address": "Địa chỉ",
+            "workingHours": "Giờ làm việc",
+            "weekdays": "Thứ 2 - Thứ 6: 8:00 - 18:00",
+            "saturday": "Thứ 7: 8:00 - 12:00",
+            "sunday": "Chủ nhật: Nghỉ"
+        },
+        "form": {
+            "title": "Gửi tin nhắn",
+            "name": "Họ tên",
+            "namePlaceholder": "Nguyễn Văn A",
+            "email": "Email",
+            "emailPlaceholder": "email@example.com",
+            "subject": "Chủ đề",
+            "subjectPlaceholder": "Chọn chủ đề",
+            "subjects": {
+                "support": "Hỗ trợ kỹ thuật",
+                "billing": "Thanh toán & đăng ký",
+                "partnership": "Hợp tác kinh doanh",
+                "feedback": "Góp ý & phản hồi",
+                "other": "Khác"
+            },
+            "message": "Nội dung",
+            "messagePlaceholder": "Mô tả chi tiết vấn đề hoặc yêu cầu của bạn...",
+            "send": "Gửi tin nhắn",
+            "sending": "Đang gửi..."
+        },
+        "success": {
+            "title": "Cảm ơn bạn!",
+            "message": "Tin nhắn của bạn đã được gửi. Đội ngũ hỗ trợ sẽ phản hồi trong vòng 24 giờ.",
+            "sendAnother": "Gửi tin nhắn khác"
+        }
+    },
+    "footer": {
+        "description": "Nền tảng tạo và quản lý mã QR code hiện đại cho doanh nghiệp Việt Nam",
+        "product": "Sản phẩm",
+        "company": "Công ty",
+        "legal": "Pháp lý",
+        "copyright": "© 2024 QRCode-Shiba. Bảo lưu mọi quyền."
+    }
+}

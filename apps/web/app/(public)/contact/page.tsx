@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/i18n/index";
 
 export default function ContactPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const { toast } = useToast();
+    const { t } = useTranslation();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -22,8 +24,8 @@ export default function ContactPage() {
         setIsLoading(false);
         setIsSuccess(true);
         toast({
-            title: "Đã gửi thành công!",
-            description: "Chúng tôi sẽ phản hồi trong vòng 24 giờ.",
+            title: t("common.success"),
+            description: t("contact.success.message"),
         });
     };
 
@@ -34,12 +36,12 @@ export default function ContactPage() {
                     <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
                         <CheckCircle2 className="h-10 w-10 text-green-600" />
                     </div>
-                    <h2 className="text-2xl font-bold mb-2">Cảm ơn bạn!</h2>
+                    <h2 className="text-2xl font-bold mb-2">{t("contact.success.title")}</h2>
                     <p className="text-muted-foreground mb-6">
-                        Tin nhắn của bạn đã được gửi. Đội ngũ hỗ trợ sẽ phản hồi trong vòng 24 giờ.
+                        {t("contact.success.message")}
                     </p>
                     <Button onClick={() => setIsSuccess(false)} variant="outline">
-                        Gửi tin nhắn khác
+                        {t("contact.success.sendAnother")}
                     </Button>
                 </div>
             </div>
@@ -57,14 +59,14 @@ export default function ContactPage() {
                     className="mb-6 -ml-2 text-muted-foreground hover:text-foreground gap-2 animate-fade-in"
                 >
                     <ArrowLeft className="h-4 w-4" />
-                    Quay lại
+                    {t("common.back")}
                 </Button>
 
                 {/* Header */}
                 <div className="text-center mb-12 animate-slide-up">
-                    <h1 className="text-3xl font-bold mb-2">Liên hệ với chúng tôi</h1>
+                    <h1 className="text-3xl font-bold mb-2">{t("contact.title")}</h1>
                     <p className="text-muted-foreground max-w-lg mx-auto">
-                        Bạn có câu hỏi hoặc cần hỗ trợ? Đội ngũ của chúng tôi luôn sẵn sàng giúp đỡ.
+                        {t("contact.subtitle")}
                     </p>
                 </div>
 
@@ -72,14 +74,14 @@ export default function ContactPage() {
                     {/* Contact Info */}
                     <div className="space-y-8">
                         <div>
-                            <h2 className="text-xl font-bold mb-6">Thông tin liên hệ</h2>
+                            <h2 className="text-xl font-bold mb-6">{t("contact.info.title")}</h2>
                             <div className="space-y-4">
                                 <div className="flex items-start gap-4">
                                     <div className="w-10 h-10 rounded-lg bg-shiba-500/10 flex items-center justify-center flex-shrink-0">
                                         <Mail className="h-5 w-5 text-shiba-500" />
                                     </div>
                                     <div>
-                                        <p className="font-medium">Email</p>
+                                        <p className="font-medium">{t("contact.info.email")}</p>
                                         <a href="mailto:support@shiba.pw" className="text-muted-foreground hover:text-shiba-500">
                                             support@shiba.pw
                                         </a>
@@ -90,7 +92,7 @@ export default function ContactPage() {
                                         <Phone className="h-5 w-5 text-shiba-500" />
                                     </div>
                                     <div>
-                                        <p className="font-medium">Hotline</p>
+                                        <p className="font-medium">{t("contact.info.hotline")}</p>
                                         <a href="tel:1900xxxx" className="text-muted-foreground hover:text-shiba-500">
                                             1900 xxxx (8:00 - 22:00)
                                         </a>
@@ -101,7 +103,7 @@ export default function ContactPage() {
                                         <MapPin className="h-5 w-5 text-shiba-500" />
                                     </div>
                                     <div>
-                                        <p className="font-medium">Địa chỉ</p>
+                                        <p className="font-medium">{t("contact.info.address")}</p>
                                         <p className="text-muted-foreground">
                                             Quận 1, TP. Hồ Chí Minh, Việt Nam
                                         </p>
@@ -111,60 +113,60 @@ export default function ContactPage() {
                         </div>
 
                         <div className="p-6 rounded-2xl border bg-card">
-                            <h3 className="font-bold mb-2">Giờ làm việc</h3>
+                            <h3 className="font-bold mb-2">{t("contact.info.workingHours")}</h3>
                             <p className="text-muted-foreground text-sm">
-                                Thứ 2 - Thứ 6: 8:00 - 18:00<br />
-                                Thứ 7: 8:00 - 12:00<br />
-                                Chủ nhật: Nghỉ
+                                {t("contact.info.weekdays")}<br />
+                                {t("contact.info.saturday")}<br />
+                                {t("contact.info.sunday")}
                             </p>
                         </div>
                     </div>
 
                     {/* Contact Form */}
                     <div className="p-6 rounded-2xl border bg-card">
-                        <h2 className="text-xl font-bold mb-6">Gửi tin nhắn</h2>
+                        <h2 className="text-xl font-bold mb-6">{t("contact.form.title")}</h2>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-sm font-medium mb-1 block">Họ tên</label>
+                                    <label className="text-sm font-medium mb-1 block">{t("contact.form.name")}</label>
                                     <input
                                         type="text"
                                         required
                                         className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
-                                        placeholder="Nguyễn Văn A"
+                                        placeholder={t("contact.form.namePlaceholder")}
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium mb-1 block">Email</label>
+                                    <label className="text-sm font-medium mb-1 block">{t("contact.form.email")}</label>
                                     <input
                                         type="email"
                                         required
                                         className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
-                                        placeholder="email@example.com"
+                                        placeholder={t("contact.form.emailPlaceholder")}
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className="text-sm font-medium mb-1 block">Chủ đề</label>
+                                <label className="text-sm font-medium mb-1 block">{t("contact.form.subject")}</label>
                                 <select
                                     required
                                     className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
                                 >
-                                    <option value="">Chọn chủ đề</option>
-                                    <option value="support">Hỗ trợ kỹ thuật</option>
-                                    <option value="billing">Thanh toán & đăng ký</option>
-                                    <option value="partnership">Hợp tác kinh doanh</option>
-                                    <option value="feedback">Góp ý & phản hồi</option>
-                                    <option value="other">Khác</option>
+                                    <option value="">{t("contact.form.subjectPlaceholder")}</option>
+                                    <option value="support">{t("contact.form.subjects.support")}</option>
+                                    <option value="billing">{t("contact.form.subjects.billing")}</option>
+                                    <option value="partnership">{t("contact.form.subjects.partnership")}</option>
+                                    <option value="feedback">{t("contact.form.subjects.feedback")}</option>
+                                    <option value="other">{t("contact.form.subjects.other")}</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="text-sm font-medium mb-1 block">Nội dung</label>
+                                <label className="text-sm font-medium mb-1 block">{t("contact.form.message")}</label>
                                 <textarea
                                     required
                                     rows={4}
                                     className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500 resize-none"
-                                    placeholder="Mô tả chi tiết vấn đề hoặc yêu cầu của bạn..."
+                                    placeholder={t("contact.form.messagePlaceholder")}
                                 />
                             </div>
                             <Button
@@ -175,12 +177,12 @@ export default function ContactPage() {
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="h-4 w-4 animate-spin" />
-                                        Đang gửi...
+                                        {t("contact.form.sending")}
                                     </>
                                 ) : (
                                     <>
                                         <Send className="h-4 w-4" />
-                                        Gửi tin nhắn
+                                        {t("contact.form.send")}
                                     </>
                                 )}
                             </Button>

@@ -1,0 +1,313 @@
+{
+    "common": {
+        "back": "戻る",
+        "loading": "読み込み中...",
+        "save": "保存",
+        "cancel": "キャンセル",
+        "submit": "送信",
+        "send": "送る",
+        "close": "閉じる",
+        "delete": "削除",
+        "edit": "編集",
+        "create": "作成",
+        "search": "検索",
+        "filter": "フィルター",
+        "download": "ダウンロード",
+        "upload": "アップロード",
+        "copy": "コピー",
+        "copied": "コピーしました！",
+        "yes": "はい",
+        "no": "いいえ",
+        "ok": "OK",
+        "error": "エラー",
+        "success": "成功",
+        "warning": "警告",
+        "info": "情報"
+    },
+    "nav": {
+        "home": "ホーム",
+        "pricing": "料金",
+        "about": "会社概要",
+        "contact": "お問い合わせ",
+        "login": "ログイン",
+        "logout": "ログアウト",
+        "dashboard": "ダッシュボード",
+        "settings": "設定"
+    },
+    "auth": {
+        "loginTitle": "おかえりなさい！",
+        "loginSubtitle": "メールアドレスを入力してログインリンクを受け取る",
+        "sendLoginLink": "ログインリンクを送信",
+        "sendingLink": "リンクを送信中...",
+        "checkEmail": "メールをご確認ください",
+        "emailSent": "ログインリンクを送信しました",
+        "clickLink": "メール内のリンクをクリックして続行してください。",
+        "noEmail": "メールが届きませんか？",
+        "tryAgain": "別のメールアドレスで試す",
+        "orContinueWith": "または",
+        "loginWithGoogle": "Googleでログイン",
+        "loggingIn": "ログイン中..."
+    },
+    "home": {
+        "hero": {
+            "badge": "無料でQRコードを作成 - 登録不要",
+            "title": "プロフェッショナルなQRコードを",
+            "titleHighlight": "数秒で作成",
+            "subtitle": "誰でも無料で使えるQRコードプラットフォーム。色をカスタマイズして、すぐにダウンロード - アカウント不要。"
+        },
+        "qrTypes": {
+            "link": "リンク",
+            "text": "テキスト",
+            "email": "メール",
+            "phone": "電話",
+            "sms": "SMS",
+            "wifi": "WiFi",
+            "contact": "連絡先",
+            "location": "位置情報"
+        },
+        "generator": {
+            "enterContent": "コンテンツを入力",
+            "placeholder": "https://",
+            "design": "QRコードをデザイン",
+            "frame": "フレーム",
+            "style": "スタイル",
+            "logo": "ロゴ",
+            "none": "なし",
+            "simple": "シンプル",
+            "rounded": "角丸",
+            "scanMe": "Scan Me",
+            "color": "色",
+            "downloadQR": "QRコードをダウンロード",
+            "createQR": "QRを作成",
+            "enterContentToCreate": "QRコードを作成するにはコンテンツを入力してください",
+            "freeUnlimited": "無料・無制限"
+        },
+        "benefits": {
+            "free": {
+                "title": "100%無料",
+                "description": "QRコードを無制限に作成、支払い不要"
+            },
+            "fast": {
+                "title": "高速",
+                "description": "3秒でQRを作成、リアルタイムプレビュー"
+            },
+            "customize": {
+                "title": "簡単カスタマイズ",
+                "description": "ブランドに合わせて色とロゴを追加"
+            }
+        },
+        "features": {
+            "title": "なぜQRCode-Shibaを選ぶのか？",
+            "subtitle": "ベトナム市場向けに設計された包括的なQRコードソリューション",
+            "customization": {
+                "title": "無制限のカスタマイズ",
+                "description": "ブランドに合わせてロゴ、色、パターンを追加"
+            },
+            "analytics": {
+                "title": "リアルタイム分析",
+                "description": "スキャン、位置、デバイスの詳細を追跡"
+            },
+            "dynamic": {
+                "title": "ダイナミックQRコード",
+                "description": "再印刷せずにリンク先を変更"
+            },
+            "integration": {
+                "title": "ベトナム連携",
+                "description": "VNPay、MoMo、Zaloなどのローカルサービス"
+            }
+        },
+        "cta": {
+            "title": "QRスキャンを追跡したいですか？",
+            "subtitle": "無料登録で詳細な分析付きダイナミックQRコードを作成。",
+            "button": "無料アカウントを作成"
+        }
+    },
+    "about": {
+        "badge": "会社概要",
+        "title": "モダンなQRコードプラットフォーム",
+        "titleHighlight": "ビジネス向け",
+        "subtitle": "QRCode-Shibaは、プロフェッショナルで使いやすいQRコードソリューションを提供するために開発されました。",
+        "mission": {
+            "title": "ミッション",
+            "description": "すべての企業がQRコード技術に簡単かつ効果的にアクセスできるようにする。"
+        },
+        "team": {
+            "title": "チーム",
+            "description": "テクノロジーに情熱を持つエンジニアとデザイナーのチームで、ユーザー体験に焦点を当てています。"
+        },
+        "commitment": {
+            "title": "コミットメント",
+            "description": "データセキュリティ、99.9%のアップタイム、24時間年中無休の献身的なカスタマーサポート。"
+        },
+        "whyUs": {
+            "title": "なぜQRCode-Shibaを選ぶのか？",
+            "speed": {
+                "title": "超高速",
+                "description": "数秒でQRコードを作成、静的QRは登録不要。"
+            },
+            "analytics": {
+                "title": "詳細な分析",
+                "description": "リアルタイムのスキャン追跡、位置とデバイスによる分析。"
+            },
+            "customization": {
+                "title": "柔軟なカスタマイズ",
+                "description": "ロゴ、色、スタイル - すべてがあなたの手の中に。"
+            }
+        },
+        "cta": {
+            "title": "始める準備はできましたか？",
+            "subtitle": "今日、無料で最初のQRコードを作成しましょう。",
+            "button": "無料で始める"
+        }
+    },
+    "terms": {
+        "title": "利用規約",
+        "lastUpdated": "最終更新日",
+        "sections": {
+            "acceptance": {
+                "title": "1. 規約の同意",
+                "content": "QRCode-Shibaサービスにアクセスし使用することにより、この文書に記載された利用規約に同意したものとみなされます。いずれかの条件に同意しない場合は、サービスを使用しないでください。"
+            },
+            "description": {
+                "title": "2. サービスの説明",
+                "content": "QRCode-Shibaは、以下を含むQRコード作成・管理プラットフォームを提供します：",
+                "items": [
+                    "静的・動的QRコード",
+                    "QRコードのカスタマイズ",
+                    "スキャン追跡と分析",
+                    "企業向けAPI統合"
+                ]
+            },
+            "account": {
+                "title": "3. ユーザーアカウント",
+                "content": "アカウント情報のセキュリティはお客様の責任です。アカウントで発生するすべての活動はお客様の責任となります。不正アクセスを発見した場合は、直ちにお知らせください。"
+            },
+            "prohibited": {
+                "title": "4. 禁止コンテンツ",
+                "content": "以下のコンテンツを含むQRコードを作成するためにサービスを使用することはできません：",
+                "items": [
+                    "法律に違反するコンテンツ",
+                    "フィッシング、詐欺、マルウェア",
+                    "ポルノまたは暴力的なコンテンツ",
+                    "著作権または商標の侵害"
+                ]
+            },
+            "payment": {
+                "title": "5. 支払いと払い戻し",
+                "content": "有料プランは月額または年額で請求されます。サービスに満足されない場合は、支払いから7日以内の払い戻しをサポートしています。"
+            },
+            "contact": {
+                "title": "6. お問い合わせ",
+                "content": "利用規約についてご質問がある場合は、こちらにお問い合わせください："
+            }
+        }
+    },
+    "privacy": {
+        "title": "プライバシーポリシー",
+        "lastUpdated": "最終更新日",
+        "sections": {
+            "collection": {
+                "title": "1. 収集する情報",
+                "content": "QRCode-Shibaを使用する際、以下の情報を収集する場合があります：",
+                "items": [
+                    "アカウント情報：メール、名前、アバター",
+                    "QRコードデータ：コンテンツ、デザイン、リンク先URL",
+                    "分析データ：スキャン、位置、デバイス",
+                    "支払い情報：安全な決済ゲートウェイで処理"
+                ]
+            },
+            "usage": {
+                "title": "2. データの使用方法",
+                "content": "お客様のデータは以下の目的で使用されます：",
+                "items": [
+                    "サービスの提供と改善",
+                    "統計と分析の表示",
+                    "重要なアカウント通知の送信",
+                    "カスタマーサポート"
+                ]
+            },
+            "security": {
+                "title": "3. データセキュリティ",
+                "content": "業界標準のセキュリティ対策を適用しています：",
+                "items": [
+                    "すべての接続にSSL/TLS暗号化",
+                    "保存時の機密データの暗号化",
+                    "二要素認証（オプション）",
+                    "定期的なセキュリティ監査"
+                ]
+            },
+            "sharing": {
+                "title": "4. データ共有",
+                "content": "お客様の個人データを販売することはありません。データは以下とのみ共有されます：",
+                "items": [
+                    "サービスプロバイダー（ホスティング、メール、決済）",
+                    "法的要件がある場合の当局"
+                ]
+            },
+            "rights": {
+                "title": "5. あなたの権利",
+                "content": "あなたには以下の権利があります：",
+                "items": [
+                    "データへのアクセスとダウンロード",
+                    "個人情報の編集",
+                    "アカウントと関連データの削除",
+                    "マーケティングメールの配信停止"
+                ]
+            },
+            "cookies": {
+                "title": "6. クッキー",
+                "content": "ログインセッションクッキーや分析クッキーを含む、ユーザー体験を向上させるためにクッキーを使用しています。ブラウザの設定でクッキーを管理できます。"
+            },
+            "contact": {
+                "title": "7. お問い合わせ",
+                "content": "プライバシーポリシーについてご質問がある場合は、こちらにお問い合わせください："
+            }
+        }
+    },
+    "contact": {
+        "title": "お問い合わせ",
+        "subtitle": "ご質問やサポートが必要ですか？私たちのチームがいつでもお手伝いします。",
+        "info": {
+            "title": "連絡先情報",
+            "email": "メール",
+            "hotline": "電話",
+            "address": "住所",
+            "workingHours": "営業時間",
+            "weekdays": "月〜金：8:00〜18:00",
+            "saturday": "土：8:00〜12:00",
+            "sunday": "日：休業"
+        },
+        "form": {
+            "title": "メッセージを送信",
+            "name": "氏名",
+            "namePlaceholder": "山田太郎",
+            "email": "メール",
+            "emailPlaceholder": "email@example.com",
+            "subject": "件名",
+            "subjectPlaceholder": "件名を選択",
+            "subjects": {
+                "support": "技術サポート",
+                "billing": "支払いとサブスクリプション",
+                "partnership": "ビジネスパートナーシップ",
+                "feedback": "フィードバックと提案",
+                "other": "その他"
+            },
+            "message": "メッセージ",
+            "messagePlaceholder": "問題またはリクエストを詳しく説明してください...",
+            "send": "メッセージを送信",
+            "sending": "送信中..."
+        },
+        "success": {
+            "title": "ありがとうございます！",
+            "message": "メッセージが送信されました。サポートチームが24時間以内に返信いたします。",
+            "sendAnother": "別のメッセージを送信"
+        }
+    },
+    "footer": {
+        "description": "ビジネス向けのモダンなQRコードプラットフォーム",
+        "product": "製品",
+        "company": "会社",
+        "legal": "法的情報",
+        "copyright": "© 2024 QRCode-Shiba. All rights reserved."
+    }
+}

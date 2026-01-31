@@ -5,10 +5,13 @@ import { QrCode, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
 import { useEffect, useState } from "react";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useTranslation } from "@/lib/i18n/index";
 
 export function AuthHeader() {
     const { isAuthenticated, user, _hasHydrated } = useAuthStore();
     const [mounted, setMounted] = useState(false);
+    const { t } = useTranslation();
 
     // Wait for hydration to avoid mismatch
     useEffect(() => {
@@ -32,29 +35,30 @@ export function AuthHeader() {
                         href="/pricing"
                         className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
-                        Bảng giá
+                        {t("nav.pricing")}
                     </Link>
                     <Link
                         href="/about"
                         className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
-                        Giới thiệu
+                        {t("nav.about")}
                     </Link>
                     <Link
                         href="/contact"
                         className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
-                        Liên hệ
+                        {t("nav.contact")}
                     </Link>
                 </nav>
 
                 <div className="flex items-center gap-3">
+                    <LanguageSwitcher />
                     {mounted && _hasHydrated && isAuthenticated ? (
                         // User is logged in - show dashboard button
                         <Link href="/dashboard/qr">
                             <Button size="sm" className="bg-shiba-500 hover:bg-shiba-600 gap-2">
                                 <User className="h-4 w-4" />
-                                {user?.name ? user.name.split(" ")[0] : "Dashboard"}
+                                {user?.name ? user.name.split(" ")[0] : t("nav.dashboard")}
                             </Button>
                         </Link>
                     ) : (
@@ -62,7 +66,7 @@ export function AuthHeader() {
                         <>
                             <Link href="/login">
                                 <Button variant="ghost" size="sm">
-                                    Đăng nhập
+                                    {t("nav.login")}
                                 </Button>
                             </Link>
                         </>
@@ -72,3 +76,4 @@ export function AuthHeader() {
         </header>
     );
 }
+

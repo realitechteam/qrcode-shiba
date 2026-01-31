@@ -11,9 +11,10 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/auth-store";
 import { signInWithGoogle } from "@/lib/firebase";
+import { useTranslation } from "@/lib/i18n/index";
 
 const loginSchema = z.object({
-    email: z.string().email("Email không hợp lệ"),
+    email: z.string().email("Invalid email address"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -25,6 +26,7 @@ export default function LoginPage() {
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [sentEmail, setSentEmail] = useState("");
+    const { t } = useTranslation();
 
     const {
         register,
@@ -40,13 +42,13 @@ export default function LoginPage() {
             setSentEmail(data.email);
             setIsSuccess(true);
             toast({
-                title: "Đã gửi link đăng nhập",
-                description: "Vui lòng kiểm tra email của bạn",
+                title: t("auth.emailSent"),
+                description: t("auth.checkEmail"),
             });
         } catch (error: any) {
             toast({
-                title: "Gửi link thất bại",
-                description: error.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại",
+                title: t("common.error"),
+                description: error.response?.data?.message || t("common.error"),
                 variant: "destructive",
             });
         }
@@ -91,16 +93,16 @@ export default function LoginPage() {
             setTokens(data.accessToken, data.refreshToken);
 
             toast({
-                title: "Đăng nhập thành công!",
-                description: `Chào mừng ${data.user.name || data.user.email}!`,
+                title: t("common.success"),
+                description: `${t("auth.loginTitle")} ${data.user.name || data.user.email}!`,
             });
 
             router.push("/dashboard/qr");
         } catch (error: any) {
             console.error("Google login error:", error);
             toast({
-                title: "Đăng nhập Google thất bại",
-                description: error.message || "Không thể đăng nhập với Google",
+                title: t("common.error"),
+                description: error.message || t("common.error"),
                 variant: "destructive",
             });
         } finally {
@@ -116,19 +118,19 @@ export default function LoginPage() {
                         <CheckCircle2 className="w-8 h-8 text-green-600" />
                     </div>
 
-                    <h2 className="text-2xl font-bold mb-2">Check email của bạn</h2>
+                    <h2 className="text-2xl font-bold mb-2">{t("auth.checkEmail")}</h2>
                     <p className="text-muted-foreground mb-6">
-                        Chúng tôi đã gửi link đăng nhập đến <strong>{sentEmail}</strong>.<br />
-                        Vui lòng click vào link trong email để tiếp tục.
+                        {t("auth.emailSent")} <strong>{sentEmail}</strong>.<br />
+                        {t("auth.clickLink")}
                     </p>
 
                     <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 mb-6">
-                        <p className="mb-2">Không nhận được email?</p>
+                        <p className="mb-2">{t("auth.noEmail")}</p>
                         <button
                             onClick={() => setIsSuccess(false)}
                             className="text-shiba-500 hover:text-shiba-600 font-medium hover:underline"
                         >
-                            Thử lại với email khác
+                            {t("auth.tryAgain")}
                         </button>
                     </div>
                 </div>
@@ -156,9 +158,9 @@ export default function LoginPage() {
                     {/* Form */}
                     <div className="bg-card rounded-2xl border p-8 shadow-lg">
                         <div className="mb-6">
-                            <h1 className="text-2xl font-bold">Chào mừng trở lại!</h1>
+                            <h1 className="text-2xl font-bold">{t("auth.loginTitle")}</h1>
                             <p className="text-muted-foreground mt-1">
-                                Nhập email để nhận link đăng nhập
+                                {t("auth.loginSubtitle")}
                             </p>
                         </div>
 
@@ -194,10 +196,10 @@ export default function LoginPage() {
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Đang gửi link...
+                                        {t("auth.sendingLink")}
                                     </>
                                 ) : (
-                                    "Gửi link đăng nhập"
+                                    t("auth.sendLoginLink")
                                 )}
                             </Button>
                         </form>
@@ -205,7 +207,7 @@ export default function LoginPage() {
                         {/* Divider */}
                         <div className="my-6 flex items-center gap-4">
                             <div className="flex-1 border-t" />
-                            <span className="text-xs text-muted-foreground">HOẶC</span>
+                            <span className="text-xs text-muted-foreground">{t("auth.orContinueWith")}</span>
                             <div className="flex-1 border-t" />
                         </div>
 
@@ -239,7 +241,7 @@ export default function LoginPage() {
                                     />
                                 </svg>
                             )}
-                            {isGoogleLoading ? "Đang đăng nhập..." : "Đăng nhập với Google"}
+                            {isGoogleLoading ? t("auth.loggingIn") : t("auth.loginWithGoogle")}
                         </Button>
 
                     </div>
@@ -255,11 +257,10 @@ export default function LoginPage() {
                         </div>
                     </div>
                     <h2 className="text-3xl font-bold mb-4">
-                        Tạo QR Code chuyên nghiệp trong vài giây
+                        {t("home.hero.title")} {t("home.hero.titleHighlight")}
                     </h2>
                     <p className="text-shiba-100">
-                        Tùy chỉnh với logo, theo dõi lượt quét real-time, và tích hợp dễ dàng
-                        với hệ thống của bạn.
+                        {t("home.hero.subtitle")}
                     </p>
                 </div>
             </div>

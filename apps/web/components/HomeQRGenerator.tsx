@@ -22,17 +22,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { SignupModal } from "@/components/SignupModal";
 import { savePendingQR } from "@/lib/pending-qr";
+import { useTranslation } from "@/lib/i18n/index";
 
-// QR Types for static generation
+// QR Types for static generation - using translation keys
 const QR_TYPES = [
-    { id: "URL", label: "Link", icon: LinkIcon },
-    { id: "TEXT", label: "Văn bản", icon: Type },
-    { id: "EMAIL", label: "E-mail", icon: Mail },
-    { id: "PHONE", label: "Gọi điện", icon: Phone },
-    { id: "SMS", label: "SMS", icon: MessageSquare },
-    { id: "WIFI", label: "WiFi", icon: Wifi },
-    { id: "VCARD", label: "Danh bạ", icon: User },
-    { id: "LOCATION", label: "Vị trí", icon: MapPin },
+    { id: "URL", labelKey: "home.qrTypes.link", icon: LinkIcon },
+    { id: "TEXT", labelKey: "home.qrTypes.text", icon: Type },
+    { id: "EMAIL", labelKey: "home.qrTypes.email", icon: Mail },
+    { id: "PHONE", labelKey: "home.qrTypes.phone", icon: Phone },
+    { id: "SMS", labelKey: "home.qrTypes.sms", icon: MessageSquare },
+    { id: "WIFI", labelKey: "home.qrTypes.wifi", icon: Wifi },
+    { id: "VCARD", labelKey: "home.qrTypes.contact", icon: User },
+    { id: "LOCATION", labelKey: "home.qrTypes.location", icon: MapPin },
 ] as const;
 
 // Color presets
@@ -45,29 +46,30 @@ const COLOR_PRESETS = [
     "#DC2626", // Red
 ];
 
-// Design tabs
+// Design tabs - using translation keys
 const DESIGN_TABS = [
-    { id: "frame", label: "Khung", icon: Frame },
-    { id: "shape", label: "Kiểu dáng", icon: Shapes },
-    { id: "logo", label: "Logo", icon: Image },
+    { id: "frame", labelKey: "home.generator.frame", icon: Frame },
+    { id: "shape", labelKey: "home.generator.style", icon: Shapes },
+    { id: "logo", labelKey: "home.generator.logo", icon: Image },
 ] as const;
 
 // Frame options - values must match backend frameStyle
 const FRAME_OPTIONS = [
-    { id: "none", label: "Không", backendStyle: "none", text: undefined },
-    { id: "basic", label: "Đơn giản", backendStyle: "basic", text: undefined },
-    { id: "rounded", label: "Bo góc", backendStyle: "rounded", text: undefined },
-    { id: "scan-me", label: "Scan Me", backendStyle: "rounded", text: "SCAN ME" },
+    { id: "none", labelKey: "home.generator.none", backendStyle: "none", text: undefined },
+    { id: "basic", labelKey: "home.generator.simple", backendStyle: "basic", text: undefined },
+    { id: "rounded", labelKey: "home.generator.rounded", backendStyle: "rounded", text: undefined },
+    { id: "scan-me", labelKey: "home.generator.scanMe", backendStyle: "rounded", text: "SCAN ME" },
 ];
 
-// Shape options (dot styles)
+// Shape options (dot styles) - hardcoded but simple enough
 const SHAPE_OPTIONS = [
-    { id: "square", label: "Vuông" },
-    { id: "rounded", label: "Tròn" },
-    { id: "dots", label: "Chấm" },
+    { id: "square", labelKey: "home.generator.simple" },
+    { id: "rounded", labelKey: "home.generator.rounded" },
+    { id: "dots", labelKey: "home.generator.none" },
 ];
 
 export function HomeQRGenerator() {
+    const { t } = useTranslation();
     const [activeType, setActiveType] = useState<string>("URL");
 
     // URL type
@@ -256,7 +258,7 @@ export function HomeQRGenerator() {
                         {/* QR Type Tabs */}
                         <div>
                             <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                                Chọn loại QR Code
+                                {t("home.generator.enterContent")}
                             </h3>
                             <div className="grid grid-cols-4 gap-2">
                                 {QR_TYPES.map((type) => (
@@ -272,7 +274,7 @@ export function HomeQRGenerator() {
                                             }`}
                                     >
                                         <type.icon className="h-5 w-5" />
-                                        <span className="text-xs font-medium">{type.label}</span>
+                                        <span className="text-xs font-medium">{t(type.labelKey)}</span>
                                     </button>
                                 ))}
                             </div>
@@ -282,7 +284,7 @@ export function HomeQRGenerator() {
                         <div className="space-y-3">
                             <div className="flex items-center gap-2">
                                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-shiba-500 text-xs font-bold text-white">1</span>
-                                <h3 className="text-sm font-medium">Nhập nội dung</h3>
+                                <h3 className="text-sm font-medium">{t("home.generator.enterContent")}</h3>
                             </div>
 
                             {/* URL Input */}
@@ -460,7 +462,7 @@ export function HomeQRGenerator() {
                         <div className="space-y-3">
                             <div className="flex items-center gap-2">
                                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-shiba-500 text-xs font-bold text-white">2</span>
-                                <h3 className="text-sm font-medium">Thiết kế QR Code</h3>
+                                <h3 className="text-sm font-medium">{t("home.generator.design")}</h3>
                             </div>
 
                             {/* Design Tabs */}
@@ -475,7 +477,7 @@ export function HomeQRGenerator() {
                                             }`}
                                     >
                                         <tab.icon className="h-4 w-4" />
-                                        {tab.label}
+                                        {t(tab.labelKey)}
                                     </button>
                                 ))}
                             </div>
@@ -495,7 +497,7 @@ export function HomeQRGenerator() {
                                             <div className="h-8 w-8 mx-auto mb-1 bg-muted rounded flex items-center justify-center">
                                                 <QrCode className="h-4 w-4 text-muted-foreground" />
                                             </div>
-                                            <span className="text-xs">{frame.label}</span>
+                                            <span className="text-xs">{t(frame.labelKey)}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -519,7 +521,7 @@ export function HomeQRGenerator() {
                                                         "bg-foreground rounded-full"
                                                     }`} />
                                             </div>
-                                            <span className="text-xs">{shape.label}</span>
+                                            <span className="text-xs">{t(shape.labelKey)}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -542,7 +544,7 @@ export function HomeQRGenerator() {
                             <div className="flex items-center gap-3">
                                 <span className="text-sm text-muted-foreground flex items-center gap-1">
                                     <Palette className="h-4 w-4" />
-                                    Màu:
+                                    {t("home.generator.color")}:
                                 </span>
                                 <div className="flex gap-2">
                                     {COLOR_PRESETS.map((color) => (
@@ -565,7 +567,7 @@ export function HomeQRGenerator() {
                     <div className="flex flex-col items-center bg-muted/30 rounded-xl p-6">
                         <h4 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
                             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-shiba-500 text-xs font-bold text-white">3</span>
-                            Tải QR Code
+                            {t("home.generator.downloadQR")}
                         </h4>
 
                         {/* QR Preview - Fixed size with right-click protection */}
@@ -598,7 +600,7 @@ export function HomeQRGenerator() {
                         {/* Validation Message */}
                         {isContentEmpty() && (
                             <p className="text-xs text-shiba-500 text-center mb-3">
-                                Nhập nội dung để tạo QR Code
+                                {t("home.generator.enterContentToCreate")}
                             </p>
                         )}
 
@@ -615,7 +617,7 @@ export function HomeQRGenerator() {
                             ) : (
                                 <Sparkles className="h-4 w-4" />
                             )}
-                            Tạo mã QR
+                            {t("home.generator.createQR")}
                         </Button>
 
                         {/* Download Button */}
@@ -626,11 +628,11 @@ export function HomeQRGenerator() {
                             disabled={!qrPreview}
                         >
                             <Download className="h-5 w-5" />
-                            Tải QR Code
+                            {t("home.generator.downloadQR")}
                         </Button>
 
                         <p className="mt-3 text-xs text-muted-foreground text-center">
-                            Miễn phí • Không giới hạn
+                            {t("home.generator.freeUnlimited")}
                         </p>
                     </div>
                 </div>

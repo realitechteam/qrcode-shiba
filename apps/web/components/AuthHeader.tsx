@@ -29,22 +29,22 @@ export function AuthHeader() {
 
                 <nav className="hidden md:flex items-center gap-6">
                     <Link
-                        href="/features"
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Tính năng
-                    </Link>
-                    <Link
                         href="/pricing"
                         className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                         Bảng giá
                     </Link>
                     <Link
-                        href="/api-docs"
+                        href="/about"
                         className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
-                        API
+                        Giới thiệu
+                    </Link>
+                    <Link
+                        href="/contact"
+                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        Liên hệ
                     </Link>
                 </nav>
 

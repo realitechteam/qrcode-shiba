@@ -115,16 +115,16 @@ export default function LoginPage() {
                     <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
                         <CheckCircle2 className="w-8 h-8 text-green-600" />
                     </div>
-                    
+
                     <h2 className="text-2xl font-bold mb-2">Check email của bạn</h2>
                     <p className="text-muted-foreground mb-6">
-                        Chúng tôi đã gửi link đăng nhập đến <strong>{sentEmail}</strong>.<br/>
+                        Chúng tôi đã gửi link đăng nhập đến <strong>{sentEmail}</strong>.<br />
                         Vui lòng click vào link trong email để tiếp tục.
                     </p>
 
                     <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 mb-6">
                         <p className="mb-2">Không nhận được email?</p>
-                        <button 
+                        <button
                             onClick={() => setIsSuccess(false)}
                             className="text-shiba-500 hover:text-shiba-600 font-medium hover:underline"
                         >
@@ -158,7 +158,7 @@ export default function LoginPage() {
                         <div className="mb-6">
                             <h1 className="text-2xl font-bold">Chào mừng trở lại!</h1>
                             <p className="text-muted-foreground mt-1">
-                                Nhập email để nhận Magic Link đăng nhập
+                                Nhập email để nhận link đăng nhập
                             </p>
                         </div>
 
@@ -197,7 +197,7 @@ export default function LoginPage() {
                                         Đang gửi link...
                                     </>
                                 ) : (
-                                    "Gửi Magic Link"
+                                    "Gửi link đăng nhập"
                                 )}
                             </Button>
                         </form>

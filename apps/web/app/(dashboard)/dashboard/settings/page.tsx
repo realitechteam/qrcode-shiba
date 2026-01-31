@@ -41,23 +41,23 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
     const { user, fetchUser, isBusinessUser } = useAuthStore();
-    
+
     // Account form state
     const [name, setName] = useState(user?.name || "");
     const [isSaving, setIsSaving] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    
+
     // 2FA state
     const [twoFAEnabled, setTwoFAEnabled] = useState(false);
     const [showTwoFASetup, setShowTwoFASetup] = useState(false);
-    
+
     // Notification state
     const [notifications, setNotifications] = useState({
         emailPromo: true,
         emailWeekly: true,
     });
-    
+
     useEffect(() => {
         if (user?.name) setName(user.name);
     }, [user?.name]);
@@ -116,8 +116,8 @@ export default function SettingsPage() {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
-                                            ? "bg-shiba-100 text-shiba-700 dark:bg-shiba-900/30 dark:text-shiba-400"
-                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                        ? "bg-shiba-100 text-shiba-700 dark:bg-shiba-900/30 dark:text-shiba-400"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                         }`}
                                 >
                                     <Icon className="h-4 w-4" />
@@ -154,7 +154,7 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                     </div>
-                                    <Button 
+                                    <Button
                                         className="bg-shiba-500 hover:bg-shiba-600"
                                         onClick={handleSaveAccount}
                                         disabled={isSaving}
@@ -172,8 +172,8 @@ export default function SettingsPage() {
                                     Khi xóa tài khoản, tất cả dữ liệu QR codes, analytics sẽ bị xóa vĩnh viễn
                                     và không thể khôi phục.
                                 </p>
-                                <Button 
-                                    variant="destructive" 
+                                <Button
+                                    variant="destructive"
                                     size="sm"
                                     onClick={() => setShowDeleteConfirm(true)}
                                 >
@@ -201,8 +201,8 @@ export default function SettingsPage() {
                                                     key={mode.id}
                                                     onClick={() => setTheme(mode.id)}
                                                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${theme === mode.id
-                                                            ? "border-shiba-500 bg-shiba-50 text-shiba-700 dark:bg-shiba-900/30 dark:text-shiba-400"
-                                                            : "hover:bg-muted"
+                                                        ? "border-shiba-500 bg-shiba-50 text-shiba-700 dark:bg-shiba-900/30 dark:text-shiba-400"
+                                                        : "hover:bg-muted"
                                                         }`}
                                                 >
                                                     <Icon className="h-4 w-4" />
@@ -215,7 +215,7 @@ export default function SettingsPage() {
 
                                 <div>
                                     <label className="text-sm font-medium mb-3 block">Ngôn ngữ</label>
-                                    <select 
+                                    <select
                                         className="w-full max-w-xs rounded-lg border bg-background px-4 py-2.5 text-sm cursor-not-allowed opacity-60"
                                         disabled
                                     >
@@ -282,7 +282,7 @@ export default function SettingsPage() {
                                                 </Button>
                                             </div>
                                         ) : (
-                                            <Button 
+                                            <Button
                                                 variant="outline"
                                                 onClick={() => {
                                                     toast({
@@ -298,10 +298,10 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="mt-4 p-4 rounded-lg bg-muted/50">
                                 <p className="text-sm text-muted-foreground">
-                                    <strong>Lưu ý:</strong> QRCode-Shiba sử dụng Magic Link để đăng nhập, 
+                                    <strong>Lưu ý:</strong> QRCode-Shiba sử dụng link đăng nhập qua email,
                                     không cần mật khẩu. 2FA sẽ thêm một lớp bảo mật bổ sung khi cần thiết.
                                 </p>
                             </div>
@@ -319,7 +319,7 @@ export default function SettingsPage() {
                                     </div>
                                     <h3 className="text-lg font-semibold mb-2">Dành cho gói Business</h3>
                                     <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-                                        API Keys cho phép bạn tích hợp QRCode-Shiba vào ứng dụng của mình. 
+                                        API Keys cho phép bạn tích hợp QRCode-Shiba vào ứng dụng của mình.
                                         Nâng cấp lên gói Business để sử dụng tính năng này.
                                     </p>
                                     <Link href="/dashboard/billing">
@@ -416,14 +416,14 @@ function APIKeysSection() {
             <p className="text-sm text-muted-foreground mb-4">
                 Sử dụng API Keys để tích hợp QRCode-Shiba vào ứng dụng của bạn.
             </p>
-            
+
             {apiKeys.length === 0 ? (
                 <div className="p-8 rounded-lg border-2 border-dashed text-center">
                     <Key className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
                     <p className="text-sm text-muted-foreground mb-4">
                         Bạn chưa có API key nào
                     </p>
-                    <Button 
+                    <Button
                         className="bg-shiba-500 hover:bg-shiba-600"
                         onClick={handleCreate}
                     >
@@ -454,7 +454,7 @@ function APIKeysSection() {
                             </Button>
                         </div>
                     ))}
-                    <Button 
+                    <Button
                         variant="outline"
                         className="w-full"
                         onClick={handleCreate}

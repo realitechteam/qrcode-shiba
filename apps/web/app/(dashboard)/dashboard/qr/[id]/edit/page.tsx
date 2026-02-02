@@ -1,117 +1,136 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
     ArrowLeft,
     Save,
     Loader2,
-    Link2,
-    ExternalLink,
-    BarChart3,
-    Calendar,
-    Globe,
-    Smartphone,
+    Palette,
+    FileText,
+    Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import qrApi from "@/lib/qr-api";
+import { QRDataForm } from "../../new/components/qr-data-form";
+import { QRStyling, StylingOptions } from "../../new/components/qr-styling";
+import { QRPreview } from "../../new/components/qr-preview";
 
-interface QRCode {
-    id: string;
-    shortCode: string;
-    name: string | null;
-    type: string;
-    status: string;
-    isDynamic: boolean;
-    destinationUrl: string | null;
-    scanCount: number;
-    createdAt: string;
-    updatedAt: string;
-    content?: {
-        data: Record<string, any>;
+interface EditQRPageProps {
+    params: {
+        id: string;
     };
 }
 
-interface ScanStats {
-    total: number;
-    byDate: { date: string; count: number }[];
-    byCountry: { name: string; count: number }[];
-    byDevice: { name: string; count: number }[];
-}
-
-export default function EditQRPage() {
+export default function EditQRPage({ params }: EditQRPageProps) {
     const router = useRouter();
-    const params = useParams();
     const { toast } = useToast();
-    const qrId = params.id as string;
+    const id = params.id;
 
-    const [qr, setQr] = useState<QRCode | null>(null);
-    const [stats, setStats] = useState<ScanStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [qr, setQr] = useState<any>(null);
 
-    // Form state
-    const [name, setName] = useState("");
-    const [destinationUrl, setDestinationUrl] = useState("");
+    // Form State
+    const [qrName, setQrName] = useState("");
+    const [selectedType, setSelectedType] = useState<string>("URL");
+    const [formData, setFormData] = useState<Record<string, any>>({});
+    const [styling, setStyling] = useState<StylingOptions>({
+        foregroundColor: "#000000",
+        backgroundColor: "#FFFFFF",
+        dotsStyle: "square",
+        cornersSquareStyle: "square",
+        cornersDotStyle: "square",
+    });
+    
+    const [preview, setPreview] = useState<string | null>(null);
+    const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
-    // Load QR data
-    const loadQR = useCallback(async () => {
-        try {
-            setIsLoading(true);
-            const response = await qrApi.get(`/qr/${qrId}`);
-            const data = response.data;
-            setQr(data);
-            setName(data.name || "");
-            setDestinationUrl(data.destinationUrl || data.content?.data?.url || "");
-
-            // Load stats
-            try {
-                const statsResponse = await qrApi.get(`/qr/${qrId}/stats?period=30d`);
-                setStats(statsResponse.data);
-            } catch {
-                // Stats might fail if no scans
-            }
-        } catch (error) {
-            console.error("Failed to load QR:", error);
-            toast({
-                title: "Lỗi",
-                description: "Không thể tải thông tin QR code",
-                variant: "destructive",
-            });
-            router.push("/dashboard/qr");
-        } finally {
-            setIsLoading(false);
-        }
-    }, [qrId, router, toast]);
-
+    // Fetch QR data
     useEffect(() => {
-        loadQR();
-    }, [loadQR]);
+        const fetchQR = async () => {
+            try {
+                const response = await qrApi.get(`/qr/${id}`);
+                const data = response.data;
+                setQr(data);
+                
+                // Populate form
+                setQrName(data.name || "");
+                setSelectedType(data.type);
+                setFormData(data.data || {});
+                if (data.styling) {
+                    setStyling(data.styling);
+                }
+            } catch (error) {
+                console.error("Error fetching QR:", error);
+                toast({
+                    title: "Lỗi",
+                    description: "Không thể tải thông tin QR Code",
+                    variant: "destructive",
+                });
+                router.push("/dashboard/qr");
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-    // Save changes
+        if (id) {
+            fetchQR();
+        }
+    }, [id, router, toast]);
+
+    // Generate preview
+    const generatePreview = useCallback(async () => {
+        if (!formData || Object.keys(formData).length === 0) return;
+
+        setIsPreviewLoading(true);
+        try {
+            const response = await qrApi.post("/qr/preview", {
+                type: selectedType,
+                data: formData,
+                styling,
+                size: 300,
+            });
+            setPreview(response.data.dataUrl);
+        } catch (error) {
+            console.error("Preview error:", error);
+        } finally {
+            setIsPreviewLoading(false);
+        }
+    }, [selectedType, formData, styling]);
+
+    // Debounced preview generation
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (qr) {
+                generatePreview();
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [formData, styling, selectedType, qr, generatePreview]);
+
     const handleSave = async () => {
-        if (!qr) return;
-
         setIsSaving(true);
         try {
-            await qrApi.patch(`/qr/${qrId}`, {
-                name: name || undefined,
-                destinationUrl: destinationUrl || undefined,
+            await qrApi.patch(`/qr/${id}`, {
+                name: qrName.trim() || undefined,
+                data: formData,
+                styling,
+                type: selectedType, // In case type change allows
             });
-
+            
             toast({
-                title: "Đã lưu!",
-                description: "QR code đã được cập nhật thành công",
+                title: "Thành công",
+                description: "Đã cập nhật QR Code",
             });
-
-            // Reload to get updated data
-            loadQR();
-        } catch (error) {
-            console.error("Save error:", error);
+            router.push("/dashboard/qr");
+        } catch (error: any) {
             toast({
-                title: "Lỗi",
-                description: "Không thể lưu thay đổi",
+                title: "Lỗi lưu thay đổi",
+                description: error.message || "Có lỗi xảy ra",
                 variant: "destructive",
             });
         } finally {
@@ -121,39 +140,35 @@ export default function EditQRPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="flex items-center justify-center h-[50vh]">
                 <Loader2 className="h-8 w-8 animate-spin text-shiba-500" />
             </div>
         );
     }
 
-    if (!qr) {
-        return (
-            <div className="text-center py-12">
-                <p className="text-muted-foreground">QR code không tồn tại</p>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-6">
+        <div className="max-w-5xl mx-auto pb-8">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => router.push("/dashboard/qr")}
-                >
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div className="flex-1">
-                    <h1 className="text-2xl font-bold">Chỉnh sửa QR Code</h1>
-                    <p className="text-muted-foreground">
-                        {qr.isDynamic ? "Dynamic QR - Có thể thay đổi URL" : "Static QR"}
-                    </p>
+            <div className="flex items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => router.back()}
+                        className="p-2 rounded-lg hover:bg-muted transition-colors"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                    </button>
+                    <div>
+                        <h1 className="text-2xl font-bold">Chỉnh sửa QR Code</h1>
+                        <p className="text-muted-foreground flex items-center gap-2">
+                            {qr?.name || "Untitled"}
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-muted">
+                                {qr?.isDynamic ? "Dynamic" : "Static"}
+                            </span>
+                        </p>
+                    </div>
                 </div>
-                <Button
-                    onClick={handleSave}
+                <Button 
+                    onClick={handleSave} 
                     disabled={isSaving}
                     className="bg-shiba-500 hover:bg-shiba-600 gap-2"
                 >
@@ -166,152 +181,76 @@ export default function EditQRPage() {
                 </Button>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* Edit Form */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Basic Info */}
-                    <div className="rounded-xl border bg-card p-6">
-                        <h2 className="font-semibold mb-4">Thông tin cơ bản</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-sm font-medium mb-2 block">
+            {/* Content */}
+            <div className="grid lg:grid-cols-3 gap-8">
+                {/* Left: Editor Tabs - Spans 2 cols */}
+                <div className="lg:col-span-2 rounded-xl border bg-card p-6 h-fit">
+                    <Tabs defaultValue="content" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-8">
+                            <TabsTrigger value="content" className="gap-2">
+                                <FileText className="h-4 w-4" />
+                                Nội dung
+                            </TabsTrigger>
+                            <TabsTrigger value="styling" className="gap-2">
+                                <Palette className="h-4 w-4" />
+                                Giao diện
+                            </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="content" className="space-y-6 animate-in slide-in-from-left-2 duration-300">
+                            {/* QR Name Input */}
+                            <div className="space-y-2">
+                                <label htmlFor="qr-name" className="block text-sm font-medium">
                                     Tên QR Code
                                 </label>
                                 <input
+                                    id="qr-name"
                                     type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Nhập tên cho QR code"
-                                    className="w-full rounded-lg border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                                    value={qrName}
+                                    onChange={(e) => setQrName(e.target.value)}
+                                    className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                                    placeholder="Đặt tên cho QR Code này..."
                                 />
                             </div>
 
-                            {qr.isDynamic && (
-                                <div>
-                                    <label className="text-sm font-medium mb-2 block">
-                                        URL đích
-                                    </label>
-                                    <div className="relative">
-                                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <input
-                                            type="url"
-                                            value={destinationUrl}
-                                            onChange={(e) => setDestinationUrl(e.target.value)}
-                                            placeholder="https://example.com"
-                                            className="w-full rounded-lg border bg-background pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
-                                        />
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                        💡 Dynamic QR: Thay đổi URL mà không cần in lại QR code
-                                    </p>
-                                </div>
-                            )}
+                            <div className="border-t pt-6">
+                                <h3 className="text-sm font-medium mb-4 text-muted-foreground uppercase tracking-wider">
+                                    Dữ liệu {selectedType}
+                                </h3>
+                                <QRDataForm
+                                    type={selectedType}
+                                    data={formData}
+                                    onChange={setFormData}
+                                />
+                            </div>
+                        </TabsContent>
 
-                            {!qr.isDynamic && (
-                                <div className="p-4 rounded-lg bg-muted">
-                                    <p className="text-sm text-muted-foreground">
-                                        ⚠️ Static QR: URL được mã hóa trực tiếp trong QR code và không thể thay đổi.
-                                        Tạo Dynamic QR để có thể chỉnh sửa URL sau này.
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* QR Info */}
-                    <div className="rounded-xl border bg-card p-6">
-                        <h2 className="font-semibold mb-4">Chi tiết QR Code</h2>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Short Code</p>
-                                <p className="font-mono font-medium">{qr.shortCode}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Loại</p>
-                                <p className="capitalize">{qr.type}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Trạng thái</p>
-                                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs ${qr.status === "ACTIVE"
-                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                    : "bg-red-100 text-red-700"
-                                    }`}>
-                                    {qr.status === "ACTIVE" ? "Hoạt động" : qr.status}
-                                </span>
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Ngày tạo</p>
-                                <p>{new Date(qr.createdAt).toLocaleDateString("vi-VN")}</p>
-                            </div>
-                        </div>
-                    </div>
+                        <TabsContent value="styling" className="animate-in slide-in-from-right-2 duration-300">
+                            <QRStyling styling={styling} onChange={setStyling} />
+                        </TabsContent>
+                    </Tabs>
                 </div>
 
-                {/* Stats Sidebar */}
-                <div className="space-y-6">
-                    {/* Scan Stats */}
-                    <div className="rounded-xl border bg-card p-6">
+                {/* Right: Preview - Spans 1 col */}
+                <div className="lg:col-span-1">
+                    <div className="rounded-xl border bg-card p-6 sticky top-6">
                         <h2 className="font-semibold mb-4 flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5 text-shiba-500" />
-                            Thống kê quét
+                            <Palette className="h-5 w-5 text-shiba-500" />
+                            Xem trước
                         </h2>
-                        <div className="space-y-4">
-                            <div className="text-center p-4 rounded-lg bg-shiba-50 dark:bg-shiba-900/20">
-                                <p className="text-3xl font-bold text-shiba-600">
-                                    {qr.scanCount}
+                        <QRPreview
+                            preview={preview}
+                            isLoading={isPreviewLoading}
+                            styling={styling}
+                        />
+                        <div className="mt-4 p-4 bg-muted/30 rounded-lg text-xs text-muted-foreground">
+                            {qr?.isDynamic ? (
+                                <p>QR Dynamic: Nội dung có thể thay đổi mà không làm thay đổi hình ảnh QR.</p>
+                            ) : (
+                                <p className="text-orange-600 dark:text-orange-400">
+                                    Lưu ý: Thay đổi nội dung QR Static sẽ làm thay đổi hình ảnh QR. Hãy in lại nếu cần thiết.
                                 </p>
-                                <p className="text-sm text-muted-foreground">Tổng lượt quét</p>
-                            </div>
-
-                            {stats && stats.byDevice && stats.byDevice.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                                        <Smartphone className="h-4 w-4" />
-                                        Thiết bị
-                                    </p>
-                                    <div className="space-y-2">
-                                        {stats.byDevice.map((device) => (
-                                            <div key={device.name} className="flex justify-between text-sm">
-                                                <span>{device.name}</span>
-                                                <span className="font-medium">{device.count}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
                             )}
-
-                            {stats && stats.byCountry && stats.byCountry.length > 0 && (
-                                <div>
-                                    <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                                        <Globe className="h-4 w-4" />
-                                        Quốc gia
-                                    </p>
-                                    <div className="space-y-2">
-                                        {stats.byCountry.slice(0, 5).map((country) => (
-                                            <div key={country.name} className="flex justify-between text-sm">
-                                                <span>{country.name || "Unknown"}</span>
-                                                <span className="font-medium">{country.count}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Quick Links */}
-                    <div className="rounded-xl border bg-card p-6">
-                        <h2 className="font-semibold mb-4">Liên kết nhanh</h2>
-                        <div className="space-y-2">
-                            <a
-                                href={`${process.env.NEXT_PUBLIC_REDIRECT_URL || 'https://redirect-service-production-0d4b.up.railway.app'}/${qr.shortCode}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-shiba-600 hover:underline"
-                            >
-                                <ExternalLink className="h-4 w-4" />
-                                Mở liên kết QR
-                            </a>
                         </div>
                     </div>
                 </div>

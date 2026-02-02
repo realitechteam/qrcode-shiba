@@ -203,6 +203,31 @@ export default function QRCodesPage() {
                     
                     {/* Desktop Only - Buttons */}
                     <div className="hidden lg:flex items-center gap-2">
+                        {/* View Mode Toggle */}
+                        <div className="flex rounded-lg border bg-muted/30 p-1">
+                            <button
+                                onClick={() => setViewMode("list")}
+                                className={`p-2 rounded-md transition-all ${
+                                    viewMode === "list"
+                                        ? "bg-card shadow-sm text-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                }`}
+                                title="Danh sách"
+                            >
+                                <List className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => setViewMode("grid")}
+                                className={`p-2 rounded-md transition-all ${
+                                    viewMode === "grid"
+                                        ? "bg-card shadow-sm text-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                }`}
+                                title="Lưới"
+                            >
+                                <LayoutGrid className="h-4 w-4" />
+                            </button>
+                        </div>
                         <Button
                             variant={showFolderPanel ? "secondary" : "outline"}
                             onClick={() => setShowFolderPanel(!showFolderPanel)}
@@ -287,8 +312,21 @@ export default function QRCodesPage() {
                 ) : filteredQRCodes.length === 0 ? (
                     // Empty State
                     <EmptyState />
+                ) : viewMode === "grid" ? (
+                    // Grid View
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        {filteredQRCodes.map((qr, index) => (
+                            <DraggableQRCard key={qr.id} id={qr.id}>
+                                <QRCardGrid
+                                    qr={qr}
+                                    index={index}
+                                    onCardClick={() => handleCardClick(qr)}
+                                />
+                            </DraggableQRCard>
+                        ))}
+                    </div>
                 ) : (
-                    // QR Cards List - Draggable
+                    // List View - Draggable
                     filteredQRCodes.map((qr, index) => (
                         <DraggableQRCard key={qr.id} id={qr.id}>
                             <QRCardMobile
@@ -376,7 +414,7 @@ export default function QRCodesPage() {
             </div>
             )}
 
-            {/* Analytics Modal */}
+            {/* Analytics/Detail Modal */}
             {analyticsTarget && (
                 <AnalyticsModal
                     qr={analyticsTarget}
@@ -388,6 +426,14 @@ export default function QRCodesPage() {
                     onOpenLink={() => {
                         handleOpenLink(analyticsTarget);
                         setAnalyticsTarget(null);
+                    }}
+                    onEdit={() => {
+                        setAnalyticsTarget(null);
+                        handleEdit(analyticsTarget);
+                    }}
+                    onDelete={() => {
+                        setAnalyticsTarget(null);
+                        handleDelete(analyticsTarget);
                     }}
                 />
             )}
@@ -419,9 +465,7 @@ function EmptyState() {
 interface QRCardMobileProps {
     qr: QRCode;
     index: number;
-    isActive: boolean;
     isDownloading: boolean;
-    onToggleActions: () => void;
     onOpenLink: () => void;
     onDownload: () => void;
     onEdit: () => void;
@@ -432,9 +476,7 @@ interface QRCardMobileProps {
 function QRCardMobile({
     qr,
     index,
-    isActive,
     isDownloading,
-    onToggleActions,
     onOpenLink,
     onDownload,
     onEdit,
@@ -502,46 +544,58 @@ function QRCardMobile({
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
 
-            {/* Action Menu Dropdown */}
-            {isActive && (
-                <div className="absolute right-4 top-14 w-48 rounded-xl border bg-card shadow-xl py-2 z-20 animate-scale-in">
-                    <button
-                        onClick={onOpenLink}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-muted transition-colors"
+// Grid View Card Component
+interface QRCardGridProps {
+    qr: QRCode;
+    index: number;
+    onCardClick: () => void;
+}
+
+function QRCardGrid({ qr, index, onCardClick }: QRCardGridProps) {
+    const staggerClass = `stagger-${Math.min(index + 1, 6)}`;
+
+    return (
+        <div
+            className={`rounded-2xl border bg-card overflow-hidden opacity-0 animate-slide-up ${staggerClass} cursor-pointer hover:shadow-lg hover:border-shiba-300 transition-all duration-200 touch-feedback`}
+            onClick={onCardClick}
+        >
+            {/* QR Preview */}
+            <div className="aspect-square bg-muted/50 flex items-center justify-center p-4">
+                {qr.imageUrl ? (
+                    <img
+                        src={qr.imageUrl}
+                        alt={qr.name || "QR Code"}
+                        className="w-full h-full object-contain"
+                    />
+                ) : (
+                    <QrCode className="h-16 w-16 text-muted-foreground/30" />
+                )}
+            </div>
+
+            {/* Info */}
+            <div className="p-3 border-t">
+                <h3 className="font-medium text-sm truncate">{qr.name || "Untitled"}</h3>
+                <div className="flex items-center justify-between mt-2">
+                    <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            qr.isDynamic
+                                ? "bg-shiba-100 text-shiba-700 dark:bg-shiba-900/30 dark:text-shiba-400"
+                                : "bg-muted text-muted-foreground"
+                        }`}
                     >
-                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                        <span>Mở liên kết</span>
-                    </button>
-                    <button
-                        onClick={onDownload}
-                        disabled={isDownloading}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-muted transition-colors disabled:opacity-50"
-                    >
-                        {isDownloading ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        ) : (
-                            <Download className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <span>{isDownloading ? "Đang tải..." : "Tải xuống"}</span>
-                    </button>
-                    <button
-                        onClick={onEdit}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-muted transition-colors"
-                    >
-                        <Pencil className="h-4 w-4 text-muted-foreground" />
-                        <span>Chỉnh sửa</span>
-                    </button>
-                    <hr className="my-2 border-border" />
-                    <button
-                        onClick={onDelete}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        <span>Xóa</span>
-                    </button>
+                        {qr.isDynamic ? "Dynamic" : "Static"}
+                    </span>
+                    {qr.isDynamic && (
+                        <span className="text-xs text-muted-foreground">
+                            {qr.scanCount || 0} quét
+                        </span>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 }

@@ -15,6 +15,8 @@ import {
     Lock,
     Crown,
     Sparkles,
+    Pencil,
+    Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { triggerHaptic } from "@/lib/haptic";
@@ -38,6 +40,8 @@ interface AnalyticsModalProps {
     onClose: () => void;
     onDownload: () => void;
     onOpenLink: () => void;
+    onEdit?: () => void;
+    onDelete?: () => void;
 }
 
 interface ApiStats {
@@ -58,7 +62,14 @@ interface ScanStats {
     weeklyData: { day: string; count: number }[];
 }
 
-export function AnalyticsModal({ qr, onClose, onDownload, onOpenLink }: AnalyticsModalProps) {
+export function AnalyticsModal({ 
+    qr, 
+    onClose, 
+    onDownload, 
+    onOpenLink, 
+    onEdit, 
+    onDelete 
+}: AnalyticsModalProps) {
     const [stats, setStats] = useState<ScanStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const { isPaidUser } = useAuthStore();
@@ -241,10 +252,11 @@ export function AnalyticsModal({ qr, onClose, onDownload, onOpenLink }: Analytic
                             )}
 
                             {/* Actions */}
-                            <div className="flex gap-3 pt-2">
+                            {/* Actions */}
+                            <div className="grid grid-cols-2 gap-3 pt-2">
                                 <Button
                                     variant="outline"
-                                    className="flex-1 h-12 rounded-xl gap-2"
+                                    className="h-12 rounded-xl gap-2"
                                     onClick={() => {
                                         triggerHaptic("light");
                                         onOpenLink();
@@ -254,7 +266,7 @@ export function AnalyticsModal({ qr, onClose, onDownload, onOpenLink }: Analytic
                                     Mở link
                                 </Button>
                                 <Button
-                                    className="flex-1 h-12 rounded-xl bg-shiba-500 hover:bg-shiba-600 gap-2"
+                                    className="h-12 rounded-xl bg-shiba-500 hover:bg-shiba-600 gap-2"
                                     onClick={() => {
                                         triggerHaptic("medium");
                                         onDownload();
@@ -262,6 +274,28 @@ export function AnalyticsModal({ qr, onClose, onDownload, onOpenLink }: Analytic
                                 >
                                     <Download className="h-4 w-4" />
                                     Tải xuống
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    className="h-12 rounded-xl gap-2"
+                                    onClick={() => {
+                                        triggerHaptic("light");
+                                        if (onEdit) onEdit();
+                                    }}
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                    Chỉnh sửa
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    className="h-12 rounded-xl gap-2 text-destructive hover:bg-destructive/10"
+                                    onClick={() => {
+                                        triggerHaptic("warning");
+                                        if (onDelete) onDelete();
+                                    }}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    Xóa QR
                                 </Button>
                             </div>
                         </>
@@ -437,21 +471,57 @@ function transformApiStats(data: ApiStats, totalScanCount: number): ScanStats {
     const todayScans = data.byDate?.[today] || 0;
 
     // Transform byDevice to array with percentages
-    const deviceTotal = Object.values(data.byDevice || {}).reduce((a, b) => a + b, 0) || 1;
-    const byDevice = Object.entries(data.byDevice || {})
-        .map(([name, count]) => ({
-            name,
-            count,
-            percent: Math.round((count / deviceTotal) * 100),
-        }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3);
+    // Handle both object format {mobile: 10} and array format [{name: "mobile", count: 10}]
+    let byDevice: { name: string; count: number; percent: number }[] = [];
+    
+    if (data.byDevice) {
+        if (Array.isArray(data.byDevice)) {
+            // Already an array
+            const deviceTotal = (data.byDevice as any[]).reduce((sum, d) => sum + (d.count || 0), 0) || 1;
+            byDevice = (data.byDevice as any[])
+                .map((d: any) => ({
+                    name: String(d.name || 'Unknown'),
+                    count: Number(d.count || 0),
+                    percent: Math.round(((d.count || 0) / deviceTotal) * 100),
+                }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 3);
+        } else {
+            // Object format {mobile: 10}
+            const deviceTotal = Object.values(data.byDevice).reduce((a, b) => a + b, 0) || 1;
+            byDevice = Object.entries(data.byDevice)
+                .map(([name, count]) => ({
+                    name: String(name),
+                    count: Number(count),
+                    percent: Math.round((count / deviceTotal) * 100),
+                }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 3);
+        }
+    }
 
     // Transform byCountry to array
-    const byCountry = Object.entries(data.byCountry || {})
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
+    // Handle both object format {VN: 10} and array format [{name: "VN", count: 10}]
+    let byCountry: { name: string; count: number }[] = [];
+    
+    if (data.byCountry) {
+        if (Array.isArray(data.byCountry)) {
+            // Already an array
+            byCountry = (data.byCountry as any[])
+                .map((c: any) => ({ 
+                    name: String(c.name || 'Unknown'), 
+                    count: Number(c.count || 0) 
+                }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+        } else {
+            // Object format {VN: 10}
+            byCountry = Object.entries(data.byCountry)
+                .map(([name, count]) => ({ name: String(name), count: Number(count) }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+        }
+    }
 
     // Transform byDate to weekly data
     const weeklyData = generateWeeklyDataFromApi(data.byDate || {});

@@ -23,6 +23,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { processPendingQR } from "@/lib/pending-qr";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const navigation = [
     { name: "QR Codes", href: "/dashboard/qr", icon: QrCode },
@@ -262,6 +263,7 @@ export default function DashboardLayout({
 
                     {/* Quick actions */}
                     <div className="flex items-center gap-3">
+                        <LanguageSwitcher />
                         {/* Notification Bell */}
                         <div className="relative">
                             <button

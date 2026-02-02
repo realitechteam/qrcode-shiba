@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
     ArrowLeft,
@@ -11,10 +11,12 @@ import {
     Check,
     Lock,
     Crown,
+    FileEdit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/auth-store";
+import { useQRCreationStore } from "@/stores/qr-creation-store";
 import qrApi from "@/lib/qr-api";
 import { QRTypeSelector } from "./components/qr-type-selector";
 import { QRDataForm } from "./components/qr-data-form";
@@ -27,6 +29,8 @@ export default function NewQRPage() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const { canUseDynamicQR, canDownloadSVG, isPaidUser } = useAuthStore();
+    const { saveDraft, loadDraft, clearDraft, hasDraft } = useQRCreationStore();
+    const isInitialized = useRef(false);
 
     const [currentStep, setCurrentStep] = useState(1);
     const [selectedType, setSelectedType] = useState<string>(
@@ -45,6 +49,60 @@ export default function NewQRPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [savedQR, setSavedQR] = useState<any>(null);
     const [qrName, setQrName] = useState("");
+    const [showDraftBanner, setShowDraftBanner] = useState(false);
+
+    // Load draft on mount
+    useEffect(() => {
+        if (isInitialized.current) return;
+        isInitialized.current = true;
+        
+        const draft = loadDraft();
+        if (draft && hasDraft()) {
+            setShowDraftBanner(true);
+        }
+    }, [loadDraft, hasDraft]);
+
+    // Restore draft handler
+    const handleRestoreDraft = () => {
+        const draft = loadDraft();
+        if (draft) {
+            setSelectedType(draft.selectedType);
+            setFormData(draft.formData);
+            setStyling(draft.styling);
+            setQrName(draft.qrName);
+            setCurrentStep(draft.currentStep);
+            setShowDraftBanner(false);
+            toast({
+                title: "Đã khôi phục bản nháp",
+                description: "Tiếp tục tạo QR code từ lần trước",
+            });
+        }
+    };
+
+    // Discard draft handler
+    const handleDiscardDraft = () => {
+        clearDraft();
+        setShowDraftBanner(false);
+    };
+
+    // Auto-save draft on changes (debounced)
+    useEffect(() => {
+        if (savedQR) return; // Don't save draft if QR is already saved
+        
+        const timer = setTimeout(() => {
+            if (currentStep > 1 || Object.keys(formData).length > 0 || qrName.trim()) {
+                saveDraft({
+                    selectedType,
+                    formData,
+                    styling,
+                    qrName,
+                    currentStep,
+                });
+            }
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [selectedType, formData, styling, qrName, currentStep, savedQR, saveDraft]);
 
     // Generate preview
     const generatePreview = useCallback(async () => {
@@ -66,16 +124,14 @@ export default function NewQRPage() {
         }
     }, [selectedType, formData, styling]);
 
-    // Debounced preview generation
+    // Debounced preview generation - always generate preview
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (currentStep >= 2) {
-                generatePreview();
-            }
+            generatePreview();
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [formData, styling, currentStep, generatePreview]);
+    }, [formData, styling, selectedType, generatePreview]);
 
     const handleNext = () => {
         if (currentStep < 4) {
@@ -100,6 +156,7 @@ export default function NewQRPage() {
                 name: qrName.trim() || undefined, // Send name if provided
             });
             setSavedQR(response.data);
+            clearDraft(); // Clear draft after successful save
             toast({
                 title: "QR Code đã được tạo!",
                 description: "Bạn có thể tải xuống hoặc chia sẻ ngay",
@@ -169,6 +226,37 @@ export default function NewQRPage() {
 
     return (
         <div className="max-w-5xl mx-auto">
+            {/* Draft Banner */}
+            {showDraftBanner && (
+                <div className="mb-6 p-4 rounded-xl border border-shiba-200 bg-gradient-to-r from-shiba-50 to-orange-50 dark:from-shiba-900/20 dark:to-orange-900/20 animate-slide-up">
+                    <div className="flex items-center gap-4">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-shiba-100 dark:bg-shiba-800/30 flex items-center justify-center">
+                            <FileEdit className="h-5 w-5 text-shiba-600 dark:text-shiba-400" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-medium text-sm">Bạn có bản nháp chưa hoàn thành</h3>
+                            <p className="text-xs text-muted-foreground">Tiếp tục từ lần trước hoặc bắt đầu mới</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleDiscardDraft}
+                            >
+                                Bỏ qua
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={handleRestoreDraft}
+                                className="bg-shiba-500 hover:bg-shiba-600"
+                            >
+                                Tiếp tục
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center gap-4 mb-8">
                 <button

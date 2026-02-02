@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "@/stores/auth-store";
 
 // Use the payment service URL
-const API_URL = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "http://localhost:3004/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "https://payment-service-production.up.railway.app/api/v1";
 
 export interface CreatePaymentResponse {
     success: boolean;

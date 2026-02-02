@@ -25,7 +25,6 @@ import { useToast } from "@/hooks/use-toast";
 import { processPendingQR } from "@/lib/pending-qr";
 
 const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "QR Codes", href: "/dashboard/qr", icon: QrCode },
     { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
 ];
@@ -318,15 +317,12 @@ export default function DashboardLayout({
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-t pb-safe">
                 <div className="flex items-center justify-around h-16">
                     {[
-                        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
                         { name: "QR Codes", href: "/dashboard/qr", icon: QrCode },
                         { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+                        { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
                         { name: "Cài đặt", href: "/dashboard/settings", icon: Settings },
                     ].map((item) => {
-                        // Dashboard should only be active on exact match
-                        const isActive = item.href === "/dashboard"
-                            ? pathname === "/dashboard"
-                            : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                         return (
                             <Link
                                 key={item.name}

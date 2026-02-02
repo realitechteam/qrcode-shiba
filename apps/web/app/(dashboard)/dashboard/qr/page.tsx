@@ -7,7 +7,6 @@ import {
     Plus,
     Search,
     QrCode,
-    MoreVertical,
     Pencil,
     Trash2,
     Download,
@@ -20,6 +19,8 @@ import {
     BarChart3,
     GripVertical,
     FolderOpen,
+    LayoutGrid,
+    List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
@@ -68,10 +69,10 @@ export default function QRCodesPage() {
     const [deleteTarget, setDeleteTarget] = useState<QRCode | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
-    const [activeActionId, setActiveActionId] = useState<string | null>(null);
     const [analyticsTarget, setAnalyticsTarget] = useState<QRCode | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showFolderPanel, setShowFolderPanel] = useState(false);
+    const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
     const fetchQRCodes = useCallback(async () => {
         try {
@@ -100,7 +101,6 @@ export default function QRCodesPage() {
     const handleDelete = (qr: QRCode) => {
         triggerHaptic("warning");
         setDeleteTarget(qr);
-        setActiveActionId(null);
     };
 
     // Show analytics modal on card click
@@ -138,7 +138,6 @@ export default function QRCodesPage() {
 
     const handleDownload = async (qr: QRCode) => {
         setDownloadingId(qr.id);
-        setActiveActionId(null);
         try {
             const response = await qrApi.get(`/qr/${qr.id}/download`, {
                 responseType: "blob",
@@ -169,7 +168,6 @@ export default function QRCodesPage() {
             ? `${baseUrl}/${qr.shortCode}`
             : qr.destinationUrl;
         if (url) window.open(url, "_blank");
-        setActiveActionId(null);
     };
 
     const handleEdit = (qr: QRCode) => {
@@ -296,9 +294,7 @@ export default function QRCodesPage() {
                             <QRCardMobile
                                 qr={qr}
                                 index={index}
-                                isActive={activeActionId === qr.id}
                                 isDownloading={downloadingId === qr.id}
-                                onToggleActions={() => setActiveActionId(activeActionId === qr.id ? null : qr.id)}
                                 onOpenLink={() => handleOpenLink(qr)}
                                 onDownload={() => handleDownload(qr)}
                                 onEdit={() => handleEdit(qr)}
@@ -395,14 +391,6 @@ export default function QRCodesPage() {
                     }}
                 />
             )}
-
-            {/* Backdrop for action menu */}
-            {activeActionId && (
-                <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setActiveActionId(null)}
-                />
-            )}
         </div>
         </DragDropProvider>
     );
@@ -486,26 +474,18 @@ function QRCardMobile({
                                 {qr.destinationUrl || qr.shortCode}
                             </p>
                         </div>
-                        
-                        {/* Action Button */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleActions();
-                            }}
-                            className="p-2 -mr-2 rounded-lg hover:bg-muted transition-colors"
-                        >
-                            <MoreVertical className="h-5 w-5 text-muted-foreground" />
-                        </button>
                     </div>
 
                     {/* Stats Row */}
                     <div className="flex items-center gap-4 mt-3">
-                        <div className="flex items-center gap-1.5 text-sm">
-                            <TrendingUp className="h-4 w-4 text-green-500" />
-                            <span className="font-medium">{qr.scanCount || 0}</span>
-                            <span className="text-muted-foreground">quét</span>
-                        </div>
+                        {/* Only show scan count for Dynamic QR */}
+                        {qr.isDynamic && (
+                            <div className="flex items-center gap-1.5 text-sm">
+                                <TrendingUp className="h-4 w-4 text-green-500" />
+                                <span className="font-medium">{qr.scanCount || 0}</span>
+                                <span className="text-muted-foreground">quét</span>
+                            </div>
+                        )}
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <Clock className="h-3.5 w-3.5" />
                             <span>{timeAgo(qr.updatedAt || qr.createdAt)}</span>

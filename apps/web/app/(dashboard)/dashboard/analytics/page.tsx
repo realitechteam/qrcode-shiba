@@ -306,7 +306,7 @@ function DeviceBreakdown() {
         const fetchData = async () => {
             try {
                 setIsLoading(true);
-                const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "http://localhost:3002";
+                const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "https://redirect-service-production-0d4b.up.railway.app";
                 
                 const response = await fetch(`${redirectUrl}/analytics/device-breakdown?period=30d`, {
                     headers: {

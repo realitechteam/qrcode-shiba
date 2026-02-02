@@ -42,7 +42,7 @@ export function LocationMap({ period = "30d" }: LocationMapProps) {
     const fetchData = useCallback(async () => {
         try {
             setIsLoading(true);
-            const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "http://localhost:3002";
+            const redirectUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "https://redirect-service-production-0d4b.up.railway.app";
             
             const response = await fetch(`${redirectUrl}/analytics/country-breakdown?period=${period}`, {
                 headers: {

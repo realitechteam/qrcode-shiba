@@ -53,15 +53,16 @@ export class QrService {
      */
     async create(userId: string, dto: CreateQRDto): Promise<any> {
         const shortCode = nanoid(8);
-        const dataString = this.generator.generateDataString(dto.type.toLowerCase(), dto.data);
+        
+        // For Dynamic QR: encode system redirect URL (enables tracking + editable destination)
+        // For Static QR: encode user's actual data directly
+        const redirectBaseUrl = process.env.REDIRECT_URL || 'https://go.shiba.pw';
+        const qrContentUrl = dto.isDynamic 
+            ? `${redirectBaseUrl}/${shortCode}` 
+            : this.generator.generateDataString(dto.type.toLowerCase(), dto.data);
 
-        // Generate QR preview
-        const preview = await this.generatePreview({
-            type: dto.type,
-            data: dto.data,
-            styling: dto.styling,
-            size: 400, // Higher quality for storage
-        });
+        // Generate QR preview with correct content
+        const preview = await this.generatePreviewWithContent(qrContentUrl, dto.styling, 400);
 
         // Create in database with image saved
         const qr = await this.prisma.qRCode.create({
@@ -90,7 +91,24 @@ export class QrService {
         return {
             ...qr,
             preview: preview.dataUrl,
+            redirectUrl: dto.isDynamic ? `${redirectBaseUrl}/${shortCode}` : null,
         };
+    }
+
+    /**
+     * Generate preview with specific content string (for Dynamic vs Static)
+     */
+    private async generatePreviewWithContent(content: string, styling: any, size: number) {
+        const matrix = await this.generator.generateMatrix(content, {
+            errorCorrectionLevel: "M",
+        });
+
+        const finalStyling = { ...DEFAULT_STYLING, ...styling };
+        const svg = this.styler.generateStyledSvg(matrix, finalStyling, size);
+        const pngBuffer = await this.renderer.svgToPng(svg, size);
+        const dataUrl = `data:image/png;base64,${pngBuffer.toString("base64")}`;
+
+        return { dataUrl, svg, size };
     }
 
     /**
@@ -134,18 +152,20 @@ export class QrService {
         ]);
 
         // Generate previews for each QR
+        const redirectBaseUrl = process.env.REDIRECT_URL || 'https://go.shiba.pw';
         const itemsWithPreview = await Promise.all(
             items.map(async (item) => {
-                const preview = await this.generatePreview({
-                    type: item.type as any,
-                    data: item.content?.data as Record<string, any> || {},
-                    styling: item.styling as any,
-                    size: 150,
-                });
+                // Use correct content based on Dynamic/Static type
+                const qrContent = item.isDynamic 
+                    ? `${redirectBaseUrl}/${item.shortCode}`
+                    : this.generator.generateDataString(item.type.toLowerCase(), item.content?.data as Record<string, any> || {});
+                
+                const preview = await this.generatePreviewWithContent(qrContent, item.styling, 150);
                 return {
                     ...item,
                     scanCount: item._count.scans,
                     preview: preview.dataUrl,
+                    redirectUrl: item.isDynamic ? `${redirectBaseUrl}/${item.shortCode}` : null,
                 };
             })
         );
@@ -179,19 +199,36 @@ export class QrService {
             throw new ForbiddenException("Access denied");
         }
 
-        const preview = await this.generatePreview({
-            type: qr.type as any,
-            data: qr.content?.data as Record<string, any> || {},
-            styling: qr.styling as any,
-            size: 300,
-        });
+        // Use correct content based on QR type (Dynamic = system URL, Static = user data)
+        const qrContent = this.getQrContent(qr);
+        const preview = await this.generatePreviewWithContent(qrContent, qr.styling, 300);
+
+        const redirectBaseUrl = process.env.REDIRECT_URL || 'https://go.shiba.pw';
 
         return {
             ...qr,
             scanCount: qr._count.scans,
             preview: preview.dataUrl,
             svg: preview.svg,
+            redirectUrl: qr.isDynamic ? `${redirectBaseUrl}/${qr.shortCode}` : null,
         };
+    }
+
+    /**
+     * Get QR content string based on Dynamic/Static type
+     */
+    private getQrContent(qr: any): string {
+        const redirectBaseUrl = process.env.REDIRECT_URL || 'https://go.shiba.pw';
+        
+        if (qr.isDynamic) {
+            return `${redirectBaseUrl}/${qr.shortCode}`;
+        }
+        
+        // Static QR: encode user's actual data
+        return this.generator.generateDataString(
+            qr.type.toLowerCase(),
+            qr.content?.data as Record<string, any> || {}
+        );
     }
 
     /**
@@ -315,12 +352,8 @@ export class QrService {
         }
 
         // Regenerate for specific format or size
-        const preview = await this.generatePreview({
-            type: qr.type as any,
-            data: qr.content?.data as Record<string, any> || {},
-            styling: qr.styling as any,
-            size,
-        });
+        const qrContent = this.getQrContent(qr);
+        const preview = await this.generatePreviewWithContent(qrContent, qr.styling, size);
 
         switch (format) {
             case "svg":

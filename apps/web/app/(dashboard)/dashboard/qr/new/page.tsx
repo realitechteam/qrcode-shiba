@@ -12,8 +12,10 @@ import {
     Lock,
     Crown,
     FileEdit,
+    BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/auth-store";
 import { useQRCreationStore } from "@/stores/qr-creation-store";
@@ -50,6 +52,11 @@ export default function NewQRPage() {
     const [savedQR, setSavedQR] = useState<any>(null);
     const [qrName, setQrName] = useState("");
     const [showDraftBanner, setShowDraftBanner] = useState(false);
+    const [enableTracking, setEnableTracking] = useState(false);
+
+    // Get current QR type info
+    const currentQRType = qrTypes.find(t => t.id === selectedType);
+    const supportsTracking = currentQRType?.supportsTracking ?? false;
 
     // Load draft on mount
     useEffect(() => {
@@ -360,6 +367,61 @@ export default function NewQRPage() {
                                 data={formData}
                                 onChange={setFormData}
                             />
+
+                            {/* Tracking Toggle */}
+                            {supportsTracking && (
+                                <div className="p-4 rounded-xl border bg-gradient-to-r from-shiba-50/50 to-transparent dark:from-shiba-900/20">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex items-start gap-3">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-shiba-100 dark:bg-shiba-900/30">
+                                                <BarChart3 className="h-5 w-5 text-shiba-600" />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-medium">Bật theo dõi (Tracking)</h4>
+                                                    {!isPaidUser && (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                                                            <Crown className="h-3 w-3" />
+                                                            PRO
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Theo dõi lượt quét, thiết bị, vị trí địa lý
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Switch
+                                            checked={enableTracking}
+                                            onCheckedChange={(checked) => {
+                                                if (!isPaidUser && checked) {
+                                                    toast({
+                                                        title: "Tính năng PRO",
+                                                        description: "Nâng cấp PRO để bật theo dõi QR code",
+                                                        variant: "default",
+                                                    });
+                                                    return;
+                                                }
+                                                setEnableTracking(checked);
+                                            }}
+                                            disabled={!isPaidUser}
+                                            className="data-[state=checked]:bg-shiba-500"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Non-trackable type info */}
+                            {!supportsTracking && (
+                                <div className="p-4 rounded-xl border border-dashed bg-muted/30">
+                                    <div className="flex items-center gap-3 text-muted-foreground">
+                                        <Lock className="h-5 w-5" />
+                                        <p className="text-sm">
+                                            Loại QR này không hỗ trợ tracking do dữ liệu được nhúng trực tiếp.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -384,58 +446,55 @@ export default function NewQRPage() {
                             </div>
 
                             {!savedQR ? (
-                                <div className="grid gap-4">
-                                    {/* Static QR - Available to all */}
-                                    <button
-                                        onClick={() => handleSave(false)}
-                                        disabled={isSaving}
-                                        className="p-4 rounded-xl border hover:border-shiba-500 hover:bg-shiba-50 dark:hover:bg-shiba-900/10 transition-all text-left"
-                                    >
-                                        <h3 className="font-semibold mb-1">QR Code tĩnh</h3>
-                                        <p className="text-sm text-muted-foreground">
-                                            Nội dung cố định, không thể thay đổi sau khi tạo. Miễn phí.
-                                        </p>
-                                    </button>
-
-                                    {/* Dynamic QR - PRO only */}
-                                    {canUseDynamicQR() ? (
-                                        <button
-                                            onClick={() => handleSave(true)}
-                                            disabled={isSaving}
-                                            className="p-4 rounded-xl border border-shiba-200 bg-gradient-to-r from-shiba-50 to-orange-50 hover:border-shiba-500 transition-all text-left"
-                                        >
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-semibold">QR Code động</h3>
-                                                <span className="px-2 py-0.5 rounded-full bg-shiba-500 text-white text-xs font-medium flex items-center gap-1">
-                                                    <Crown className="h-3 w-3" /> PRO
-                                                </span>
+                                <div className="space-y-4">
+                                    {/* Summary of QR settings */}
+                                    <div className="p-4 rounded-xl border bg-muted/30">
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="text-muted-foreground">Loại:</span>
+                                                <p className="font-medium">{currentQRType?.name}</p>
                                             </div>
-                                            <p className="text-sm text-muted-foreground">
-                                                Thay đổi URL bất cứ lúc nào, theo dõi lượt quét, analytics chi tiết.
-                                            </p>
-                                        </button>
-                                    ) : (
-                                        <div className="p-4 rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 text-left relative">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-semibold text-muted-foreground">QR Code động</h3>
-                                                <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-shiba-500 to-orange-500 text-white text-xs font-medium flex items-center gap-1">
-                                                    <Crown className="h-3 w-3" /> PRO
-                                                </span>
-                                                <Lock className="h-4 w-4 text-muted-foreground ml-auto" />
+                                            <div>
+                                                <span className="text-muted-foreground">Tên:</span>
+                                                <p className="font-medium">{qrName || "Chưa đặt tên"}</p>
                                             </div>
-                                            <p className="text-sm text-muted-foreground mb-3">
-                                                Thay đổi URL bất cứ lúc nào, theo dõi lượt quét, analytics chi tiết.
-                                            </p>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => router.push("/dashboard/billing")}
-                                                className="bg-gradient-to-r from-shiba-500 to-orange-500 hover:from-shiba-600 hover:to-orange-600"
-                                            >
-                                                <Crown className="h-4 w-4 mr-1" />
-                                                Nâng cấp để dùng
-                                            </Button>
+                                            <div className="col-span-2">
+                                                <span className="text-muted-foreground">Theo dõi:</span>
+                                                <p className="font-medium flex items-center gap-2">
+                                                    {enableTracking ? (
+                                                        <>
+                                                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                                                            Bật - Theo dõi lượt quét
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="h-2 w-2 rounded-full bg-gray-400" />
+                                                            Tắt - QR tĩnh
+                                                        </>
+                                                    )}
+                                                </p>
+                                            </div>
                                         </div>
-                                    )}
+                                    </div>
+
+                                    {/* Create Button */}
+                                    <Button
+                                        onClick={() => handleSave(enableTracking)}
+                                        disabled={isSaving}
+                                        className="w-full h-12 bg-shiba-500 hover:bg-shiba-600 gap-2 text-base"
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                Đang tạo...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Check className="h-5 w-5" />
+                                                Tạo QR Code
+                                            </>
+                                        )}
+                                    </Button>
                                 </div>
                             ) : (
                                 <div className="grid gap-3">

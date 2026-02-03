@@ -76,7 +76,8 @@ export function AnalyticsModal({
     
     // Check if user can view detailed analytics
     // Dynamic QR = always visible, Static QR = only for Pro users
-    const canViewAnalytics = qr.isDynamic || isPaidUser();
+    // Analytics requires PRO subscription regardless of QR type
+    const canViewAnalytics = isPaidUser();
 
     useEffect(() => {
         triggerHaptic("light");

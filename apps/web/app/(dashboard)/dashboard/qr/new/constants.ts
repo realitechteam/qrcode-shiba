@@ -10,14 +10,14 @@ import {
 } from "lucide-react";
 
 export const qrTypes = [
-    { id: "URL", name: "URL", icon: Link2, description: "Link website" },
-    { id: "TEXT", name: "Text", icon: FileText, description: "Văn bản tùy ý" },
-    { id: "VCARD", name: "vCard", icon: User, description: "Danh thiếp điện tử" },
-    { id: "WIFI", name: "WiFi", icon: Wifi, description: "Chia sẻ mật khẩu WiFi" },
-    { id: "EMAIL", name: "Email", icon: Mail, description: "Gửi email" },
-    { id: "PHONE", name: "Điện thoại", icon: Phone, description: "Gọi điện thoại" },
-    { id: "SMS", name: "SMS", icon: MessageSquare, description: "Gửi tin nhắn" },
-    { id: "LOCATION", name: "Vị trí", icon: MapPin, description: "Google Maps" },
+    { id: "URL", name: "URL", icon: Link2, description: "Link website", supportsTracking: true },
+    { id: "TEXT", name: "Text", icon: FileText, description: "Văn bản tùy ý", supportsTracking: false },
+    { id: "VCARD", name: "vCard", icon: User, description: "Danh thiếp điện tử", supportsTracking: true },
+    { id: "WIFI", name: "WiFi", icon: Wifi, description: "Chia sẻ mật khẩu WiFi", supportsTracking: false },
+    { id: "EMAIL", name: "Email", icon: Mail, description: "Gửi email", supportsTracking: true },
+    { id: "PHONE", name: "Điện thoại", icon: Phone, description: "Gọi điện thoại", supportsTracking: true },
+    { id: "SMS", name: "SMS", icon: MessageSquare, description: "Gửi tin nhắn", supportsTracking: true },
+    { id: "LOCATION", name: "Vị trí", icon: MapPin, description: "Google Maps", supportsTracking: true },
 ];
 
 export const steps = [

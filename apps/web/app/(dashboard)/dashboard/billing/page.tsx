@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
 import { useToast } from "@/hooks/use-toast";
 import { paymentService } from "@/services/payment-service";
+import { useTranslation } from "@/lib/i18n";
 
 const plans = [
     {
@@ -119,6 +120,7 @@ function CountdownTimer({ onExpire }: { onExpire: () => void }) {
 export default function BillingPage() {
     const { user, getUserPlan } = useAuthStore();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const currentPlan = getUserPlan();
     const [isLoading, setIsLoading] = useState(false);
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
@@ -299,9 +301,9 @@ export default function BillingPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-bold">Billing</h1>
+                <h1 className="text-2xl font-bold">{t("dashboard.billing.title")}</h1>
                 <p className="text-muted-foreground">
-                    Quản lý gói đăng ký và thanh toán
+                    {t("dashboard.billing.subtitle")}
                 </p>
             </div>
 

@@ -27,13 +27,14 @@ import { useTheme } from "next-themes";
 import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 
-const tabs = [
-    { id: "account", name: "Tài khoản", icon: User },
-    { id: "appearance", name: "Giao diện", icon: Palette },
-    { id: "notifications", name: "Thông báo", icon: Bell },
-    { id: "security", name: "Bảo mật", icon: Shield },
-    { id: "api", name: "API Keys", icon: Key },
+const tabItems = [
+    { id: "account", key: "dashboard.settings.profile", icon: User },
+    { id: "appearance", key: "dashboard.settings.appearance", icon: Palette },
+    { id: "notifications", key: "dashboard.settings.notifications", icon: Bell },
+    { id: "security", key: "common.security", icon: Shield },
+    { id: "api", key: "common.apiKeys", icon: Key },
 ];
 
 export default function SettingsPage() {
@@ -41,6 +42,7 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const { theme, setTheme } = useTheme();
     const { user, fetchUser, isBusinessUser } = useAuthStore();
+    const { t } = useTranslation();
 
     // Account form state
     const [name, setName] = useState(user?.name || "");
@@ -99,9 +101,9 @@ export default function SettingsPage() {
     return (
         <div className="max-w-4xl mx-auto">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold">Cài đặt</h1>
+                <h1 className="text-2xl font-bold">{t("dashboard.settings.title")}</h1>
                 <p className="text-muted-foreground">
-                    Quản lý tài khoản và tùy chọn của bạn
+                    {t("dashboard.settings.subtitle")}
                 </p>
             </div>
 
@@ -109,7 +111,7 @@ export default function SettingsPage() {
                 {/* Sidebar */}
                 <div className="md:w-48 flex-shrink-0">
                     <nav className="flex md:flex-col gap-1">
-                        {tabs.map((tab) => {
+                        {tabItems.map((tab) => {
                             const Icon = tab.icon;
                             return (
                                 <button
@@ -121,7 +123,7 @@ export default function SettingsPage() {
                                         }`}
                                 >
                                     <Icon className="h-4 w-4" />
-                                    <span className="hidden md:inline">{tab.name}</span>
+                                    <span className="hidden md:inline">{t(tab.key)}</span>
                                 </button>
                             );
                         })}
@@ -185,47 +187,7 @@ export default function SettingsPage() {
                     )}
 
                     {activeTab === "appearance" && (
-                        <SettingsSection title="Giao diện">
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="text-sm font-medium mb-3 block">Chế độ</label>
-                                    <div className="flex gap-3">
-                                        {[
-                                            { id: "light", name: "Sáng", icon: Sun },
-                                            { id: "dark", name: "Tối", icon: Moon },
-                                            { id: "system", name: "Hệ thống", icon: Monitor },
-                                        ].map((mode) => {
-                                            const Icon = mode.icon;
-                                            return (
-                                                <button
-                                                    key={mode.id}
-                                                    onClick={() => setTheme(mode.id)}
-                                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${theme === mode.id
-                                                        ? "border-shiba-500 bg-shiba-50 text-shiba-700 dark:bg-shiba-900/30 dark:text-shiba-400"
-                                                        : "hover:bg-muted"
-                                                        }`}
-                                                >
-                                                    <Icon className="h-4 w-4" />
-                                                    {mode.name}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="text-sm font-medium mb-3 block">Ngôn ngữ</label>
-                                    <select
-                                        className="w-full max-w-xs rounded-lg border bg-background px-4 py-2.5 text-sm cursor-not-allowed opacity-60"
-                                        disabled
-                                    >
-                                        <option value="vi">🇻🇳 Tiếng Việt</option>
-                                        <option value="en">🇺🇸 English</option>
-                                    </select>
-                                    <p className="text-xs text-muted-foreground mt-2">Chức năng đa ngôn ngữ sẽ được cập nhật sau</p>
-                                </div>
-                            </div>
-                        </SettingsSection>
+                        <AppearanceSection />
                     )}
 
                     {activeTab === "notifications" && (
@@ -465,6 +427,62 @@ function APIKeysSection() {
                 </div>
             )}
         </div>
+    );
+}
+
+function AppearanceSection() {
+    const { theme, setTheme } = useTheme();
+    const { locale, setLocale, locales, t } = useTranslation();
+
+    return (
+        <SettingsSection title={t("dashboard.settings.appearance")}>
+            <div className="space-y-6">
+                <div>
+                    <label className="text-sm font-medium mb-3 block">{t("dashboard.settings.theme")}</label>
+                    <div className="flex gap-3">
+                        {[
+                            { id: "light", name: t("dashboard.settings.light"), icon: Sun },
+                            { id: "dark", name: t("dashboard.settings.dark"), icon: Moon },
+                            { id: "system", name: t("dashboard.settings.system"), icon: Monitor },
+                        ].map((mode) => {
+                            const Icon = mode.icon;
+                            return (
+                                <button
+                                    key={mode.id}
+                                    onClick={() => setTheme(mode.id)}
+                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${theme === mode.id
+                                        ? "border-shiba-500 bg-shiba-50 text-shiba-700 dark:bg-shiba-900/30 dark:text-shiba-400"
+                                        : "hover:bg-muted"
+                                        }`}
+                                >
+                                    <Icon className="h-4 w-4" />
+                                    {mode.name}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div>
+                    <label className="text-sm font-medium mb-3 block">{t("dashboard.settings.language")}</label>
+                    <div className="flex flex-wrap gap-3">
+                        {locales.map((lang) => (
+                            <button
+                                key={lang.code}
+                                onClick={() => setLocale(lang.code)}
+                                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${locale === lang.code
+                                    ? "border-shiba-500 bg-shiba-50 text-shiba-700 dark:bg-shiba-900/30 dark:text-shiba-400"
+                                    : "hover:bg-muted"
+                                    }`}
+                            >
+                                <span className="text-lg">{lang.flag}</span>
+                                {lang.nativeName}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </SettingsSection>
     );
 }
 

@@ -24,15 +24,16 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { processPendingQR } from "@/lib/pending-qr";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useTranslation } from "@/lib/i18n";
 
-const navigation = [
-    { name: "QR Codes", href: "/dashboard/qr", icon: QrCode },
-    { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+const navigationItems = [
+    { key: "dashboard.sidebar.qrCodes", href: "/dashboard/qr", icon: QrCode },
+    { key: "dashboard.sidebar.analytics", href: "/dashboard/analytics", icon: BarChart3 },
 ];
 
-const bottomNavigation = [
-    { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
+const bottomNavigationItems = [
+    { key: "dashboard.sidebar.billing", href: "/dashboard/billing", icon: CreditCard },
+    { key: "dashboard.sidebar.settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export default function DashboardLayout({
@@ -43,6 +44,7 @@ export default function DashboardLayout({
     const pathname = usePathname();
     const router = useRouter();
     const { user, isAuthenticated, logout, fetchUser, _hasHydrated } = useAuthStore();
+    const { t } = useTranslation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -141,20 +143,20 @@ export default function DashboardLayout({
                         <Link href="/dashboard/qr/new">
                             <Button className="w-full bg-shiba-500 hover:bg-shiba-600 gap-2">
                                 <Plus className="h-4 w-4" />
-                                Tạo QR Code
+                                {t("dashboard.qr.createQR")}
                             </Button>
                         </Link>
                     </div>
 
                     <nav className="flex-1 px-3 space-y-1">
-                        {navigation.map((item) => {
+                        {navigationItems.map((item) => {
                             // Dashboard should only be active on exact match
                             const isActive = item.href === "/dashboard" 
                                 ? pathname === "/dashboard"
                                 : pathname === item.href || pathname.startsWith(`${item.href}/`);
                             return (
                                 <Link
-                                    key={item.name}
+                                    key={item.key}
                                     href={item.href}
                                     className={cn(
                                         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -164,7 +166,7 @@ export default function DashboardLayout({
                                     )}
                                 >
                                     <item.icon className="h-5 w-5" />
-                                    {item.name}
+                                    {t(item.key)}
                                 </Link>
                             );
                         })}
@@ -172,11 +174,11 @@ export default function DashboardLayout({
 
                     {/* Bottom navigation */}
                     <div className="px-3 py-4 border-t space-y-1">
-                        {bottomNavigation.map((item) => {
+                        {bottomNavigationItems.map((item) => {
                             const isActive = pathname === item.href;
                             return (
                                 <Link
-                                    key={item.name}
+                                    key={item.key}
                                     href={item.href}
                                     className={cn(
                                         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -186,7 +188,7 @@ export default function DashboardLayout({
                                     )}
                                 >
                                     <item.icon className="h-5 w-5" />
-                                    {item.name}
+                                    {t(item.key)}
                                 </Link>
                             );
                         })}
@@ -283,18 +285,18 @@ export default function DashboardLayout({
                                     />
                                     <div className="absolute right-0 top-full mt-2 w-80 bg-card rounded-xl border shadow-lg z-50 animate-scale-in">
                                         <div className="p-4 border-b">
-                                            <h3 className="font-semibold">Thông báo</h3>
+                                            <h3 className="font-semibold">{t("dashboard.sidebar.notifications")}</h3>
                                         </div>
                                         <div className="p-8 text-center text-muted-foreground">
                                             <Bell className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                                            <p className="text-sm">Chưa có thông báo mới</p>
+                                            <p className="text-sm">{t("dashboard.notifications.noNew")}</p>
                                         </div>
                                         <div className="p-2 border-t">
                                             <button 
                                                 className="w-full text-sm text-shiba-500 hover:text-shiba-600 py-2"
                                                 onClick={() => setShowNotifications(false)}
                                             >
-                                                Xem tất cả thông báo
+                                                {t("dashboard.notifications.viewAll")}
                                             </button>
                                         </div>
                                     </div>
@@ -305,7 +307,7 @@ export default function DashboardLayout({
                         <Link href="/dashboard/qr/new">
                             <Button size="sm" className="bg-shiba-500 hover:bg-shiba-600 gap-2">
                                 <Plus className="h-4 w-4" />
-                                <span className="hidden sm:inline">Tạo QR</span>
+                                <span className="hidden sm:inline">{t("dashboard.qr.createQR")}</span>
                             </Button>
                         </Link>
                     </div>
@@ -319,15 +321,15 @@ export default function DashboardLayout({
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-t pb-safe">
                 <div className="flex items-center justify-around h-16">
                     {[
-                        { name: "QR Codes", href: "/dashboard/qr", icon: QrCode },
-                        { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-                        { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
-                        { name: "Cài đặt", href: "/dashboard/settings", icon: Settings },
+                        { key: "dashboard.sidebar.qrCodes", href: "/dashboard/qr", icon: QrCode },
+                        { key: "dashboard.sidebar.analytics", href: "/dashboard/analytics", icon: BarChart3 },
+                        { key: "dashboard.sidebar.billing", href: "/dashboard/billing", icon: CreditCard },
+                        { key: "dashboard.sidebar.settings", href: "/dashboard/settings", icon: Settings },
                     ].map((item) => {
                         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                         return (
                             <Link
-                                key={item.name}
+                                key={item.key}
                                 href={item.href}
                                 className={cn(
                                     "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[64px]",
@@ -346,7 +348,7 @@ export default function DashboardLayout({
                                     "text-[10px] font-medium transition-all duration-200",
                                     isActive ? "opacity-100" : "opacity-70"
                                 )}>
-                                    {item.name}
+                                    {t(item.key)}
                                 </span>
                                 {isActive && (
                                     <div className="absolute bottom-1 w-1 h-1 rounded-full bg-shiba-500" />

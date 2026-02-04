@@ -22,7 +22,9 @@
         "error": "Lỗi",
         "success": "Thành công",
         "warning": "Cảnh báo",
-        "info": "Thông tin"
+        "info": "Thông tin",
+        "security": "Bảo mật",
+        "apiKeys": "API Keys"
     },
     "nav": {
         "home": "Trang chủ",
@@ -309,5 +311,120 @@
         "company": "Công ty",
         "legal": "Pháp lý",
         "copyright": "© 2024 QRCode-Shiba. Bảo lưu mọi quyền."
+    },
+    "dashboard": {
+        "sidebar": {
+            "qrCodes": "QR Codes",
+            "analytics": "Thống kê",
+            "folders": "Thư mục",
+            "billing": "Thanh toán",
+            "settings": "Cài đặt",
+            "notifications": "Thông báo"
+        },
+        "qr": {
+            "title": "QR Codes",
+            "createQR": "Tạo QR Code",
+            "search": "Tìm kiếm QR codes...",
+            "totalScans": "Tổng lượt quét",
+            "dynamic": "Dynamic",
+            "static": "Static",
+            "noQRCodes": "Chưa có QR code nào",
+            "noQRCodesDesc": "Tạo QR code đầu tiên để bắt đầu theo dõi và quản lý các liên kết",
+            "createFirst": "Tạo QR Code đầu tiên",
+            "scans": "quét",
+            "justNow": "Vừa xong",
+            "minutesAgo": "phút trước",
+            "hoursAgo": "giờ trước",
+            "daysAgo": "ngày trước",
+            "confirmDelete": "Xác nhận xóa",
+            "confirmDeleteDesc": "Bạn có chắc muốn xóa QR code",
+            "deleteWarning": "Hành động này không thể hoàn tác.",
+            "deleted": "Đã xóa",
+            "errorLoading": "Lỗi tải dữ liệu",
+            "errorDelete": "Lỗi xóa QR",
+            "downloaded": "Đã tải xuống"
+        },
+        "detail": {
+            "createdOn": "Tạo ngày",
+            "edit": "Chỉnh sửa",
+            "download": "Tải xuống",
+            "shortLink": "Link rút gọn",
+            "details": "Chi tiết",
+            "type": "Loại",
+            "destination": "Đích đến",
+            "shortCode": "Short code",
+            "totalScans": "Tổng lượt quét",
+            "today": "Hôm nay",
+            "topCountry": "Top Quốc gia",
+            "scansLast30Days": "Lượt quét 30 ngày qua",
+            "noScanData": "Chưa có dữ liệu quét",
+            "topCountries": "Top Quốc gia",
+            "devices": "Thiết bị",
+            "noData": "Chưa có dữ liệu",
+            "unknown": "Không xác định",
+            "cannotLoadData": "Không thể tải dữ liệu",
+            "backToList": "Quay lại danh sách"
+        },
+        "analytics": {
+            "title": "Thống kê",
+            "subtitle": "Theo dõi lượt quét và hiệu suất QR codes của bạn",
+            "totalScans": "Tổng lượt quét",
+            "visitors": "Khách truy cập",
+            "avgPerDay": "Trung bình/ngày",
+            "device": "Thiết bị",
+            "compared": "so với kỳ trước",
+            "exportCSV": "Xuất CSV",
+            "topQRCodes": "Top QR Codes",
+            "viewAll": "Xem tất cả",
+            "devices": "Thiết bị",
+            "noDeviceData": "Chưa có dữ liệu thiết bị",
+            "unlockAnalytics": "Mở khóa Analytics",
+            "upgradeProDesc": "Nâng cấp lên Pro để xem thống kê chi tiết về lượt quét, vị trí người dùng, thiết bị và xu hướng thời gian.",
+            "upgradePro": "Nâng cấp Pro"
+        },
+        "settings": {
+            "title": "Cài đặt",
+            "subtitle": "Quản lý tài khoản và tùy chọn của bạn",
+            "profile": "Hồ sơ",
+            "name": "Tên",
+            "email": "Email",
+            "saveChanges": "Lưu thay đổi",
+            "saving": "Đang lưu...",
+            "saved": "Đã lưu cài đặt!",
+            "appearance": "Giao diện",
+            "theme": "Chủ đề",
+            "light": "Sáng",
+            "dark": "Tối",
+            "system": "Hệ thống",
+            "language": "Ngôn ngữ",
+            "notifications": "Thông báo",
+            "emailNotifications": "Thông báo qua email",
+            "emailNotificationsDesc": "Nhận thông báo về các sự kiện quan trọng qua email",
+            "dangerZone": "Vùng nguy hiểm",
+            "deleteAccount": "Xóa tài khoản",
+            "deleteAccountDesc": "Xóa vĩnh viễn tài khoản và tất cả dữ liệu. Hành động này không thể hoàn tác."
+        },
+        "billing": {
+            "title": "Thanh toán",
+            "subtitle": "Quản lý gói đăng ký và phương thức thanh toán",
+            "currentPlan": "Gói hiện tại",
+            "free": "Miễn phí",
+            "pro": "Pro",
+            "upgrade": "Nâng cấp",
+            "manageSubscription": "Quản lý gói đăng ký",
+            "paymentHistory": "Lịch sử thanh toán",
+            "noPayments": "Chưa có lịch sử thanh toán"
+        },
+        "folders": {
+            "title": "Thư mục",
+            "subtitle": "Sắp xếp QR codes của bạn",
+            "createFolder": "Tạo thư mục",
+            "noFolders": "Chưa có thư mục nào",
+            "noFoldersDesc": "Tạo thư mục để tổ chức QR codes của bạn"
+        },
+        "notifications": {
+            "noNew": "Chưa có thông báo mới",
+            "viewAll": "Xem tất cả thông báo"
+        }
     }
 }

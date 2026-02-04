@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
-import { AnalyticsModal } from "@/components/qr/analytics-modal";
+// Analytics Modal removed - now navigate to detail page directly
 import { DragDropProvider, DraggableQRCard } from "@/components/dnd";
 import { useToast } from "@/hooks/use-toast";
 import { triggerHaptic } from "@/lib/haptic";
@@ -69,7 +69,7 @@ export default function QRCodesPage() {
     const [deleteTarget, setDeleteTarget] = useState<QRCode | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
-    const [analyticsTarget, setAnalyticsTarget] = useState<QRCode | null>(null);
+    // Analytics modal removed - using detail page instead
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showFolderPanel, setShowFolderPanel] = useState(false);
     const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -103,10 +103,10 @@ export default function QRCodesPage() {
         setDeleteTarget(qr);
     };
 
-    // Show analytics modal on card click
+    // Navigate to detail page on card click
     const handleCardClick = (qr: QRCode) => {
         triggerHaptic("light");
-        setAnalyticsTarget(qr);
+        router.push(`/dashboard/qr/${qr.id}`);
     };
 
     // Pull-to-refresh handler
@@ -414,29 +414,7 @@ export default function QRCodesPage() {
             </div>
             )}
 
-            {/* Analytics/Detail Modal */}
-            {analyticsTarget && (
-                <AnalyticsModal
-                    qr={analyticsTarget}
-                    onClose={() => setAnalyticsTarget(null)}
-                    onDownload={() => {
-                        handleDownload(analyticsTarget);
-                        setAnalyticsTarget(null);
-                    }}
-                    onOpenLink={() => {
-                        handleOpenLink(analyticsTarget);
-                        setAnalyticsTarget(null);
-                    }}
-                    onEdit={() => {
-                        setAnalyticsTarget(null);
-                        handleEdit(analyticsTarget);
-                    }}
-                    onDelete={() => {
-                        setAnalyticsTarget(null);
-                        handleDelete(analyticsTarget);
-                    }}
-                />
-            )}
+            {/* Analytics modal removed - now using /dashboard/qr/[id] detail page */}
         </div>
         </DragDropProvider>
     );

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,12 +21,21 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
     const { requestMagicLink, isLoading, setUser, setTokens } = useAuthStore();
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [sentEmail, setSentEmail] = useState("");
     const { t } = useTranslation();
+
+    // Capture referral code from URL and store in localStorage
+    useEffect(() => {
+        const ref = searchParams.get("ref");
+        if (ref) {
+            localStorage.setItem("affiliate_ref", ref);
+        }
+    }, [searchParams]);
 
     const {
         register,
@@ -91,6 +100,22 @@ export default function LoginPage() {
 
             // Store backend tokens
             setTokens(data.accessToken, data.refreshToken);
+
+            // Track affiliate referral if present
+            const affiliateRef = localStorage.getItem("affiliate_ref");
+            if (affiliateRef) {
+                try {
+                    const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "https://payment-service-production-84d6.up.railway.app/api/v1";
+                    await fetch(`${paymentApiUrl}/affiliate/track-referral`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "x-user-id": data.user.id },
+                        body: JSON.stringify({ referralCode: affiliateRef, referredUserId: data.user.id }),
+                    });
+                    localStorage.removeItem("affiliate_ref");
+                } catch (e) {
+                    console.error("Failed to track referral:", e);
+                }
+            }
 
             toast({
                 title: t("common.success"),

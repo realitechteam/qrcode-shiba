@@ -16,5 +16,5 @@ export default async function ReferralPage({ params }: RefPageProps) {
     // during rendering. We'll use a client component wrapper instead.
 
     // Redirect to register with ref query param (client component will handle cookie)
-    redirect(`/register?ref=${encodeURIComponent(code)}`);
+    redirect(`/login?ref=${encodeURIComponent(code)}`);
 }

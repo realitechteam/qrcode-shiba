@@ -12,7 +12,7 @@ function VerifyContent() {
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
     const { verifyMagicLink } = useAuthStore();
-    
+
     const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
     const [errorMessage, setErrorMessage] = useState("");
 
@@ -27,7 +27,27 @@ function VerifyContent() {
             try {
                 await verifyMagicLink(token);
                 setStatus("success");
-                
+
+                // Track affiliate referral if present
+                const affiliateRef = localStorage.getItem("affiliate_ref");
+                if (affiliateRef) {
+                    try {
+                        const authStorage = localStorage.getItem("auth-storage");
+                        const userId = authStorage ? JSON.parse(authStorage)?.state?.user?.id : null;
+                        if (userId) {
+                            const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "https://payment-service-production-84d6.up.railway.app/api/v1";
+                            await fetch(`${paymentApiUrl}/affiliate/track-referral`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "x-user-id": userId },
+                                body: JSON.stringify({ referralCode: affiliateRef, referredUserId: userId }),
+                            });
+                            localStorage.removeItem("affiliate_ref");
+                        }
+                    } catch (e) {
+                        console.error("Failed to track referral:", e);
+                    }
+                }
+
                 // Redirect after short delay
                 setTimeout(() => {
                     router.push("/dashboard/qr");
@@ -94,7 +114,7 @@ export default function VerifyPage() {
         <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
                 <div className="w-full max-w-md bg-card rounded-2xl border shadow-lg p-8 text-center">
-                     <div className="mx-auto w-16 h-16 bg-shiba-100 rounded-full flex items-center justify-center mb-6">
+                    <div className="mx-auto w-16 h-16 bg-shiba-100 rounded-full flex items-center justify-center mb-6">
                         <Loader2 className="w-8 h-8 text-shiba-600 animate-spin" />
                     </div>
                     <h2 className="text-2xl font-bold mb-2">Đang tải...</h2>

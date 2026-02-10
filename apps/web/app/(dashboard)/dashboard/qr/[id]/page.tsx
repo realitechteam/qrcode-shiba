@@ -64,7 +64,7 @@ export default function QRDetailPage() {
     const params = useParams();
     const router = useRouter();
     const { toast } = useToast();
-    
+
     const [qr, setQr] = useState<QRData | null>(null);
     const [stats, setStats] = useState<StatsData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -76,29 +76,29 @@ export default function QRDetailPage() {
     useEffect(() => {
         const fetchData = async () => {
             if (!params.id) return;
-            
+
             setIsLoading(true);
             setError(null);
-            
+
             try {
                 const [qrRes, statsRes] = await Promise.all([
                     qrApi.get(`/qr/${params.id}`),
                     qrApi.get(`/qr/${params.id}/stats`, { params: { period: "30d" } })
                 ]);
-                
+
                 setQr(qrRes.data);
                 setStats(statsRes.data);
             } catch (err: any) {
                 console.error("Failed to fetch QR data:", err);
-                setError(err.response?.status === 404 
-                    ? "QR code không tồn tại" 
+                setError(err.response?.status === 404
+                    ? "QR code không tồn tại"
                     : "Không thể tải dữ liệu"
                 );
             } finally {
                 setIsLoading(false);
             }
         };
-        
+
         fetchData();
     }, [params.id]);
 
@@ -125,9 +125,16 @@ export default function QRDetailPage() {
         percent: Math.round((d.count / totalDeviceScans) * 100)
     })) || [];
 
+    // Force use of go.shiba.pw for display if not configured
     const redirectBaseUrl = process.env.NEXT_PUBLIC_REDIRECT_URL || "https://go.shiba.pw";
-    const qrUrl = qr?.isDynamic 
-        ? `${redirectBaseUrl}/${qr.shortCode}`
+
+    // Check if redirectBaseUrl is an internal service URL (e.g. railway internal) and replace it for display
+    const displayRedirectUrl = redirectBaseUrl.includes("redirect-service")
+        ? "https://go.shiba.pw"
+        : redirectBaseUrl;
+
+    const qrUrl = qr?.isDynamic
+        ? `${displayRedirectUrl}/${qr.shortCode}`
         : qr?.destinationUrl || "";
 
     const handleCopy = async () => {
@@ -139,7 +146,7 @@ export default function QRDetailPage() {
 
     const handleDownload = async (format: "png" | "svg" = "png") => {
         if (!qr) return;
-        
+
         try {
             const response = await qrApi.get(`/qr/${qr.id}/download`, {
                 params: { format, size: 1024 },
@@ -152,7 +159,7 @@ export default function QRDetailPage() {
             a.download = `${qr.shortCode}.${format}`;
             a.click();
             URL.revokeObjectURL(url);
-            
+
             toast({ title: "Đã tải xuống!" });
         } catch (err) {
             toast({ title: "Lỗi tải xuống", variant: "destructive" });
@@ -162,7 +169,7 @@ export default function QRDetailPage() {
     const handleDelete = async () => {
         if (!qr) return;
         if (!confirm("Bạn có chắc chắn muốn xóa QR code này?")) return;
-        
+
         setIsDeleting(true);
         try {
             await qrApi.delete(`/qr/${qr.id}`);
@@ -225,9 +232,9 @@ export default function QRDetailPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
+                    <Button
+                        variant="outline"
+                        size="sm"
                         className="gap-2"
                         onClick={() => router.push(`/dashboard/qr/${qr.id}/edit`)}
                     >
@@ -273,7 +280,7 @@ export default function QRDetailPage() {
                         </div>
 
                         <div className="flex gap-2 justify-center">
-                            <Button 
+                            <Button
                                 className="bg-shiba-500 hover:bg-shiba-600 gap-2"
                                 onClick={() => handleDownload("png")}
                             >

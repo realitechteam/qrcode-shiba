@@ -62,7 +62,7 @@ export default function NewQRPage() {
     useEffect(() => {
         if (isInitialized.current) return;
         isInitialized.current = true;
-        
+
         const draft = loadDraft();
         if (draft && hasDraft()) {
             setShowDraftBanner(true);
@@ -95,7 +95,7 @@ export default function NewQRPage() {
     // Auto-save draft on changes (debounced)
     useEffect(() => {
         if (savedQR) return; // Don't save draft if QR is already saved
-        
+
         const timer = setTimeout(() => {
             if (currentStep > 1 || Object.keys(formData).length > 0 || qrName.trim()) {
                 saveDraft({
@@ -555,6 +555,18 @@ export default function NewQRPage() {
                         isLoading={isLoading}
                         styling={styling}
                     />
+                    <div className="mt-4 p-4 bg-muted/30 rounded-lg text-xs text-muted-foreground">
+                        {currentQRType?.id ? (
+                            // Determine if dynamic based on store/logic or just show general note
+                            supportsTracking ? (
+                                <p>QR Dynamic: Nội dung có thể thay đổi mà không làm thay đổi hình ảnh QR.</p>
+                            ) : (
+                                <p className="text-orange-600 dark:text-orange-400">
+                                    Lưu ý: Thay đổi nội dung QR Static sẽ làm thay đổi hình ảnh QR. Hãy in lại nếu cần thiết.
+                                </p>
+                            )
+                        ) : null}
+                    </div>
                 </div>
             </div>
 

@@ -32,7 +32,7 @@ export class NotificationService {
         private readonly prisma: PrismaService
     ) {
         const apiKey = this.configService.get<string>("RESEND_API_KEY");
-        
+
         if (apiKey && apiKey !== "re_dummy_key") {
             try {
                 this.resend = new Resend(apiKey);
@@ -40,7 +40,7 @@ export class NotificationService {
                 this.logger.error("Failed to initialize Resend:", err);
             }
         }
-        
+
         this.fromEmail = this.configService.get<string>("RESEND_FROM_EMAIL") || "QRCode-Shiba <noreply@shiba.pw>";
         this.frontendUrl = this.configService.get<string>("FRONTEND_URL") || "https://www.shiba.pw";
     }
@@ -204,11 +204,11 @@ export class NotificationService {
             const qr = await this.prisma.qRCode.findUnique({
                 where: { id: qrId },
                 include: {
-                    owner: {
+                    user: {
                         select: {
                             id: true,
                             email: true,
-                            notificationSettings: true,
+                            // notificationSettings: true, // TODO: Add notificationSettings to User model if needed
                         },
                     },
                     _count: {
@@ -217,10 +217,12 @@ export class NotificationService {
                 },
             });
 
-            if (!qr || !qr.owner?.email) return;
+            if (!qr || !qr.user?.email) return;
 
-            const settings = qr.owner.notificationSettings as any;
-            if (!settings?.scanAlerts?.enabled) return;
+            // const settings = qr.user.notificationSettings as any;
+            // if (!settings?.scanAlerts?.enabled) return;
+            // For now, always enable scan alerts if email exists
+            const settings = { scanAlerts: { enabled: true, threshold: 100 } };
 
             const threshold = settings.scanAlerts.threshold || 100;
             const scanCount = qr._count?.scans || 0;
@@ -230,10 +232,10 @@ export class NotificationService {
             const shouldAlert = milestones.some(m => scanCount === m);
 
             if (shouldAlert) {
-                await this.sendScanAlert(qr.owner.email, {
+                await this.sendScanAlert(qr.user.email, {
                     qrId: qr.id,
-                    qrName: qr.name,
-                    scanCount,
+                    qrName: qr.name || "QR Code",
+                    scanCount: qr._count.scans,
                 });
             }
         } catch (error) {

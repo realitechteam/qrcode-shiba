@@ -59,7 +59,7 @@ export default function EditQRPage({ params }: EditQRPageProps) {
                 // Populate form
                 setQrName(data.name || "");
                 setSelectedType(data.type);
-                setFormData(data.data || {});
+                setFormData(data.content?.data || {});
                 if (data.styling) {
                     setStyling(data.styling);
                 }
@@ -119,8 +119,6 @@ export default function EditQRPage({ params }: EditQRPageProps) {
                 name: qrName.trim() || undefined,
                 data: formData,
                 styling,
-                type: selectedType, // In case type change allows
-            });
             
             toast({
                 title: "Thành công",

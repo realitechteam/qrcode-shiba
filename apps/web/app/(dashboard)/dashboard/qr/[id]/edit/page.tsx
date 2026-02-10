@@ -44,7 +44,7 @@ export default function EditQRPage({ params }: EditQRPageProps) {
         cornersSquareStyle: "square",
         cornersDotStyle: "square",
     });
-    
+
     const [preview, setPreview] = useState<string | null>(null);
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
@@ -55,7 +55,7 @@ export default function EditQRPage({ params }: EditQRPageProps) {
                 const response = await qrApi.get(`/qr/${id}`);
                 const data = response.data;
                 setQr(data);
-                
+
                 // Populate form
                 setQrName(data.name || "");
                 setSelectedType(data.type);
@@ -119,7 +119,8 @@ export default function EditQRPage({ params }: EditQRPageProps) {
                 name: qrName.trim() || undefined,
                 data: formData,
                 styling,
-            
+            });
+
             toast({
                 title: "Thành công",
                 description: "Đã cập nhật QR Code",
@@ -165,8 +166,8 @@ export default function EditQRPage({ params }: EditQRPageProps) {
                         </p>
                     </div>
                 </div>
-                <Button 
-                    onClick={handleSave} 
+                <Button
+                    onClick={handleSave}
                     disabled={isSaving}
                     className="bg-shiba-500 hover:bg-shiba-600 gap-2"
                 >

@@ -22,7 +22,9 @@
         "error": "Fehler",
         "success": "Erfolg",
         "warning": "Warnung",
-        "info": "Information"
+        "info": "Information",
+        "security": "Security",
+        "apiKeys": "API Keys"
     },
     "nav": {
         "home": "Startseite",
@@ -309,5 +311,120 @@
         "company": "Unternehmen",
         "legal": "Rechtliches",
         "copyright": "© 2024 QRCode-Shiba. Alle Rechte vorbehalten."
+    },
+    "dashboard": {
+        "sidebar": {
+            "qrCodes": "QR Codes",
+            "analytics": "Analytics",
+            "folders": "Folders",
+            "billing": "Billing",
+            "settings": "Settings",
+            "notifications": "Notifications"
+        },
+        "qr": {
+            "title": "QR Codes",
+            "createQR": "Create QR Code",
+            "search": "Search QR codes...",
+            "totalScans": "Total scans",
+            "dynamic": "Dynamic",
+            "static": "Static",
+            "noQRCodes": "No QR codes yet",
+            "noQRCodesDesc": "Create your first QR code to start tracking your links",
+            "createFirst": "Create First QR Code",
+            "scans": "scans",
+            "justNow": "Just now",
+            "minutesAgo": "minutes ago",
+            "hoursAgo": "hours ago",
+            "daysAgo": "days ago",
+            "confirmDelete": "Confirm delete",
+            "confirmDeleteDesc": "Are you sure you want to delete QR code",
+            "deleteWarning": "This action cannot be undone.",
+            "deleted": "Deleted",
+            "errorLoading": "Error loading data",
+            "errorDelete": "Error deleting QR",
+            "downloaded": "Downloaded"
+        },
+        "detail": {
+            "createdOn": "Created on",
+            "edit": "Edit",
+            "download": "Download",
+            "shortLink": "Short link",
+            "details": "Details",
+            "type": "Type",
+            "destination": "Destination",
+            "shortCode": "Short code",
+            "totalScans": "Total scans",
+            "today": "Today",
+            "topCountry": "Top Country",
+            "scansLast30Days": "Scans last 30 days",
+            "noScanData": "No scan data yet",
+            "topCountries": "Top Countries",
+            "devices": "Devices",
+            "noData": "No data yet",
+            "unknown": "Unknown",
+            "cannotLoadData": "Cannot load data",
+            "backToList": "Back to list"
+        },
+        "analytics": {
+            "title": "Analytics",
+            "subtitle": "Track scans and performance of your QR codes",
+            "totalScans": "Total scans",
+            "visitors": "Visitors",
+            "avgPerDay": "Average/day",
+            "device": "Device",
+            "compared": "compared to previous period",
+            "exportCSV": "Export CSV",
+            "topQRCodes": "Top QR Codes",
+            "viewAll": "View all",
+            "devices": "Devices",
+            "noDeviceData": "No device data yet",
+            "unlockAnalytics": "Unlock Analytics",
+            "upgradeProDesc": "Upgrade to Pro to view detailed statistics on scans, user locations, devices and time trends.",
+            "upgradePro": "Upgrade Pro"
+        },
+        "settings": {
+            "title": "Settings",
+            "subtitle": "Manage your account and preferences",
+            "profile": "Profile",
+            "name": "Name",
+            "email": "Email",
+            "saveChanges": "Save changes",
+            "saving": "Saving...",
+            "saved": "Settings saved!",
+            "appearance": "Appearance",
+            "theme": "Theme",
+            "light": "Light",
+            "dark": "Dark",
+            "system": "System",
+            "language": "Language",
+            "notifications": "Notifications",
+            "emailNotifications": "Email notifications",
+            "emailNotificationsDesc": "Receive notifications about important events via email",
+            "dangerZone": "Danger Zone",
+            "deleteAccount": "Delete Account",
+            "deleteAccountDesc": "Permanently delete your account and all data. This action cannot be undone."
+        },
+        "billing": {
+            "title": "Billing",
+            "subtitle": "Manage your subscription and payment methods",
+            "currentPlan": "Current Plan",
+            "free": "Free",
+            "pro": "Pro",
+            "upgrade": "Upgrade",
+            "manageSubscription": "Manage Subscription",
+            "paymentHistory": "Payment History",
+            "noPayments": "No payment history yet"
+        },
+        "folders": {
+            "title": "Folders",
+            "subtitle": "Organize your QR codes",
+            "createFolder": "Create Folder",
+            "noFolders": "No folders yet",
+            "noFoldersDesc": "Create folders to organize your QR codes"
+        },
+        "notifications": {
+            "noNew": "No new notifications",
+            "viewAll": "View all notifications"
+        }
     }
 }

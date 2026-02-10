@@ -90,6 +90,8 @@ model User {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
+  referredBy    String?      // AffiliateAccount.referralCode that referred this user
+
   // Relations
   qrCodes      QRCode[]
   subscription Subscription?
@@ -97,9 +99,11 @@ model User {
   apiKeys      ApiKey[]
   teamMembers  TeamMember[]
   ownedTeams   Team[]        @relation("TeamOwner")
+  affiliate    AffiliateAccount?
 
   @@index([email])
   @@index([authProvider, providerId])
+  @@index([referredBy])
 }
 
 model RefreshToken {
@@ -373,4 +377,79 @@ model ApiKey {
 
   @@index([userId])
   @@index([keyHash])
+}
+
+// ============================================
+// AFFILIATE PROGRAM
+// ============================================
+
+model AffiliateAccount {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  referralCode    String   @unique
+  commissionRate  Float    @default(0.20) // 20%
+  totalEarnings   Int      @default(0)    // VND
+  pendingBalance  Int      @default(0)    // VND
+  paidBalance     Int      @default(0)    // VND
+  status          String   @default("ACTIVE") // ACTIVE, SUSPENDED, BANNED
+  bankName        String?
+  bankAccount     String?
+  bankHolder      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referrals   AffiliateReferral[]
+  commissions AffiliateCommission[]
+  payouts     AffiliatePayout[]
+
+  @@index([referralCode])
+  @@index([userId])
+}
+
+model AffiliateReferral {
+  id             String    @id @default(uuid())
+  affiliateId    String
+  referredUserId String    @unique
+  status         String    @default("REGISTERED") // REGISTERED, CONVERTED, CHURNED
+  convertedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
+}
+
+model AffiliateCommission {
+  id          String   @id @default(uuid())
+  affiliateId String
+  orderId     String
+  amount      Int      // VND
+  rate        Float    // commission rate at time of calculation
+  status      String   @default("PENDING") // PENDING, APPROVED, PAID, REJECTED
+  createdAt   DateTime @default(now())
+
+  // Relations
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
+  @@index([status])
+}
+
+model AffiliatePayout {
+  id          String    @id @default(uuid())
+  affiliateId String
+  amount      Int       // VND
+  method      String    // BANK_TRANSFER
+  status      String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  processedAt DateTime?
+  note        String?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
 }

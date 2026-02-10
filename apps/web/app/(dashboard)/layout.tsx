@@ -17,6 +17,7 @@ import {
     ChevronDown,
     User,
     Bell,
+    BadgePercent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
@@ -29,6 +30,7 @@ import { useTranslation } from "@/lib/i18n";
 const navigationItems = [
     { key: "dashboard.sidebar.qrCodes", href: "/dashboard/qr", icon: QrCode },
     { key: "dashboard.sidebar.analytics", href: "/dashboard/analytics", icon: BarChart3 },
+    { key: "dashboard.sidebar.affiliate", href: "/dashboard/affiliate", icon: BadgePercent },
 ];
 
 const bottomNavigationItems = [
@@ -151,7 +153,7 @@ export default function DashboardLayout({
                     <nav className="flex-1 px-3 space-y-1">
                         {navigationItems.map((item) => {
                             // Dashboard should only be active on exact match
-                            const isActive = item.href === "/dashboard" 
+                            const isActive = item.href === "/dashboard"
                                 ? pathname === "/dashboard"
                                 : pathname === item.href || pathname.startsWith(`${item.href}/`);
                             return (
@@ -279,7 +281,7 @@ export default function DashboardLayout({
 
                             {showNotifications && (
                                 <>
-                                    <div 
+                                    <div
                                         className="fixed inset-0 z-40"
                                         onClick={() => setShowNotifications(false)}
                                     />
@@ -292,7 +294,7 @@ export default function DashboardLayout({
                                             <p className="text-sm">{t("dashboard.notifications.noNew")}</p>
                                         </div>
                                         <div className="p-2 border-t">
-                                            <button 
+                                            <button
                                                 className="w-full text-sm text-shiba-500 hover:text-shiba-600 py-2"
                                                 onClick={() => setShowNotifications(false)}
                                             >

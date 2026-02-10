@@ -5,6 +5,7 @@ import { VnpayModule } from "./vnpay/vnpay.module";
 import { MomoModule } from "./momo/momo.module";
 import { SepayModule } from "./sepay/sepay.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
+import { AffiliateModule } from "./affiliate/affiliate.module";
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import { SubscriptionModule } from "./subscription/subscription.module";
         MomoModule,
         SepayModule,
         SubscriptionModule,
+        AffiliateModule,
     ],
 })
 export class AppModule { }

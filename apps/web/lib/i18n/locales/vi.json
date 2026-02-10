@@ -319,7 +319,8 @@
             "folders": "Thư mục",
             "billing": "Thanh toán",
             "settings": "Cài đặt",
-            "notifications": "Thông báo"
+            "notifications": "Thông báo",
+            "affiliate": "Affiliate"
         },
         "qr": {
             "title": "QR Codes",

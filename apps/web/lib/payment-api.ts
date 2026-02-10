@@ -2,7 +2,7 @@ import axios from "axios";
 
 const PAYMENT_API_URL =
     process.env.NEXT_PUBLIC_PAYMENT_API_URL ||
-    "https://payment-service-production.up.railway.app/api/v1";
+    "https://pay.shiba.pw/api/v1";
 
 export const paymentApi = axios.create({
     baseURL: PAYMENT_API_URL,

@@ -35,7 +35,7 @@ function VerifyContent() {
                         const authStorage = localStorage.getItem("auth-storage");
                         const userId = authStorage ? JSON.parse(authStorage)?.state?.user?.id : null;
                         if (userId) {
-                            const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "https://payment-service-production-84d6.up.railway.app/api/v1";
+                            const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "https://pay.shiba.pw/api/v1";
                             await fetch(`${paymentApiUrl}/affiliate/track-referral`, {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json", "x-user-id": userId },

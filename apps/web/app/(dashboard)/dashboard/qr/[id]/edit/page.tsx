@@ -115,11 +115,18 @@ export default function EditQRPage({ params }: EditQRPageProps) {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await qrApi.patch(`/qr/${id}`, {
+            const payload: any = {
                 name: qrName.trim() || undefined,
                 data: formData,
                 styling,
-            });
+            };
+
+            // Fix: Helper to update destinationUrl if it's a URL type
+            if (selectedType === 'URL' && formData.url) {
+                payload.destinationUrl = formData.url;
+            }
+
+            await qrApi.patch(`/qr/${id}`, payload);
 
             toast({
                 title: "Thành công",
@@ -232,6 +239,7 @@ export default function EditQRPage({ params }: EditQRPageProps) {
 
                 {/* Right: Preview - Spans 1 col */}
                 <div className="lg:col-span-1">
+                    {/* Preview disabled to save resources
                     <div className="rounded-xl border bg-card p-6 sticky top-6">
                         <h2 className="font-semibold mb-4 flex items-center gap-2">
                             <Palette className="h-5 w-5 text-shiba-500" />
@@ -251,6 +259,10 @@ export default function EditQRPage({ params }: EditQRPageProps) {
                                 </p>
                             )}
                         </div>
+                    </div>
+                    */}
+                    <div className="p-4 rounded-xl border border-dashed bg-muted/50 text-center text-muted-foreground">
+                        Preview đang tắt để tiết kiệm tài nguyên
                     </div>
                 </div>
             </div>

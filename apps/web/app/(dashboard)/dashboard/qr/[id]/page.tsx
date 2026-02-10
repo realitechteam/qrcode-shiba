@@ -266,17 +266,10 @@ export default function QRDetailPage() {
                             className="inline-flex p-4 rounded-xl mb-4"
                             style={{ backgroundColor: qr.styling?.backgroundColor || "#FFFFFF" }}
                         >
-                            {qr.preview || qr.imageUrl ? (
-                                <img
-                                    src={qr.preview || qr.imageUrl}
-                                    alt={qr.name}
-                                    className="h-32 w-32"
-                                />
-                            ) : (
-                                <div className="h-32 w-32 flex items-center justify-center bg-muted rounded">
-                                    <Loader2 className="h-8 w-8 animate-spin" />
-                                </div>
-                            )}
+                            {/* Preview disabled to save resources */}
+                            <div className="h-32 w-32 flex items-center justify-center bg-muted rounded border border-dashed text-xs text-muted-foreground">
+                                Preview Disabled
+                            </div>
                         </div>
 
                         <div className="flex gap-2 justify-center">

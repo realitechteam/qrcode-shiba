@@ -550,11 +550,17 @@ export default function NewQRPage() {
                         <Palette className="h-5 w-5 text-shiba-500" />
                         Xem trước
                     </h2>
+                    {/* Preview disabled
                     <QRPreview
                         preview={preview}
                         isLoading={isLoading}
                         styling={styling}
                     />
+                    */}
+                    <div className="p-8 border-2 border-dashed rounded-lg flex items-center justify-center text-muted-foreground bg-muted/30">
+                        Preview đang tắt
+                    </div>
+
                     <div className="mt-4 p-4 bg-muted/30 rounded-lg text-xs text-muted-foreground">
                         {currentQRType?.id ? (
                             // Determine if dynamic based on store/logic or just show general note

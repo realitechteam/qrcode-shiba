@@ -6,7 +6,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { RegisterAffiliateDto, UpdateBankInfoDto, RequestPayoutDto } from './affiliate.dto';
+import { RegisterAffiliateDto, CreateLinkDto, UpdateLinkDto, UpdateBankInfoDto, RequestPayoutDto } from './affiliate.dto';
 import { randomUUID } from 'crypto';
 
 function generateCode(length = 8): string {
@@ -14,6 +14,7 @@ function generateCode(length = 8): string {
 }
 
 const MIN_PAYOUT_AMOUNT = 500_000; // 500,000 VND
+const DEFAULT_TOTAL_RATE = 0.20; // 20%
 
 @Injectable()
 export class AffiliateService {
@@ -21,11 +22,32 @@ export class AffiliateService {
 
     constructor(private readonly prisma: PrismaService) { }
 
+    // =============================================
+    // CONFIG
+    // =============================================
+
+    /**
+     * Get the global affiliate total rate from SystemConfig
+     */
+    private async getTotalRate(): Promise<number> {
+        try {
+            const config = await this.prisma.systemConfig.findUnique({
+                where: { key: 'affiliate_total_rate' },
+            });
+            return config ? parseFloat(config.value) : DEFAULT_TOTAL_RATE;
+        } catch {
+            return DEFAULT_TOTAL_RATE;
+        }
+    }
+
+    // =============================================
+    // REGISTRATION
+    // =============================================
+
     /**
      * Register as affiliate
      */
     async register(userId: string, dto: RegisterAffiliateDto) {
-        // Check if already registered
         const existing = await this.prisma.affiliateAccount.findUnique({
             where: { userId },
         });
@@ -34,21 +56,9 @@ export class AffiliateService {
             throw new ConflictException('Bạn đã đăng ký Affiliate rồi');
         }
 
-        // Generate or validate referral code
-        let referralCode = dto.referralCode?.toUpperCase().replace(/\s/g, '') || generateCode(8);
-
-        // Check uniqueness
-        const codeExists = await this.prisma.affiliateAccount.findUnique({
-            where: { referralCode },
-        });
-        if (codeExists) {
-            referralCode = generateCode(8);
-        }
-
         const affiliate = await this.prisma.affiliateAccount.create({
             data: {
                 userId,
-                referralCode,
                 bankName: dto.bankName,
                 bankAccount: dto.bankAccount,
                 bankHolder: dto.bankHolder,
@@ -57,12 +67,161 @@ export class AffiliateService {
 
         return {
             id: affiliate.id,
-            referralCode: affiliate.referralCode,
-            commissionRate: affiliate.commissionRate,
             status: affiliate.status,
-            referralLink: `https://shiba.pw/ref/${affiliate.referralCode}`,
         };
     }
+
+    // =============================================
+    // LINKS MANAGEMENT
+    // =============================================
+
+    /**
+     * Create a new referral link
+     */
+    async createLink(userId: string, dto: CreateLinkDto) {
+        const affiliate = await this.getAffiliateOrThrow(userId);
+        const totalRate = await this.getTotalRate();
+
+        const discountRate = dto.discountRate || 0;
+
+        // Validate: commissionRate + discountRate <= totalRate
+        if (dto.commissionRate + discountRate > totalRate + 0.001) {
+            throw new BadRequestException(
+                `Tổng hoa hồng + giảm giá (${((dto.commissionRate + discountRate) * 100).toFixed(0)}%) không được vượt quá ${(totalRate * 100).toFixed(0)}%`
+            );
+        }
+
+        // Generate or validate referral code
+        let referralCode = dto.referralCode?.toUpperCase().replace(/\s/g, '') || generateCode(8);
+
+        // Check uniqueness
+        const codeExists = await this.prisma.affiliateLink.findUnique({
+            where: { referralCode },
+        });
+        if (codeExists) {
+            if (dto.referralCode) {
+                throw new ConflictException('Mã giới thiệu này đã được sử dụng');
+            }
+            referralCode = generateCode(8);
+        }
+
+        const link = await this.prisma.affiliateLink.create({
+            data: {
+                affiliateId: affiliate.id,
+                referralCode,
+                label: dto.label,
+                commissionRate: dto.commissionRate,
+                discountRate,
+            },
+        });
+
+        return {
+            id: link.id,
+            referralCode: link.referralCode,
+            label: link.label,
+            commissionRate: link.commissionRate,
+            discountRate: link.discountRate,
+            referralLink: `https://shiba.pw/ref/${link.referralCode}`,
+        };
+    }
+
+    /**
+     * Get all links for an affiliate
+     */
+    async getLinks(userId: string) {
+        const affiliate = await this.getAffiliateOrThrow(userId);
+
+        const links = await this.prisma.affiliateLink.findMany({
+            where: { affiliateId: affiliate.id },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        return links.map(l => ({
+            id: l.id,
+            referralCode: l.referralCode,
+            label: l.label,
+            commissionRate: l.commissionRate,
+            discountRate: l.discountRate,
+            clickCount: l.clickCount,
+            referralCount: l.referralCount,
+            isActive: l.isActive,
+            referralLink: `https://shiba.pw/ref/${l.referralCode}`,
+            createdAt: l.createdAt,
+        }));
+    }
+
+    /**
+     * Update a link
+     */
+    async updateLink(userId: string, linkId: string, dto: UpdateLinkDto) {
+        const affiliate = await this.getAffiliateOrThrow(userId);
+
+        const link = await this.prisma.affiliateLink.findFirst({
+            where: { id: linkId, affiliateId: affiliate.id },
+        });
+
+        if (!link) {
+            throw new NotFoundException('Link không tồn tại');
+        }
+
+        // Validate rates if changed
+        if (dto.commissionRate !== undefined || dto.discountRate !== undefined) {
+            const totalRate = await this.getTotalRate();
+            const newCommission = dto.commissionRate ?? link.commissionRate;
+            const newDiscount = dto.discountRate ?? link.discountRate;
+
+            if (newCommission + newDiscount > totalRate + 0.001) {
+                throw new BadRequestException(
+                    `Tổng hoa hồng + giảm giá không được vượt quá ${(totalRate * 100).toFixed(0)}%`
+                );
+            }
+        }
+
+        const updated = await this.prisma.affiliateLink.update({
+            where: { id: linkId },
+            data: {
+                label: dto.label,
+                commissionRate: dto.commissionRate,
+                discountRate: dto.discountRate,
+                isActive: dto.isActive,
+            },
+        });
+
+        return {
+            id: updated.id,
+            referralCode: updated.referralCode,
+            label: updated.label,
+            commissionRate: updated.commissionRate,
+            discountRate: updated.discountRate,
+            isActive: updated.isActive,
+        };
+    }
+
+    /**
+     * Delete (deactivate) a link
+     */
+    async deleteLink(userId: string, linkId: string) {
+        const affiliate = await this.getAffiliateOrThrow(userId);
+
+        const link = await this.prisma.affiliateLink.findFirst({
+            where: { id: linkId, affiliateId: affiliate.id },
+        });
+
+        if (!link) {
+            throw new NotFoundException('Link không tồn tại');
+        }
+
+        await this.prisma.affiliateLink.update({
+            where: { id: linkId },
+            data: { isActive: false },
+        });
+
+        return { success: true };
+    }
+
+    // =============================================
+    // DASHBOARD
+    // =============================================
 
     /**
      * Get affiliate dashboard data
@@ -71,6 +230,18 @@ export class AffiliateService {
         const affiliate = await this.prisma.affiliateAccount.findUnique({
             where: { userId },
             include: {
+                links: {
+                    where: { isActive: true },
+                    select: {
+                        id: true,
+                        referralCode: true,
+                        label: true,
+                        commissionRate: true,
+                        discountRate: true,
+                        clickCount: true,
+                        referralCount: true,
+                    },
+                },
                 _count: {
                     select: {
                         referrals: true,
@@ -84,7 +255,6 @@ export class AffiliateService {
             throw new NotFoundException('Bạn chưa đăng ký Affiliate');
         }
 
-        // Count converted referrals
         const convertedCount = await this.prisma.affiliateReferral.count({
             where: {
                 affiliateId: affiliate.id,
@@ -92,14 +262,14 @@ export class AffiliateService {
             },
         });
 
+        const totalRate = await this.getTotalRate();
+
         const conversionRate = affiliate._count.referrals > 0
             ? (convertedCount / affiliate._count.referrals * 100).toFixed(1)
             : '0.0';
 
         return {
-            referralCode: affiliate.referralCode,
-            referralLink: `https://shiba.pw/ref/${affiliate.referralCode}`,
-            commissionRate: affiliate.commissionRate,
+            totalRate,
             totalEarnings: affiliate.totalEarnings,
             pendingBalance: affiliate.pendingBalance,
             paidBalance: affiliate.paidBalance,
@@ -108,6 +278,10 @@ export class AffiliateService {
             conversionRate: `${conversionRate}%`,
             totalCommissions: affiliate._count.commissions,
             status: affiliate.status,
+            links: affiliate.links.map(l => ({
+                ...l,
+                referralLink: `https://shiba.pw/ref/${l.referralCode}`,
+            })),
             bankInfo: {
                 bankName: affiliate.bankName,
                 bankAccount: affiliate.bankAccount,
@@ -116,9 +290,10 @@ export class AffiliateService {
         };
     }
 
-    /**
-     * Get referrals list
-     */
+    // =============================================
+    // REFERRALS, COMMISSIONS, PAYOUTS
+    // =============================================
+
     async getReferrals(userId: string, page = 1, limit = 20) {
         const affiliate = await this.getAffiliateOrThrow(userId);
         const skip = (page - 1) * limit;
@@ -129,24 +304,20 @@ export class AffiliateService {
             }),
             this.prisma.affiliateReferral.findMany({
                 where: { affiliateId: affiliate.id },
+                include: {
+                    link: {
+                        select: { referralCode: true, label: true },
+                    },
+                },
                 orderBy: { createdAt: 'desc' },
                 skip,
                 take: limit,
             }),
         ]);
 
-        return {
-            items: referrals,
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-        };
+        return { items: referrals, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
 
-    /**
-     * Get commissions list
-     */
     async getCommissions(userId: string, page = 1, limit = 20) {
         const affiliate = await this.getAffiliateOrThrow(userId);
         const skip = (page - 1) * limit;
@@ -163,18 +334,9 @@ export class AffiliateService {
             }),
         ]);
 
-        return {
-            items: commissions,
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-        };
+        return { items: commissions, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
 
-    /**
-     * Update bank information
-     */
     async updateBankInfo(userId: string, dto: UpdateBankInfoDto) {
         const affiliate = await this.getAffiliateOrThrow(userId);
 
@@ -194,9 +356,6 @@ export class AffiliateService {
         };
     }
 
-    /**
-     * Request payout
-     */
     async requestPayout(userId: string, dto: RequestPayoutDto) {
         const affiliate = await this.getAffiliateOrThrow(userId);
 
@@ -214,7 +373,6 @@ export class AffiliateService {
             throw new BadRequestException('Vui lòng cập nhật thông tin ngân hàng trước khi rút tiền');
         }
 
-        // Create payout request and deduct from pending balance
         const [payout] = await this.prisma.$transaction([
             this.prisma.affiliatePayout.create({
                 data: {
@@ -235,9 +393,6 @@ export class AffiliateService {
         return payout;
     }
 
-    /**
-     * Get payout history
-     */
     async getPayouts(userId: string, page = 1, limit = 20) {
         const affiliate = await this.getAffiliateOrThrow(userId);
         const skip = (page - 1) * limit;
@@ -254,13 +409,7 @@ export class AffiliateService {
             }),
         ]);
 
-        return {
-            items: payouts,
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-        };
+        return { items: payouts, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
 
     // =============================================
@@ -272,32 +421,41 @@ export class AffiliateService {
      */
     async trackReferral(referralCode: string, referredUserId: string) {
         try {
-            const affiliate = await this.prisma.affiliateAccount.findUnique({
+            // Find the link by referralCode
+            const link = await this.prisma.affiliateLink.findUnique({
                 where: { referralCode },
+                include: { affiliate: true },
             });
 
-            if (!affiliate || affiliate.status !== 'ACTIVE') {
+            if (!link || !link.isActive || link.affiliate.status !== 'ACTIVE') {
                 this.logger.warn(`Invalid or inactive referral code: ${referralCode}`);
                 return;
             }
 
             // Don't allow self-referral
-            if (affiliate.userId === referredUserId) {
+            if (link.affiliate.userId === referredUserId) {
                 this.logger.warn(`Self-referral attempt: ${referralCode}`);
                 return;
             }
 
-            await this.prisma.affiliateReferral.create({
-                data: {
-                    affiliateId: affiliate.id,
-                    referredUserId,
-                    status: 'REGISTERED',
-                },
-            });
+            await this.prisma.$transaction([
+                this.prisma.affiliateReferral.create({
+                    data: {
+                        affiliateId: link.affiliate.id,
+                        linkId: link.id,
+                        referredUserId,
+                        status: 'REGISTERED',
+                    },
+                }),
+                // Increment link stats
+                this.prisma.affiliateLink.update({
+                    where: { id: link.id },
+                    data: { referralCount: { increment: 1 } },
+                }),
+            ]);
 
             this.logger.log(`Referral tracked: ${referralCode} -> ${referredUserId}`);
         } catch (error) {
-            // Unique constraint violation = already tracked
             if ((error as any)?.code === 'P2002') {
                 this.logger.warn(`Referral already tracked for user ${referredUserId}`);
                 return;
@@ -307,11 +465,11 @@ export class AffiliateService {
     }
 
     /**
-     * Calculate and record commission when an order is completed
+     * Calculate and record commission when an order is completed.
+     * Uses the per-link commissionRate.
      */
     async processCommission(orderId: string, userId: string, amount: number) {
         try {
-            // Find if this user was referred
             const user = await this.prisma.user.findUnique({
                 where: { id: userId },
                 select: { referredBy: true },
@@ -319,36 +477,36 @@ export class AffiliateService {
 
             if (!user?.referredBy) return;
 
-            const affiliate = await this.prisma.affiliateAccount.findUnique({
+            // Find the link that referred this user
+            const link = await this.prisma.affiliateLink.findUnique({
                 where: { referralCode: user.referredBy },
+                include: { affiliate: true },
             });
 
-            if (!affiliate || affiliate.status !== 'ACTIVE') return;
+            if (!link || link.affiliate.status !== 'ACTIVE') return;
 
-            const commissionAmount = Math.floor(amount * affiliate.commissionRate);
+            const commissionAmount = Math.floor(amount * link.commissionRate);
 
-            // Record commission and update balances in a transaction
             await this.prisma.$transaction([
                 this.prisma.affiliateCommission.create({
                     data: {
-                        affiliateId: affiliate.id,
+                        affiliateId: link.affiliate.id,
                         orderId,
                         amount: commissionAmount,
-                        rate: affiliate.commissionRate,
+                        rate: link.commissionRate,
                         status: 'PENDING',
                     },
                 }),
                 this.prisma.affiliateAccount.update({
-                    where: { id: affiliate.id },
+                    where: { id: link.affiliate.id },
                     data: {
                         totalEarnings: { increment: commissionAmount },
                         pendingBalance: { increment: commissionAmount },
                     },
                 }),
-                // Mark referral as CONVERTED
                 this.prisma.affiliateReferral.updateMany({
                     where: {
-                        affiliateId: affiliate.id,
+                        affiliateId: link.affiliate.id,
                         referredUserId: userId,
                         status: 'REGISTERED',
                     },
@@ -360,7 +518,7 @@ export class AffiliateService {
             ]);
 
             this.logger.log(
-                `Commission recorded: ${commissionAmount} VND for affiliate ${affiliate.referralCode} (order: ${orderId})`
+                `Commission: ${commissionAmount} VND for affiliate (link: ${link.referralCode}, order: ${orderId})`
             );
         } catch (error) {
             this.logger.error(`Failed to process commission for order ${orderId}:`, error);
@@ -368,13 +526,43 @@ export class AffiliateService {
     }
 
     /**
-     * Get affiliate status for a user (used by auth-service during registration)
+     * Get discount rate for a referral code (used during checkout)
      */
-    async getAffiliateByCode(code: string) {
-        return this.prisma.affiliateAccount.findUnique({
-            where: { referralCode: code, status: 'ACTIVE' },
-            select: { id: true, referralCode: true, userId: true },
+    async getDiscountForCode(code: string) {
+        const link = await this.prisma.affiliateLink.findUnique({
+            where: { referralCode: code, isActive: true },
+            select: {
+                discountRate: true,
+                referralCode: true,
+                affiliate: {
+                    select: { status: true },
+                },
+            },
         });
+
+        if (!link || link.affiliate.status !== 'ACTIVE') {
+            return { valid: false, discountRate: 0 };
+        }
+
+        return {
+            valid: true,
+            discountRate: link.discountRate,
+            referralCode: link.referralCode,
+        };
+    }
+
+    /**
+     * Track link click (increment clickCount)
+     */
+    async trackClick(referralCode: string) {
+        try {
+            await this.prisma.affiliateLink.update({
+                where: { referralCode },
+                data: { clickCount: { increment: 1 } },
+            });
+        } catch {
+            // ignore if link not found
+        }
     }
 
     // =============================================

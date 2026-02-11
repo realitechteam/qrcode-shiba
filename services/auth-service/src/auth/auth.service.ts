@@ -194,7 +194,7 @@ export class AuthService {
 
             // Send email with magic link
             const emailSent = await this.emailService.sendMagicLink(email, token);
-            
+
             if (!emailSent) {
                 // Email service returned false but didn't throw
                 console.warn(`Magic link email may not have been sent to ${email}`);
@@ -298,7 +298,7 @@ export class AuthService {
     }
 
     private async generateTokens(user: User) {
-        const payload = { sub: user.id, email: user.email };
+        const payload = { sub: user.id, email: user.email, role: (user as any).role || 'USER' };
 
         const accessToken = this.jwtService.sign(payload);
 
@@ -323,11 +323,11 @@ export class AuthService {
     }
 
     private sanitizeUser(user: any) {
-        const { passwordHash, subscription, tier, ...rest } = user;
-        
+        const { passwordHash, subscription, tier, role, ...rest } = user;
+
         // Format subscription data for frontend
         // Frontend expects: { subscription: { plan: 'pro', expiresAt: ... } }
-        const formattedSubscription = subscription 
+        const formattedSubscription = subscription
             ? {
                 plan: subscription.planId?.toLowerCase() || tier?.toLowerCase() || 'free',
                 expiresAt: subscription.endDate || null,
@@ -342,6 +342,7 @@ export class AuthService {
         return {
             ...rest,
             tier,
+            role: role || 'USER',
             subscription: formattedSubscription,
         };
     }

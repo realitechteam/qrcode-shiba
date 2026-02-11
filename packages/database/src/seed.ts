@@ -111,6 +111,32 @@ async function main() {
     }
 
     console.log("Plans seeded!");
+
+    // 2. System Config
+    console.log("Seeding system config...");
+    await prisma.systemConfig.upsert({
+        where: { key: "affiliate_total_rate" },
+        update: { value: "0.20" },
+        create: { key: "affiliate_total_rate", value: "0.20" },
+    });
+    console.log("System config seeded!");
+
+    // 3. Admin User
+    console.log("Seeding admin user...");
+    const adminEmail = "partner@realitech.dev";
+    const user = await prisma.user.findUnique({
+        where: { email: adminEmail },
+    });
+
+    if (user) {
+        await prisma.user.update({
+            where: { email: adminEmail },
+            data: { role: "ADMIN" },
+        });
+        console.log(`User ${adminEmail} promoted to ADMIN!`);
+    } else {
+        console.log(`User ${adminEmail} not found. Skipping admin promotion.`);
+    }
 }
 
 main()

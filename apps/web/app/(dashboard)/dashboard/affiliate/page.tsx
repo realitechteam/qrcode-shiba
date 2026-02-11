@@ -14,12 +14,29 @@ import {
     UserPlus,
     BadgePercent,
     Building2,
+    Plus,
+    Pencil,
+    Trash2,
+    X,
+    MousePointerClick,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import paymentApi from "@/lib/payment-api";
 
 // Types
+interface AffiliateLink {
+    id: string;
+    referralCode: string;
+    label: string | null;
+    commissionRate: number;
+    discountRate: number;
+    clickCount: number;
+    referralCount: number;
+    isActive: boolean;
+    createdAt: string;
+}
+
 interface AffiliateDashboard {
     referralCode: string;
     referralLink: string;
@@ -37,6 +54,7 @@ interface AffiliateDashboard {
         bankAccount: string | null;
         bankHolder: string | null;
     };
+    links?: AffiliateLink[];
 }
 
 interface Commission {
@@ -68,12 +86,13 @@ function formatVND(amount: number) {
 export default function AffiliatePage() {
     const { toast } = useToast();
     const [dashboard, setDashboard] = useState<AffiliateDashboard | null>(null);
+    const [links, setLinks] = useState<AffiliateLink[]>([]);
     const [commissions, setCommissions] = useState<Commission[]>([]);
     const [payouts, setPayouts] = useState<Payout[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
-    const [copied, setCopied] = useState(false);
-    const [tab, setTab] = useState<"overview" | "commissions" | "payouts">("overview");
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [tab, setTab] = useState<"overview" | "links" | "commissions" | "payouts">("overview");
 
     // Registration form
     const [regCode, setRegCode] = useState("");
@@ -87,6 +106,15 @@ export default function AffiliatePage() {
     const [isRequestingPayout, setIsRequestingPayout] = useState(false);
     const [isSavingBank, setIsSavingBank] = useState(false);
     const [showPayoutForm, setShowPayoutForm] = useState(false);
+
+    // Link form
+    const [showLinkForm, setShowLinkForm] = useState(false);
+    const [editingLink, setEditingLink] = useState<AffiliateLink | null>(null);
+    const [linkLabel, setLinkLabel] = useState("");
+    const [linkCode, setLinkCode] = useState("");
+    const [linkCommission, setLinkCommission] = useState("10");
+    const [linkDiscount, setLinkDiscount] = useState("10");
+    const [isSavingLink, setIsSavingLink] = useState(false);
 
     useEffect(() => {
         loadDashboard();
@@ -102,11 +130,13 @@ export default function AffiliatePage() {
             setBankAccount(res.data.bankInfo?.bankAccount || "");
             setBankHolder(res.data.bankInfo?.bankHolder || "");
 
-            // Load commissions and payouts
-            const [commRes, payRes] = await Promise.all([
+            // Load links, commissions and payouts
+            const [linksRes, commRes, payRes] = await Promise.all([
+                paymentApi.get("/affiliate/links").catch(() => ({ data: [] })),
                 paymentApi.get("/affiliate/commissions"),
                 paymentApi.get("/affiliate/payouts"),
             ]);
+            setLinks(linksRes.data || []);
             setCommissions(commRes.data.items || []);
             setPayouts(payRes.data.items || []);
         } catch (err: any) {
@@ -139,11 +169,18 @@ export default function AffiliatePage() {
         }
     }
 
-    async function handleCopyLink() {
+    async function handleCopyLink(link: AffiliateLink) {
+        const url = `${window.location.origin}?ref=${link.referralCode}`;
+        await navigator.clipboard.writeText(url);
+        setCopiedId(link.id);
+        setTimeout(() => setCopiedId(null), 2000);
+    }
+
+    async function handleCopyMainLink() {
         if (!dashboard) return;
         await navigator.clipboard.writeText(dashboard.referralLink);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setCopiedId("main");
+        setTimeout(() => setCopiedId(null), 2000);
     }
 
     async function handleSaveBank() {
@@ -191,6 +228,72 @@ export default function AffiliatePage() {
         }
     }
 
+    // Link management
+    function openCreateLink() {
+        setEditingLink(null);
+        setLinkLabel("");
+        setLinkCode("");
+        setLinkCommission("10");
+        setLinkDiscount("10");
+        setShowLinkForm(true);
+    }
+
+    function openEditLink(link: AffiliateLink) {
+        setEditingLink(link);
+        setLinkLabel(link.label || "");
+        setLinkCode(link.referralCode);
+        setLinkCommission(String(link.commissionRate * 100));
+        setLinkDiscount(String(link.discountRate * 100));
+        setShowLinkForm(true);
+    }
+
+    async function handleSaveLink() {
+        setIsSavingLink(true);
+        try {
+            const payload = {
+                label: linkLabel.trim() || undefined,
+                commissionRate: parseFloat(linkCommission) / 100,
+                discountRate: parseFloat(linkDiscount) / 100,
+            };
+
+            if (editingLink) {
+                await paymentApi.patch(`/affiliate/links/${editingLink.id}`, payload);
+                toast({ title: "Đã cập nhật link!" });
+            } else {
+                await paymentApi.post("/affiliate/links", {
+                    ...payload,
+                    referralCode: linkCode.trim() || undefined,
+                });
+                toast({ title: "Đã tạo link mới!" });
+            }
+            setShowLinkForm(false);
+            loadDashboard();
+        } catch (err: any) {
+            toast({
+                title: "Lỗi",
+                description: err?.response?.data?.message || "Không thể lưu link",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSavingLink(false);
+        }
+    }
+
+    async function handleDeleteLink(linkId: string) {
+        if (!confirm("Bạn có chắc muốn xóa link này?")) return;
+        try {
+            await paymentApi.delete(`/affiliate/links/${linkId}`);
+            toast({ title: "Đã xóa link" });
+            loadDashboard();
+        } catch (err: any) {
+            toast({
+                title: "Lỗi",
+                description: err?.response?.data?.message || "Không thể xóa",
+                variant: "destructive",
+            });
+        }
+    }
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -209,7 +312,7 @@ export default function AffiliatePage() {
                     </div>
                     <h1 className="text-2xl font-bold mb-2">Chương Trình Affiliate</h1>
                     <p className="text-muted-foreground mb-6">
-                        Giới thiệu bạn bè và nhận <strong>20% hoa hồng</strong> trên mỗi giao dịch thanh toán của họ.
+                        Giới thiệu bạn bè và nhận hoa hồng trên mỗi giao dịch thanh toán. Tùy chỉnh tỷ lệ commission và discount cho từng link.
                     </p>
 
                     <div className="space-y-4 text-left">
@@ -237,7 +340,8 @@ export default function AffiliatePage() {
                     </div>
 
                     <div className="mt-6 pt-6 border-t text-sm text-muted-foreground space-y-2">
-                        <p>✅ Hoa hồng 20% trên mỗi giao dịch</p>
+                        <p>✅ Tạo nhiều link giới thiệu với tỷ lệ khác nhau</p>
+                        <p>✅ Tùy chỉnh commission + discount cho từng link</p>
                         <p>✅ Rút tiền từ 500,000 VND</p>
                         <p>✅ Theo dõi realtime trên dashboard</p>
                     </div>
@@ -248,6 +352,11 @@ export default function AffiliatePage() {
 
     if (!dashboard) return null;
 
+    const totalCommission = parseFloat(linkCommission || "0");
+    const totalDiscount = parseFloat(linkDiscount || "0");
+    const totalRate = totalCommission + totalDiscount;
+    const maxRate = 20; // Will be overridden by server validation
+
     // Main dashboard
     return (
         <div className="space-y-6">
@@ -256,34 +365,6 @@ export default function AffiliatePage() {
                 <h1 className="text-2xl font-bold">Affiliate Dashboard</h1>
                 <p className="text-muted-foreground">
                     Quản lý chương trình giới thiệu và thu nhập của bạn
-                </p>
-            </div>
-
-            {/* Referral Link */}
-            <div className="rounded-xl border bg-card p-6">
-                <div className="flex items-center gap-2 mb-3">
-                    <Link2 className="h-5 w-5 text-shiba-500" />
-                    <h2 className="font-semibold">Link Giới Thiệu</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex-1 px-4 py-2.5 rounded-lg bg-muted font-mono text-sm truncate">
-                        {dashboard.referralLink}
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleCopyLink}
-                        className="shrink-0"
-                    >
-                        {copied ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                        ) : (
-                            <Copy className="h-4 w-4" />
-                        )}
-                    </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                    Mã: <strong>{dashboard.referralCode}</strong> · Hoa hồng: {(dashboard.commissionRate * 100).toFixed(0)}%
                 </p>
             </div>
 
@@ -318,7 +399,7 @@ export default function AffiliatePage() {
 
             {/* Tabs */}
             <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
-                {(["overview", "commissions", "payouts"] as const).map((t) => (
+                {(["overview", "links", "commissions", "payouts"] as const).map((t) => (
                     <button
                         key={t}
                         onClick={() => setTab(t)}
@@ -327,7 +408,7 @@ export default function AffiliatePage() {
                             : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
-                        {t === "overview" ? "Tổng quan" : t === "commissions" ? "Hoa hồng" : "Rút tiền"}
+                        {t === "overview" ? "Tổng quan" : t === "links" ? "Links" : t === "commissions" ? "Hoa hồng" : "Rút tiền"}
                     </button>
                 ))}
             </div>
@@ -446,6 +527,201 @@ export default function AffiliatePage() {
                             </p>
                         )}
                     </div>
+                </div>
+            )}
+
+            {/* Links Tab */}
+            {tab === "links" && (
+                <div className="space-y-4">
+                    {/* Create Link Button */}
+                    <div className="flex justify-end">
+                        <Button onClick={openCreateLink} className="bg-shiba-500 hover:bg-shiba-600" size="sm">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Tạo Link Mới
+                        </Button>
+                    </div>
+
+                    {/* Link Form Modal */}
+                    {showLinkForm && (
+                        <div className="rounded-xl border bg-card p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-semibold">{editingLink ? "Chỉnh sửa Link" : "Tạo Link Mới"}</h3>
+                                <button onClick={() => setShowLinkForm(false)} className="text-muted-foreground hover:text-foreground">
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs text-muted-foreground mb-1 block">Nhãn (tùy chọn)</label>
+                                        <input
+                                            type="text"
+                                            value={linkLabel}
+                                            onChange={(e) => setLinkLabel(e.target.value)}
+                                            placeholder="VD: Facebook, YouTube..."
+                                            className="w-full px-3 py-2 rounded-lg border bg-background text-sm"
+                                        />
+                                    </div>
+                                    {!editingLink && (
+                                        <div>
+                                            <label className="text-xs text-muted-foreground mb-1 block">Mã giới thiệu</label>
+                                            <input
+                                                type="text"
+                                                value={linkCode}
+                                                onChange={(e) => setLinkCode(e.target.value.toUpperCase())}
+                                                placeholder="Để trống = tự tạo"
+                                                maxLength={20}
+                                                className="w-full px-3 py-2 rounded-lg border bg-background text-sm"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs text-muted-foreground mb-1 block">Commission (% cho bạn)</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                value={linkCommission}
+                                                onChange={(e) => setLinkCommission(e.target.value)}
+                                                min={0}
+                                                max={20}
+                                                step={1}
+                                                className="w-24 px-3 py-2 rounded-lg border bg-background text-sm"
+                                            />
+                                            <span className="text-sm text-muted-foreground">%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-muted-foreground mb-1 block">Discount (% cho người mua)</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                value={linkDiscount}
+                                                onChange={(e) => setLinkDiscount(e.target.value)}
+                                                min={0}
+                                                max={20}
+                                                step={1}
+                                                className="w-24 px-3 py-2 rounded-lg border bg-background text-sm"
+                                            />
+                                            <span className="text-sm text-muted-foreground">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Rate indicator */}
+                                <div className={`text-xs px-3 py-2 rounded-lg ${totalRate > maxRate ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"}`}>
+                                    Commission ({totalCommission}%) + Discount ({totalDiscount}%) = <strong>{totalRate}%</strong>
+                                    {totalRate > maxRate && " — Vượt quá giới hạn!"}
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Button variant="outline" onClick={() => setShowLinkForm(false)} className="flex-1">
+                                        Hủy
+                                    </Button>
+                                    <Button
+                                        onClick={handleSaveLink}
+                                        disabled={isSavingLink || totalRate > maxRate}
+                                        className="flex-1 bg-shiba-500 hover:bg-shiba-600"
+                                    >
+                                        {isSavingLink && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                        {editingLink ? "Cập nhật" : "Tạo Link"}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Links List */}
+                    {links.length === 0 ? (
+                        <div className="rounded-xl border bg-card p-12 text-center">
+                            <Link2 className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+                            <p className="text-muted-foreground">Chưa có link giới thiệu nào</p>
+                            <p className="text-xs text-muted-foreground mt-1">Nhấn &quot;Tạo Link Mới&quot; để bắt đầu</p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-4">
+                            {links.map((link) => (
+                                <div key={link.id} className="rounded-xl border bg-card p-5">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-medium">{link.label || link.referralCode}</h3>
+                                                {!link.isActive && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                                                        Tắt
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                                                {link.referralCode}
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button
+                                                onClick={() => handleCopyLink(link)}
+                                                className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                                title="Copy link"
+                                            >
+                                                {copiedId === link.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                            </button>
+                                            <button
+                                                onClick={() => openEditLink(link)}
+                                                className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                                title="Chỉnh sửa"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteLink(link.id)}
+                                                className="p-1.5 rounded-md hover:bg-red-100 text-muted-foreground hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                                                title="Xóa"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Link stats */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                                        <div className="rounded-lg bg-muted/50 p-2.5">
+                                            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                                                <BadgePercent className="h-3 w-3" />
+                                                Commission
+                                            </div>
+                                            <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                                {(link.commissionRate * 100).toFixed(0)}%
+                                            </p>
+                                        </div>
+                                        <div className="rounded-lg bg-muted/50 p-2.5">
+                                            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                                                <DollarSign className="h-3 w-3" />
+                                                Discount
+                                            </div>
+                                            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                                {(link.discountRate * 100).toFixed(0)}%
+                                            </p>
+                                        </div>
+                                        <div className="rounded-lg bg-muted/50 p-2.5">
+                                            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                                                <MousePointerClick className="h-3 w-3" />
+                                                Clicks
+                                            </div>
+                                            <p className="text-sm font-semibold">{link.clickCount}</p>
+                                        </div>
+                                        <div className="rounded-lg bg-muted/50 p-2.5">
+                                            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                                                <UserPlus className="h-3 w-3" />
+                                                Referrals
+                                            </div>
+                                            <p className="text-sm font-semibold">{link.referralCount}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 

@@ -18,6 +18,7 @@ import {
     User,
     Bell,
     BadgePercent,
+    Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
@@ -173,6 +174,19 @@ export default function DashboardLayout({
                             );
                         })}
                     </nav>
+
+                    {/* Admin link (for admin users) */}
+                    {user?.role === 'ADMIN' && (
+                        <div className="px-3 py-2">
+                            <Link
+                                href="/admin"
+                                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                            >
+                                <Shield className="h-5 w-5" />
+                                Admin Panel
+                            </Link>
+                        </div>
+                    )}
 
                     {/* Bottom navigation */}
                     <div className="px-3 py-4 border-t space-y-1">

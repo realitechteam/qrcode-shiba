@@ -73,6 +73,11 @@ enum TeamRole {
   VIEWER
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 // ============================================
 // USER & AUTH
 // ============================================
@@ -86,11 +91,12 @@ model User {
   authProvider  AuthProvider @default(EMAIL)
   providerId    String?
   emailVerified Boolean      @default(false)
+  role          UserRole     @default(USER)
   tier          String       @default("FREE") // FREE, PRO, BUSINESS, ENTERPRISE
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  referredBy    String?      // AffiliateAccount.referralCode that referred this user
+  referredBy    String?      // AffiliateLink.referralCode that referred this user
 
   // Relations
   qrCodes      QRCode[]
@@ -100,10 +106,21 @@ model User {
   teamMembers  TeamMember[]
   ownedTeams   Team[]        @relation("TeamOwner")
   affiliate    AffiliateAccount?
+  orders       Order[]
 
   @@index([email])
   @@index([authProvider, providerId])
   @@index([referredBy])
+}
+
+// ============================================
+// SYSTEM CONFIG
+// ============================================
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 model RefreshToken {
@@ -294,6 +311,9 @@ model Order {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([status])
 }
@@ -386,8 +406,6 @@ model ApiKey {
 model AffiliateAccount {
   id              String   @id @default(uuid())
   userId          String   @unique
-  referralCode    String   @unique
-  commissionRate  Float    @default(0.20) // 20%
   totalEarnings   Int      @default(0)    // VND
   pendingBalance  Int      @default(0)    // VND
   paidBalance     Int      @default(0)    // VND
@@ -400,17 +418,39 @@ model AffiliateAccount {
 
   // Relations
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links       AffiliateLink[]
   referrals   AffiliateReferral[]
   commissions AffiliateCommission[]
   payouts     AffiliatePayout[]
 
-  @@index([referralCode])
   @@index([userId])
+}
+
+model AffiliateLink {
+  id              String   @id @default(uuid())
+  affiliateId     String
+  referralCode    String   @unique
+  label           String?  // e.g. "Facebook Campaign"
+  commissionRate  Float    // What affiliate keeps (e.g. 0.10 = 10%)
+  discountRate    Float    @default(0) // What referred user gets (e.g. 0.10 = 10%)
+  clickCount      Int      @default(0)
+  referralCount   Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  affiliate  AffiliateAccount  @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referrals  AffiliateReferral[]
+
+  @@index([referralCode])
+  @@index([affiliateId])
 }
 
 model AffiliateReferral {
   id             String    @id @default(uuid())
   affiliateId    String
+  linkId         String?
   referredUserId String    @unique
   status         String    @default("REGISTERED") // REGISTERED, CONVERTED, CHURNED
   convertedAt    DateTime?
@@ -418,8 +458,10 @@ model AffiliateReferral {
 
   // Relations
   affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  link      AffiliateLink?   @relation(fields: [linkId], references: [id])
 
   @@index([affiliateId])
+  @@index([linkId])
 }
 
 model AffiliateCommission {

@@ -15,6 +15,7 @@ interface User {
     name: string | null;
     avatarUrl: string | null;
     emailVerified: boolean;
+    role?: 'USER' | 'ADMIN';
     createdAt: string;
     subscription?: Subscription;
 }
@@ -109,7 +110,7 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-    register: async (email: string, password: string, name?: string) => {
+            register: async (email: string, password: string, name?: string) => {
                 set({ isLoading: true });
                 try {
                     const response = await api.post<{

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
@@ -16,12 +16,18 @@ function VerifyContent() {
     const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
     const [errorMessage, setErrorMessage] = useState("");
 
+    const verifyingRef = useRef(false);
+
     useEffect(() => {
         if (!token) {
             setStatus("error");
             setErrorMessage("Link không hợp lệ hoặc bị thiếu");
             return;
         }
+
+        // Prevent double verification (React Strict Mode or re-renders)
+        if (verifyingRef.current) return;
+        verifyingRef.current = true;
 
         const verify = async () => {
             try {

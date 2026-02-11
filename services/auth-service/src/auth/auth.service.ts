@@ -211,48 +211,62 @@ export class AuthService {
      * Verify magic link and login/register user
      */
     async verifyMagicLink(token: string) {
-        // Find the magic link
-        const magicLink = await this.prisma.magicLink.findUnique({
-            where: { token },
-        });
-
-        if (!magicLink) {
-            throw new BadRequestException("Invalid or expired magic link");
-        }
-
-        if (magicLink.expiresAt < new Date()) {
-            // Delete expired token
-            await this.prisma.magicLink.delete({ where: { token } });
-            throw new BadRequestException("Magic link has expired");
-        }
-
-        // Find or create user
-        let user = await this.usersService.findByEmail(magicLink.email);
-
-        if (!user) {
-            // Create new user with magic link provider
-            user = await this.usersService.create({
-                email: magicLink.email,
-                authProvider: AuthProvider.EMAIL,
-                emailVerified: true,
+        try {
+            // Find the magic link
+            const magicLink = await this.prisma.magicLink.findUnique({
+                where: { token },
             });
-        } else {
-            // Mark email as verified if not already
-            if (!user.emailVerified) {
-                user = await this.usersService.update(user.id, { emailVerified: true });
+
+            if (!magicLink) {
+                throw new BadRequestException("Invalid or expired magic link");
             }
+
+            if (magicLink.expiresAt < new Date()) {
+                // Delete expired token
+                await this.prisma.magicLink.delete({ where: { token } });
+                throw new BadRequestException("Magic link has expired");
+            }
+
+            // Find or create user
+            let user = await this.usersService.findByEmail(magicLink.email);
+
+            if (!user) {
+                // Create new user with magic link provider
+                user = await this.usersService.create({
+                    email: magicLink.email,
+                    authProvider: AuthProvider.EMAIL,
+                    emailVerified: true,
+                });
+            } else {
+                // Mark email as verified if not already
+                if (!user.emailVerified) {
+                    user = await this.usersService.update(user.id, { emailVerified: true });
+                }
+            }
+
+            // Delete used magic link
+            try {
+                await this.prisma.magicLink.delete({ where: { token } });
+            } catch (e) {
+                console.warn("Failed to delete used magic link:", e);
+                // Continue execution
+            }
+
+            // Generate tokens
+            const tokens = await this.generateTokens(user);
+
+            return {
+                user: this.sanitizeUser(user),
+                ...tokens,
+            };
+        } catch (error: any) {
+            console.error("Verify Magic Link Error:", error);
+            if (error instanceof BadRequestException || error instanceof NotFoundException) {
+                throw error;
+            }
+            // Return specific DB error if possible, otherwise generic
+            throw new BadRequestException(`Login failed: ${error.message || 'Unknown error'}`);
         }
-
-        // Delete used magic link
-        await this.prisma.magicLink.delete({ where: { token } });
-
-        // Generate tokens
-        const tokens = await this.generateTokens(user);
-
-        return {
-            user: this.sanitizeUser(user),
-            ...tokens,
-        };
     }
 
     // Sync Firebase user with backend database

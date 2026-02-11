@@ -10,7 +10,7 @@ import { QrCode, Loader2, Mail, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/auth-store";
-import { signInWithGoogle } from "@/lib/firebase";
+import { signInWithGoogle, getGoogleRedirectResult } from "@/lib/firebase";
 import { useTranslation } from "@/lib/i18n/index";
 
 const loginSchema = z.object({
@@ -24,7 +24,7 @@ export default function LoginPage() {
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const { requestMagicLink, isLoading, setUser, setTokens } = useAuthStore();
-    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(true); // Start true to check redirect result
     const [isSuccess, setIsSuccess] = useState(false);
     const [sentEmail, setSentEmail] = useState("");
     const { t } = useTranslation();
@@ -37,37 +37,30 @@ export default function LoginPage() {
         }
     }, [searchParams]);
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm<LoginFormData>({
-        resolver: zodResolver(loginSchema),
-    });
+    // Check for Google Redirect Result
+    useEffect(() => {
+        const checkRedirect = async () => {
+            try {
+                const firebaseUser = await getGoogleRedirectResult();
+                if (firebaseUser) {
+                    await syncUserWithBackend(firebaseUser);
+                }
+            } catch (error: any) {
+                console.error("Google redirect error:", error);
+                toast({
+                    title: t("common.error"),
+                    description: error.message || t("common.error"),
+                    variant: "destructive",
+                });
+            } finally {
+                setIsGoogleLoading(false);
+            }
+        };
+        checkRedirect();
+    }, []);
 
-    const onSubmit = async (data: LoginFormData) => {
+    const syncUserWithBackend = async (firebaseUser: any) => {
         try {
-            await requestMagicLink(data.email);
-            setSentEmail(data.email);
-            setIsSuccess(true);
-            toast({
-                title: t("auth.emailSent"),
-                description: t("auth.checkEmail"),
-            });
-        } catch (error: any) {
-            toast({
-                title: t("common.error"),
-                description: error.response?.data?.message || t("common.error"),
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleGoogleLogin = async () => {
-        setIsGoogleLoading(true);
-        try {
-            const firebaseUser = await signInWithGoogle();
-
             // Sync Firebase user with backend to get database user ID
             const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://auth-service-production-431d.up.railway.app/api/v1";
             console.log("🚀 Sync API URL:", API_URL);
@@ -124,13 +117,65 @@ export default function LoginPage() {
 
             router.push("/dashboard/qr");
         } catch (error: any) {
+            console.error("Sync error:", error);
+            toast({
+                title: t("common.error"),
+                description: error.message || t("common.error"),
+                variant: "destructive",
+            });
+        }
+    };
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+    });
+
+    const onSubmit = async (data: LoginFormData) => {
+        try {
+            await requestMagicLink(data.email);
+            setSentEmail(data.email);
+            setIsSuccess(true);
+            toast({
+                title: t("auth.emailSent"),
+                description: t("auth.checkEmail"),
+            });
+        } catch (error: any) {
+            toast({
+                title: t("common.error"),
+                description: error.response?.data?.message || t("common.error"),
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setIsGoogleLoading(true);
+        try {
+            // signInWithGoogle from firebase.ts now handles fallback to redirect automatically
+            const firebaseUser = await signInWithGoogle();
+
+            // If we get a user back immediately (popup worked), sync it
+            if (firebaseUser) {
+                await syncUserWithBackend(firebaseUser);
+            }
+            // If no user returned, it means redirect happened (or error), 
+            // so we don't need to do anything here as the page will reload
+        } catch (error: any) {
+            // Check if it's the specific "REDIRECT_IN_PROGRESS" error we threw
+            if (error.message === "REDIRECT_IN_PROGRESS") {
+                return;
+            }
+
             console.error("Google login error:", error);
             toast({
                 title: t("common.error"),
                 description: error.message || t("common.error"),
                 variant: "destructive",
             });
-        } finally {
             setIsGoogleLoading(false);
         }
     };

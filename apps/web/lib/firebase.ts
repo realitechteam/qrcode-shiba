@@ -3,6 +3,8 @@ import {
     getAuth,
     GoogleAuthProvider,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     signOut,
     onAuthStateChanged,
     User,
@@ -38,10 +40,38 @@ googleProvider.setCustomParameters({
     prompt: "select_account",
 });
 
-// Sign in with Google popup
+// Sign in with Google - try popup first, fallback to redirect
 export const signInWithGoogle = async (): Promise<User> => {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    try {
+        // Try popup first (works on most browsers)
+        const result = await signInWithPopup(auth, googleProvider);
+        return result.user;
+    } catch (error: any) {
+        // If popup blocked by COOP or browser policy, use redirect
+        if (
+            error.code === "auth/popup-blocked" ||
+            error.code === "auth/popup-closed-by-user" ||
+            error.code === "auth/cancelled-popup-request" ||
+            error.code === "auth/internal-error"
+        ) {
+            console.log("Popup blocked, falling back to redirect...");
+            await signInWithRedirect(auth, googleProvider);
+            // This line won't execute - page will redirect
+            throw new Error("REDIRECT_IN_PROGRESS");
+        }
+        throw error;
+    }
+};
+
+// Get redirect result (call on page load to handle redirect-based auth)
+export const getGoogleRedirectResult = async (): Promise<User | null> => {
+    try {
+        const result = await getRedirectResult(auth);
+        return result?.user || null;
+    } catch (error) {
+        console.error("Error getting redirect result:", error);
+        return null;
+    }
 };
 
 // Sign out

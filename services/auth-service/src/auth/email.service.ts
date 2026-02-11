@@ -11,7 +11,7 @@ export class EmailService {
 
     constructor(private readonly configService: ConfigService) {
         const apiKey = this.configService.get<string>("RESEND_API_KEY");
-        
+
         if (!apiKey || apiKey === "re_dummy_key") {
             this.logger.warn("RESEND_API_KEY not set - emails will be logged only");
         } else {
@@ -21,7 +21,7 @@ export class EmailService {
                 this.logger.error("Failed to initialize Resend:", err);
             }
         }
-        
+
         this.fromEmail = this.configService.get<string>("RESEND_FROM_EMAIL") || "QRCode-Shiba <noreply@shiba.pw>";
         this.frontendUrl = this.configService.get<string>("FRONTEND_URL") || "https://www.shiba.pw";
     }
@@ -30,7 +30,7 @@ export class EmailService {
      * Send magic link email for passwordless login
      */
     async sendMagicLink(email: string, token: string): Promise<boolean> {
-        const magicLinkUrl = `${this.frontendUrl}/auth/verify?token=${token}`;
+        const magicLinkUrl = `${this.frontendUrl}/verify?token=${token}`;
 
         const html = `
 <!DOCTYPE html>

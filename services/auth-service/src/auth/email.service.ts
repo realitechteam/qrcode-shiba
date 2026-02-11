@@ -22,7 +22,7 @@ export class EmailService {
             }
         }
 
-        this.fromEmail = this.configService.get<string>("RESEND_FROM_EMAIL") || "QRCode-Shiba <noreply@shiba.pw>";
+        this.fromEmail = this.configService.get<string>("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
         this.frontendUrl = this.configService.get<string>("FRONTEND_URL") || "https://www.shiba.pw";
     }
 
@@ -31,6 +31,8 @@ export class EmailService {
      */
     async sendMagicLink(email: string, token: string): Promise<boolean> {
         const magicLinkUrl = `${this.frontendUrl}/verify?token=${token}`;
+
+        // ... (html content skipped for brevity) ...
 
         const html = `
 <!DOCTYPE html>
@@ -79,12 +81,16 @@ export class EmailService {
                 html,
             });
 
+            if (result.error) {
+                this.logger.error(`Failed to send magic link to ${email}:`, result.error);
+                return false;
+            }
+
             this.logger.log(`Magic link email sent to ${email}: ${result.data?.id}`);
             return true;
         } catch (error: any) {
             this.logger.error(`Failed to send magic link to ${email}:`, error?.message || error);
-            // Return true anyway since the token is saved - user can retry
-            return true;
+            return false;
         }
     }
 

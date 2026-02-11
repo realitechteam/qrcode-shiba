@@ -196,15 +196,14 @@ export class AuthService {
             const emailSent = await this.emailService.sendMagicLink(email, token);
 
             if (!emailSent) {
-                // Email service returned false but didn't throw
-                console.warn(`Magic link email may not have been sent to ${email}`);
+                // If email failed to send, throw error so frontend knows
+                throw new Error("Email service failed to send email");
             }
 
             return { message: "Magic link sent to your email" };
         } catch (error) {
             console.error("Error in requestMagicLink:", error);
-            // Don't expose internal errors to client
-            throw new BadRequestException("Không thể gửi magic link. Vui lòng thử lại sau.");
+            throw new BadRequestException("Không thể gửi magic link. Vui lòng kiểm tra lại email hoặc thử lại sau.");
         }
     }
 
@@ -263,38 +262,45 @@ export class AuthService {
         firebaseUid: string,
         photoUrl: string | null
     ) {
-        // Try to find existing user by email
-        let user = await this.usersService.findByEmail(email);
+        try {
+            // Try to find existing user by email
+            let user = await this.usersService.findByEmail(email);
 
-        if (!user) {
-            // Create new user with Firebase provider
-            user = await this.usersService.create({
-                email,
-                name: name || undefined,
-                providerId: firebaseUid,
-                authProvider: AuthProvider.GOOGLE,
-                emailVerified: true,
-                avatarUrl: photoUrl || undefined,
-            });
-        } else {
-            // Update existing user's Firebase info if needed
-            if (!user.providerId) {
-                user = await this.usersService.update(user.id, {
+            if (!user) {
+                // Create new user with Firebase provider
+                user = await this.usersService.create({
+                    email,
+                    name: name || undefined,
                     providerId: firebaseUid,
                     authProvider: AuthProvider.GOOGLE,
-                    avatarUrl: photoUrl || user.avatarUrl,
-                    name: name || user.name,
+                    emailVerified: true,
+                    avatarUrl: photoUrl || undefined,
                 });
+            } else {
+                // Update existing user's Firebase info if needed
+                if (!user.providerId) {
+                    user = await this.usersService.update(user.id, {
+                        providerId: firebaseUid,
+                        authProvider: AuthProvider.GOOGLE,
+                        avatarUrl: photoUrl || user.avatarUrl,
+                        name: name || user.name,
+                    });
+                }
             }
+
+            // Generate tokens for this user
+            const tokens = await this.generateTokens(user);
+
+            return {
+                user: this.sanitizeUser(user),
+                ...tokens,
+            };
+        } catch (error: any) {
+            console.error("Sync Firebase User Error:", error);
+            // Re-throw appropriate exception
+            if (error instanceof ConflictException) throw error;
+            throw new BadRequestException(`Failed to sync user: ${error.message}`);
         }
-
-        // Generate tokens for this user
-        const tokens = await this.generateTokens(user);
-
-        return {
-            user: this.sanitizeUser(user),
-            ...tokens,
-        };
     }
 
     private async generateTokens(user: User) {

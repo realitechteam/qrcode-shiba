@@ -26,7 +26,8 @@ export class AuthService {
     ) { }
 
     async register(registerDto: RegisterDto) {
-        const existingUser = await this.usersService.findByEmail(registerDto.email);
+        const email = registerDto.email.toLowerCase();
+        const existingUser = await this.usersService.findByEmail(email);
         if (existingUser) {
             throw new ConflictException("Email already registered");
         }
@@ -34,7 +35,7 @@ export class AuthService {
         const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
         const user = await this.usersService.create({
-            email: registerDto.email,
+            email,
             passwordHash: hashedPassword,
             name: registerDto.name,
             authProvider: AuthProvider.EMAIL,
@@ -50,7 +51,7 @@ export class AuthService {
     }
 
     async validateUser(email: string, password: string): Promise<User | null> {
-        const user = await this.usersService.findByEmail(email);
+        const user = await this.usersService.findByEmail(email.toLowerCase());
         if (!user || !user.passwordHash) {
             return null;
         }
@@ -130,11 +131,12 @@ export class AuthService {
         providerId: string,
         provider: AuthProvider
     ): Promise<User> {
-        let user = await this.usersService.findByEmail(email);
+        const lowerEmail = email.toLowerCase();
+        let user = await this.usersService.findByEmail(lowerEmail);
 
         if (!user) {
             user = await this.usersService.create({
-                email,
+                email: lowerEmail,
                 name,
                 providerId,
                 authProvider: provider,
@@ -151,7 +153,7 @@ export class AuthService {
     }
 
     async forgotPassword(email: string) {
-        const user = await this.usersService.findByEmail(email);
+        const user = await this.usersService.findByEmail(email.toLowerCase());
         if (!user) {
             // Don't reveal if user exists
             return { message: "If email exists, reset link will be sent" };
@@ -180,7 +182,7 @@ export class AuthService {
             throw new BadRequestException("Email không hợp lệ");
         }
 
-        const emailLower = email.toLowerCase();
+        const lowerEmail = email.toLowerCase();
 
         try {
             // Generate a unique token
@@ -189,13 +191,13 @@ export class AuthService {
 
             // Store magic link token in database
             await this.prisma.magicLink.upsert({
-                where: { email: emailLower },
+                where: { email: lowerEmail },
                 update: { token, expiresAt },
-                create: { email: emailLower, token, expiresAt },
+                create: { email: lowerEmail, token, expiresAt },
             });
 
             // Send email with magic link
-            const emailSent = await this.emailService.sendMagicLink(emailLower, token);
+            const emailSent = await this.emailService.sendMagicLink(lowerEmail, token);
 
             if (!emailSent) {
                 // If email failed to send, throw error so frontend knows
@@ -279,13 +281,14 @@ export class AuthService {
         photoUrl: string | null
     ) {
         try {
+            const lowerEmail = email.toLowerCase();
             // Try to find existing user by email
-            let user = await this.usersService.findByEmail(email);
+            let user = await this.usersService.findByEmail(lowerEmail);
 
             if (!user) {
                 // Create new user with Firebase provider
                 user = await this.usersService.create({
-                    email,
+                    email: lowerEmail,
                     name: name || undefined,
                     providerId: firebaseUid,
                     authProvider: AuthProvider.GOOGLE,

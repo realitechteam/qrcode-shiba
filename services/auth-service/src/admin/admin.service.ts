@@ -146,13 +146,6 @@ export class AdminService {
         });
     }
 
-    async updateUser(id: string, data: { tier?: string; role?: "USER" | "ADMIN" }) {
-        return this.prisma.user.update({
-            where: { id },
-            data,
-        });
-    }
-
     async banUser(id: string) {
         // Prevent banning other admins
         const user = await this.prisma.user.findUnique({ where: { id } });
@@ -171,6 +164,22 @@ export class AdminService {
             where: { id },
             data: { bannedAt: null },
         });
+    }
+
+    async impersonateUser(userId: string) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // Use AuthService logic to generate tokens (we need to inject AuthService or replicate logic)
+        // Since AdminService is likely used by AdminController, better to return user and let controller handle token gen?
+        // Or inject AuthService.
+        // For simplicity here, let's replicate token generation or assume we can move token generation to a shared utility or UsersService.
+        // Actually, let's just use JwtService directly as we have it injected in AuthService.
+        // But AdminService doesn't have JwtService injected.
+
+        return user;
     }
 
     // ==========================================

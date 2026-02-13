@@ -8,15 +8,20 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    Post,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { AdminGuard } from "./admin.guard";
 import { AdminService } from "./admin.service";
+import { AuthService } from "../auth/auth.service";
 
 @Controller("admin")
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class AdminController {
-    constructor(private readonly adminService: AdminService) { }
+    constructor(
+        private readonly adminService: AdminService,
+        private readonly authService: AuthService
+    ) { }
 
     // ==========================================
     // DASHBOARD STATS
@@ -65,6 +70,13 @@ export class AdminController {
     @HttpCode(HttpStatus.OK)
     async unbanUser(@Param("id") id: string) {
         return this.adminService.unbanUser(id);
+    }
+
+    @Post("users/:id/impersonate")
+    @HttpCode(HttpStatus.OK)
+    async impersonateUser(@Param("id") id: string) {
+        const user = await this.adminService.impersonateUser(id);
+        return this.authService.login(user); // Generate tokens for this user
     }
 
     // ==========================================

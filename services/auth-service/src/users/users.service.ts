@@ -7,7 +7,7 @@ export class UsersService {
     constructor(private readonly prisma: PrismaService) { }
 
     async create(data: Prisma.UserCreateInput) {
-        // Enforce lowercase email
+        // Ensure email is lowercase
         if (data.email) {
             data.email = data.email.toLowerCase();
         }
@@ -39,6 +39,11 @@ export class UsersService {
     }
 
     async update(id: string, data: Prisma.UserUpdateInput) {
+        // Ensure email is lowercase if being updated
+        if (data.email && typeof data.email === 'string') {
+            data.email = data.email.toLowerCase();
+        }
+
         return this.prisma.user.update({
             where: { id },
             data,

@@ -180,6 +180,8 @@ export class AuthService {
             throw new BadRequestException("Email không hợp lệ");
         }
 
+        const emailLower = email.toLowerCase();
+
         try {
             // Generate a unique token
             const token = uuidv4();
@@ -187,13 +189,13 @@ export class AuthService {
 
             // Store magic link token in database
             await this.prisma.magicLink.upsert({
-                where: { email },
+                where: { email: emailLower },
                 update: { token, expiresAt },
-                create: { email, token, expiresAt },
+                create: { email: emailLower, token, expiresAt },
             });
 
             // Send email with magic link
-            const emailSent = await this.emailService.sendMagicLink(email, token);
+            const emailSent = await this.emailService.sendMagicLink(emailLower, token);
 
             if (!emailSent) {
                 // If email failed to send, throw error so frontend knows

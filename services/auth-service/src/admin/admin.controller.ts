@@ -50,9 +50,21 @@ export class AdminController {
     @HttpCode(HttpStatus.OK)
     async updateUser(
         @Param("id") id: string,
-        @Body() data: { tier?: string; role?: string; name?: string }
+        @Body() data: { tier?: string; role?: "USER" | "ADMIN" }
     ) {
         return this.adminService.updateUser(id, data);
+    }
+
+    @Patch("users/:id/ban")
+    @HttpCode(HttpStatus.OK)
+    async banUser(@Param("id") id: string) {
+        return this.adminService.banUser(id);
+    }
+
+    @Patch("users/:id/unban")
+    @HttpCode(HttpStatus.OK)
+    async unbanUser(@Param("id") id: string) {
+        return this.adminService.unbanUser(id);
     }
 
     // ==========================================

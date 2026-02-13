@@ -141,7 +141,35 @@ export class AdminService {
                 name: true,
                 role: true,
                 tier: true,
+                bannedAt: true,
             },
+        });
+    }
+
+    async updateUser(id: string, data: { tier?: string; role?: "USER" | "ADMIN" }) {
+        return this.prisma.user.update({
+            where: { id },
+            data,
+        });
+    }
+
+    async banUser(id: string) {
+        // Prevent banning other admins
+        const user = await this.prisma.user.findUnique({ where: { id } });
+        if (user?.role === "ADMIN") {
+            throw new Error("Cannot ban an admin");
+        }
+
+        return this.prisma.user.update({
+            where: { id },
+            data: { bannedAt: new Date() },
+        });
+    }
+
+    async unbanUser(id: string) {
+        return this.prisma.user.update({
+            where: { id },
+            data: { bannedAt: null },
         });
     }
 

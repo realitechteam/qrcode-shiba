@@ -1,5 +1,7 @@
 "use client";
 
+// Force redeploy - Admin Users Page
+
 import { useEffect, useState, useCallback } from "react";
 import { Search, ChevronLeft, ChevronRight, Pencil, X, Check } from "lucide-react";
 import { api } from "@/lib/api";
@@ -15,6 +17,7 @@ interface UserItem {
     tier: string;
     referredBy: string | null;
     createdAt: string;
+    bannedAt: string | null;
     _count: { qrCodes: number };
 }
 
@@ -69,6 +72,22 @@ export default function AdminUsersPage() {
         }
     };
 
+    const toggleBan = async (user: UserItem) => {
+        if (!confirm(`Are you sure you want to ${user.bannedAt ? "unban" : "ban"} ${user.email}?`)) return;
+
+        try {
+            if (user.bannedAt) {
+                await api.patch(`/admin/users/${user.id}/unban`);
+            } else {
+                await api.patch(`/admin/users/${user.id}/ban`);
+            }
+            loadUsers(pagination.page);
+        } catch (error: any) {
+            console.error("Failed to toggle ban:", error);
+            alert(error.response?.data?.message || "Failed to update user status");
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -102,7 +121,7 @@ export default function AdminUsersPage() {
                                 <th className="text-left px-4 py-3 text-gray-400 font-medium">Tier</th>
                                 <th className="text-left px-4 py-3 text-gray-400 font-medium">Role</th>
                                 <th className="text-left px-4 py-3 text-gray-400 font-medium">QR</th>
-                                <th className="text-left px-4 py-3 text-gray-400 font-medium">Ngày tạo</th>
+                                <th className="text-left px-4 py-3 text-gray-400 font-medium">Status</th>
                                 <th className="text-right px-4 py-3 text-gray-400 font-medium"></th>
                             </tr>
                         </thead>
@@ -119,8 +138,11 @@ export default function AdminUsersPage() {
                                 </tr>
                             ) : (
                                 users.map((u) => (
-                                    <tr key={u.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                                        <td className="px-4 py-3 text-gray-200">{u.email}</td>
+                                    <tr key={u.id} className={`border-b border-gray-800/50 hover:bg-gray-800/30 ${u.bannedAt ? "bg-red-900/10" : ""}`}>
+                                        <td className="px-4 py-3">
+                                            <div className="text-gray-200">{u.email}</div>
+                                            {u.bannedAt && <span className="text-xs text-red-400 font-medium">BANNED</span>}
+                                        </td>
                                         <td className="px-4 py-3 text-gray-300">{u.name || "—"}</td>
                                         <td className="px-4 py-3">
                                             {editingId === u.id ? (
@@ -148,16 +170,33 @@ export default function AdminUsersPage() {
                                             )}
                                         </td>
                                         <td className="px-4 py-3 text-gray-400">{u._count.qrCodes}</td>
-                                        <td className="px-4 py-3 text-gray-400 text-xs">{new Date(u.createdAt).toLocaleDateString("vi-VN")}</td>
+                                        <td className="px-4 py-3 text-gray-400 text-xs">
+                                            {new Date(u.createdAt).toLocaleDateString("vi-VN")}
+                                        </td>
                                         <td className="px-4 py-3 text-right">
-                                            {editingId === u.id ? (
-                                                <div className="flex gap-1 justify-end">
-                                                    <button onClick={() => saveEdit(u.id)} className="p-1.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"><Check className="h-3.5 w-3.5" /></button>
-                                                    <button onClick={() => setEditingId(null)} className="p-1.5 rounded bg-gray-700 text-gray-400 hover:bg-gray-600"><X className="h-3.5 w-3.5" /></button>
-                                                </div>
-                                            ) : (
-                                                <button onClick={() => startEdit(u)} className="p-1.5 rounded text-gray-400 hover:bg-gray-800 hover:text-gray-200"><Pencil className="h-3.5 w-3.5" /></button>
-                                            )}
+                                            <div className="flex gap-2 justify-end items-center">
+                                                {editingId === u.id ? (
+                                                    <>
+                                                        <button onClick={() => saveEdit(u.id)} className="p-1.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"><Check className="h-3.5 w-3.5" /></button>
+                                                        <button onClick={() => setEditingId(null)} className="p-1.5 rounded bg-gray-700 text-gray-400 hover:bg-gray-600"><X className="h-3.5 w-3.5" /></button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button onClick={() => startEdit(u)} className="p-1.5 rounded text-gray-400 hover:bg-gray-800 hover:text-gray-200" title="Edit User">
+                                                            <Pencil className="h-3.5 w-3.5" />
+                                                        </button>
+                                                        {u.role !== "ADMIN" && (
+                                                            <button
+                                                                onClick={() => toggleBan(u)}
+                                                                className={`p-1.5 rounded text-xs font-medium ${u.bannedAt ? "text-green-400 hover:text-green-300" : "text-red-400 hover:text-red-300"}`}
+                                                                title={u.bannedAt ? "Unban User" : "Ban User"}
+                                                            >
+                                                                {u.bannedAt ? "UNBAN" : "BAN"}
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

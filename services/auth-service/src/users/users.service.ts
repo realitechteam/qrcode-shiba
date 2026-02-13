@@ -7,6 +7,11 @@ export class UsersService {
     constructor(private readonly prisma: PrismaService) { }
 
     async create(data: Prisma.UserCreateInput) {
+        // Enforce lowercase email
+        if (data.email) {
+            data.email = data.email.toLowerCase();
+        }
+
         return this.prisma.user.create({
             data,
             include: {
@@ -26,7 +31,7 @@ export class UsersService {
 
     async findByEmail(email: string) {
         return this.prisma.user.findUnique({
-            where: { email },
+            where: { email: email.toLowerCase() },
             include: {
                 subscription: true,
             },

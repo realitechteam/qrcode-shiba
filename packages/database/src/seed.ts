@@ -5,13 +5,13 @@ import * as path from "path";
 // Keep the dotenv config
 dotenv.config({ path: path.resolve(__dirname, "../../../.env"), override: true });
 
-const prisma = new PrismaClient({
-    datasources: {
-        db: {
-            url: process.env.DATABASE_URL + (process.env.DATABASE_URL?.includes('?') ? '&' : '?') + "connect_timeout=30&pool_timeout=30",
-        },
-    },
-});
+// Append connection timeout params to DATABASE_URL if not already present
+const baseUrl = process.env.DATABASE_URL || "";
+if (baseUrl && !baseUrl.includes("connect_timeout")) {
+    process.env.DATABASE_URL = baseUrl + (baseUrl.includes('?') ? '&' : '?') + "connect_timeout=30&pool_timeout=30";
+}
+
+const prisma = new PrismaClient();
 
 async function main() {
     console.log("Seeding plans...");

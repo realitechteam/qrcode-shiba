@@ -4,6 +4,7 @@ import {
     ConflictException,
     NotFoundException,
     BadRequestException,
+    ForbiddenException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
@@ -320,6 +321,36 @@ export class AuthService {
             if (error instanceof ConflictException) throw error;
             throw new BadRequestException(`Failed to sync user: ${error.message}`);
         }
+    }
+
+    // Dev-only login for local testing (no password/OAuth required)
+    async devLogin(email: string) {
+        if (process.env.NODE_ENV !== 'development') {
+            throw new ForbiddenException('Dev login is only available in development mode');
+        }
+
+        const lowerEmail = email.toLowerCase();
+        let user = await this.usersService.findByEmail(lowerEmail);
+
+        if (!user) {
+            user = await this.usersService.create({
+                email: lowerEmail,
+                name: 'Dev Admin',
+                authProvider: AuthProvider.EMAIL,
+                emailVerified: true,
+            });
+            // Set admin role
+            user = await this.prisma.user.update({
+                where: { id: user.id },
+                data: { role: 'ADMIN' },
+            });
+        }
+
+        const tokens = await this.generateTokens(user);
+        return {
+            user: this.sanitizeUser(user),
+            ...tokens,
+        };
     }
 
     private async generateTokens(user: User) {

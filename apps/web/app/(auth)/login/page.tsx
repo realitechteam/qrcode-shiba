@@ -27,6 +27,7 @@ export default function LoginPage() {
     const [isGoogleLoading, setIsGoogleLoading] = useState(true); // Start true to check redirect result
     const [isSuccess, setIsSuccess] = useState(false);
     const [sentEmail, setSentEmail] = useState("");
+    const [isDevLoading, setIsDevLoading] = useState(false);
     const { t } = useTranslation();
 
     // Capture referral code from URL and store in localStorage
@@ -313,6 +314,59 @@ export default function LoginPage() {
                             )}
                             {isGoogleLoading ? t("auth.loggingIn") : t("auth.loginWithGoogle")}
                         </Button>
+
+                        {/* Dev Quick Login - only in development */}
+                        {process.env.NODE_ENV === "development" && (
+                            <>
+                                <div className="my-4 flex items-center gap-4">
+                                    <div className="flex-1 border-t border-dashed border-yellow-500/50" />
+                                    <span className="text-xs text-yellow-600 dark:text-yellow-400 font-mono">DEV ONLY</span>
+                                    <div className="flex-1 border-t border-dashed border-yellow-500/50" />
+                                </div>
+                                <Button
+                                    type="button"
+                                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-mono"
+                                    disabled={isDevLoading}
+                                    onClick={async () => {
+                                        setIsDevLoading(true);
+                                        try {
+                                            const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || "http://localhost:3001/api/v1";
+                                            const response = await fetch(`${API_URL}/auth/dev-login`, {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ email: "partner@realitech.dev" }),
+                                            });
+                                            if (!response.ok) throw new Error("Dev login failed");
+                                            const data = await response.json();
+                                            setUser({
+                                                id: data.user.id,
+                                                email: data.user.email,
+                                                name: data.user.name,
+                                                avatarUrl: data.user.avatarUrl,
+                                                emailVerified: data.user.emailVerified,
+                                                role: data.user.role,
+                                                createdAt: data.user.createdAt,
+                                                subscription: data.user.subscription,
+                                            });
+                                            setTokens(data.accessToken, data.refreshToken);
+                                            toast({ title: "Dev Login", description: `Logged in as ${data.user.email}` });
+                                            router.push("/dashboard/qr");
+                                        } catch (error: any) {
+                                            toast({ title: "Dev Login Failed", description: error.message, variant: "destructive" });
+                                        } finally {
+                                            setIsDevLoading(false);
+                                        }
+                                    }}
+                                >
+                                    {isDevLoading ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <span className="mr-2">⚡</span>
+                                    )}
+                                    Dev Login (partner@realitech.dev)
+                                </Button>
+                            </>
+                        )}
 
                     </div>
                 </div>

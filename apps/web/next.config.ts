@@ -1,9 +1,9 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
     reactStrictMode: true,
     transpilePackages: ["@qrcode-shiba/database"],
     images: {
-        domains: ["localhost", "qrcode-shiba.com"],
         remotePatterns: [
             {
                 protocol: "https",
@@ -26,4 +26,4 @@ const nextConfig = {
     },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

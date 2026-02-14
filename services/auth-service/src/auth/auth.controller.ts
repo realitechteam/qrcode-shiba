@@ -115,4 +115,11 @@ export class AuthController {
     ) {
         return this.authService.syncFirebaseUser(email, name, firebaseUid, photoUrl);
     }
+
+    // Dev-only quick login (no password/OAuth required)
+    @Post("dev-login")
+    @HttpCode(HttpStatus.OK)
+    async devLogin(@Body("email") email: string) {
+        return this.authService.devLogin(email);
+    }
 }

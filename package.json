@@ -2,7 +2,7 @@
   "name": "qrcode-shiba",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@8.15.0",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "turbo dev",
     "dev:web": "turbo dev --filter=@qrcode-shiba/web",
@@ -24,9 +24,9 @@
   "devDependencies": {
     "@qrcode-shiba/eslint-config": "workspace:*",
     "@qrcode-shiba/typescript-config": "workspace:*",
-    "prettier": "^3.2.5",
+    "prettier": "^3.5.0",
     "rimraf": "^5.0.5",
-    "turbo": "^2.0.0"
+    "turbo": "^2.4.0"
   },
   "engines": {
     "node": ">=20.0.0",

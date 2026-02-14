@@ -14,14 +14,14 @@
         "db:seed": "tsx src/seed.ts"
     },
     "dependencies": {
-        "@prisma/client": "^5.22.0",
+        "@prisma/client": "^7.0.0",
         "typescript": "^5.9.3"
     },
     "devDependencies": {
         "@qrcode-shiba/typescript-config": "workspace:*",
         "@types/node": "^20.11.0",
         "dotenv": "^17.2.3",
-        "prisma": "^5.10.0",
+        "prisma": "^7.0.0",
         "tsx": "^4.7.0"
     }
 }

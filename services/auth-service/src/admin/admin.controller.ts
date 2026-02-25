@@ -2,6 +2,7 @@ import {
     Controller,
     Get,
     Patch,
+    Delete,
     Body,
     Param,
     Query,
@@ -77,6 +78,17 @@ export class AdminController {
     async impersonateUser(@Param("id") id: string) {
         const user = await this.adminService.impersonateUser(id);
         return this.authService.login(user); // Generate tokens for this user
+    }
+
+    @Get("users/:id")
+    async getUserDetail(@Param("id") id: string) {
+        return this.adminService.getUserDetail(id);
+    }
+
+    @Delete("users/:id")
+    @HttpCode(HttpStatus.OK)
+    async deleteUser(@Param("id") id: string) {
+        return this.adminService.deleteUser(id);
     }
 
     // ==========================================

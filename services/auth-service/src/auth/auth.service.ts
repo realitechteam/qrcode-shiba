@@ -296,15 +296,17 @@ export class AuthService {
                     avatarUrl: photoUrl || undefined,
                 });
             } else {
-                // Update existing user's Firebase info if needed
-                if (!user.providerId) {
-                    user = await this.usersService.update(user.id, {
-                        providerId: firebaseUid,
-                        authProvider: AuthProvider.GOOGLE,
-                        avatarUrl: photoUrl || user.avatarUrl,
-                        name: name || user.name,
-                    });
+                // Always update Firebase info to link providers (merge accounts)
+                const updateData: any = {
+                    avatarUrl: photoUrl || user.avatarUrl,
+                    name: name || user.name,
+                    emailVerified: true,
+                };
+                // Set providerId if not already set or if it differs
+                if (!user.providerId || user.providerId !== firebaseUid) {
+                    updateData.providerId = firebaseUid;
                 }
+                user = await this.usersService.update(user.id, updateData);
             }
 
             // Generate tokens for this user
@@ -320,6 +322,26 @@ export class AuthService {
             if (error instanceof ConflictException) throw error;
             throw new BadRequestException(`Failed to sync user: ${error.message}`);
         }
+    }
+
+    // Dev login - bypass all auth for development only
+    async devLogin(email: string) {
+        if (process.env.NODE_ENV === 'production') {
+            throw new NotFoundException('Not found');
+        }
+
+        const lowerEmail = email.toLowerCase();
+        const user = await this.usersService.findByEmail(lowerEmail);
+
+        if (!user) {
+            throw new NotFoundException(`User with email ${lowerEmail} not found`);
+        }
+
+        const tokens = await this.generateTokens(user);
+        return {
+            user: this.sanitizeUser(user),
+            ...tokens,
+        };
     }
 
     private async generateTokens(user: User) {

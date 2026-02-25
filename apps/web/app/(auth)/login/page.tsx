@@ -314,6 +314,46 @@ export default function LoginPage() {
                             {isGoogleLoading ? t("auth.loggingIn") : t("auth.loginWithGoogle")}
                         </Button>
 
+                        {/* Dev Login - only in development */}
+                        {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
+                            <div className="mt-4 pt-4 border-t border-dashed border-yellow-500/30">
+                                <p className="text-xs text-yellow-500/70 mb-2 text-center">🛠 Dev Mode</p>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400"
+                                    disabled={isLoading || isGoogleLoading}
+                                    onClick={async () => {
+                                        try {
+                                            const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://auth-service-production-431d.up.railway.app/api/v1";
+                                            const res = await fetch(`${API_URL}/auth/dev-login`, {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ email: "partner@realitech.dev" }),
+                                            });
+                                            if (!res.ok) throw new Error("Dev login failed");
+                                            const data = await res.json();
+                                            setUser({
+                                                id: data.user.id,
+                                                email: data.user.email,
+                                                name: data.user.name,
+                                                avatarUrl: data.user.avatarUrl,
+                                                emailVerified: data.user.emailVerified,
+                                                createdAt: data.user.createdAt,
+                                            });
+                                            setTokens(data.accessToken, data.refreshToken);
+                                            toast({ title: "Dev Login", description: `Logged in as ${data.user.email}` });
+                                            router.push("/admin");
+                                        } catch (err: any) {
+                                            toast({ title: "Error", description: err.message, variant: "destructive" });
+                                        }
+                                    }}
+                                >
+                                    🔑 Dev Login (partner@realitech.dev)
+                                </Button>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </div>

@@ -91,6 +91,13 @@ export class AuthController {
         return this.authService.verifyEmail(token);
     }
 
+    // Dev Login - bypass auth for development only
+    @Post("dev-login")
+    @HttpCode(HttpStatus.OK)
+    async devLogin(@Body("email") email: string) {
+        return this.authService.devLogin(email);
+    }
+
     // Magic Link
     @Post("magic-link")
     @HttpCode(HttpStatus.OK)

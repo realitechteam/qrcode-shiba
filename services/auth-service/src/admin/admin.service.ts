@@ -182,6 +182,53 @@ export class AdminService {
         return user;
     }
 
+    async getUserDetail(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                subscription: true,
+                _count: {
+                    select: {
+                        qrCodes: true,
+                        orders: true,
+                        apiKeys: true,
+                        folders: true,
+                    },
+                },
+            },
+        });
+        if (!user) {
+            throw new Error("User not found");
+        }
+        return user;
+    }
+
+    async deleteUser(userId: string) {
+        // Prevent deleting admins
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            throw new Error("User not found");
+        }
+        if (user.role === "ADMIN") {
+            throw new Error("Cannot delete an admin user");
+        }
+
+        // Cascade delete all associated data
+        await this.prisma.$transaction([
+            this.prisma.refreshToken.deleteMany({ where: { userId } }),
+            this.prisma.magicLink.deleteMany({ where: { email: user.email } }),
+            this.prisma.qRCode.deleteMany({ where: { userId } }),
+            this.prisma.order.deleteMany({ where: { userId } }),
+            this.prisma.subscription.deleteMany({ where: { userId } }),
+            this.prisma.apiKey.deleteMany({ where: { userId } }),
+            this.prisma.folder.deleteMany({ where: { userId } }),
+            this.prisma.teamMember.deleteMany({ where: { userId } }),
+            this.prisma.user.delete({ where: { id: userId } }),
+        ]);
+
+        return { message: "User deleted successfully" };
+    }
+
     // ==========================================
     // ORDERS
     // ==========================================

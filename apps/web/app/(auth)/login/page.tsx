@@ -88,7 +88,9 @@ export default function LoginPage() {
                 name: data.user.name,
                 avatarUrl: data.user.avatarUrl,
                 emailVerified: data.user.emailVerified,
+                role: data.user.role,
                 createdAt: data.user.createdAt,
+                subscription: data.user.subscription,
             });
 
             // Store backend tokens
@@ -339,7 +341,9 @@ export default function LoginPage() {
                                                 name: data.user.name,
                                                 avatarUrl: data.user.avatarUrl,
                                                 emailVerified: data.user.emailVerified,
+                                                role: data.user.role,
                                                 createdAt: data.user.createdAt,
+                                                subscription: data.user.subscription,
                                             });
                                             setTokens(data.accessToken, data.refreshToken);
                                             toast({ title: "Dev Login", description: `Logged in as ${data.user.email}` });

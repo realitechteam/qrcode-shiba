@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, ChevronLeft, ChevronRight, Pencil, LogIn, Trash2, Eye, X } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Pencil, LogIn, Trash2, Eye, X, ShieldBan, ShieldCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Modal } from "@/components/ui/modal";
@@ -65,6 +65,18 @@ export default function AdminUsersPage() {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [detailUser, setDetailUser] = useState<UserDetail | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
+
+    // Ban Modal State
+    const [isBanModalOpen, setIsBanModalOpen] = useState(false);
+    const [banTarget, setBanTarget] = useState<UserItem | null>(null);
+    const [banReason, setBanReason] = useState("");
+    const [banCustomReason, setBanCustomReason] = useState("");
+
+    // Delete Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<UserItem | null>(null);
+    const [transferEmail, setTransferEmail] = useState("");
+    const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
     const loadUsers = useCallback(async (page = 1) => {
         setLoading(true);
@@ -142,41 +154,66 @@ export default function AdminUsersPage() {
         }
     };
 
-    const toggleBan = async (user: UserItem) => {
-        if (!confirm(`Are you sure you want to ${user.bannedAt ? "unban" : "ban"} ${user.email}?`)) return;
+    const openBanModal = (user: UserItem) => {
+        setBanTarget(user);
+        setBanReason("");
+        setBanCustomReason("");
+        setIsBanModalOpen(true);
+    };
 
+    const handleBan = async () => {
+        if (!banTarget) return;
+        const reason = banReason === "OTHER" ? banCustomReason : banReason;
         try {
-            if (user.bannedAt) {
-                await api.patch(`/admin/users/${user.id}/unban`);
-            } else {
-                await api.patch(`/admin/users/${user.id}/ban`);
-            }
+            await api.patch(`/admin/users/${banTarget.id}/ban`, { reason });
+            setIsBanModalOpen(false);
+            setBanTarget(null);
             loadUsers(pagination.page);
-            toast({ title: "Success", description: `User ${user.bannedAt ? "unbanned" : "banned"} successfully` });
+            toast({ title: "Success", description: `User banned successfully` });
         } catch (error: any) {
-            console.error("Failed to toggle ban:", error);
-            toast({
-                title: "Error",
-                description: error.response?.data?.message || "Failed to update user status",
-                variant: "destructive",
-            });
+            toast({ title: "Error", description: error.response?.data?.message || "Failed to ban user", variant: "destructive" });
         }
     };
 
-    const handleDeleteUser = async (user: UserItem) => {
-        if (!confirm(`⚠️ PERMANENTLY DELETE ${user.email}?\n\nThis will delete ALL their data including QR codes, orders, and subscriptions. This action CANNOT be undone.`)) return;
-
+    const handleUnban = async (user: UserItem) => {
+        if (!confirm(`Unban ${user.email}?`)) return;
         try {
-            await api.delete(`/admin/users/${user.id}`);
+            await api.patch(`/admin/users/${user.id}/unban`);
+            loadUsers(pagination.page);
+            toast({ title: "Success", description: "User unbanned" });
+        } catch (error: any) {
+            toast({ title: "Error", description: error.response?.data?.message || "Failed", variant: "destructive" });
+        }
+    };
+
+    const openDeleteModal = (user: UserItem) => {
+        setDeleteTarget(user);
+        setTransferEmail("");
+        setDeleteConfirmText("");
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDeleteUser = async () => {
+        if (!deleteTarget || deleteConfirmText !== "DELETE") return;
+        try {
+            const body: any = {};
+            if (transferEmail.trim()) {
+                // Look up user ID by email first
+                const lookupRes = await api.get(`/admin/users?search=${encodeURIComponent(transferEmail.trim())}&limit=1`);
+                const foundUser = lookupRes.data.users?.[0];
+                if (!foundUser) {
+                    toast({ title: "Error", description: `Transfer target "${transferEmail}" not found`, variant: "destructive" });
+                    return;
+                }
+                body.transferToUserId = foundUser.id;
+            }
+            await api.delete(`/admin/users/${deleteTarget.id}`, { data: body });
+            setIsDeleteModalOpen(false);
+            setDeleteTarget(null);
             loadUsers(pagination.page);
             toast({ title: "Done", description: "User deleted successfully" });
         } catch (error: any) {
-            console.error("Failed to delete user:", error);
-            toast({
-                title: "Error",
-                description: error.response?.data?.message || "Failed to delete user",
-                variant: "destructive",
-            });
+            toast({ title: "Error", description: error.response?.data?.message || "Failed to delete user", variant: "destructive" });
         }
     };
 
@@ -278,8 +315,8 @@ export default function AdminUsersPage() {
                                         <td className="px-4 py-3">{providerBadge(u.authProvider)}</td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${u.tier === "PRO" ? "bg-purple-500/20 text-purple-300" :
-                                                    u.tier === "BUSINESS" ? "bg-blue-500/20 text-blue-300" :
-                                                        "bg-gray-700/50 text-gray-400"
+                                                u.tier === "BUSINESS" ? "bg-blue-500/20 text-blue-300" :
+                                                    "bg-gray-700/50 text-gray-400"
                                                 }`}>
                                                 {u.tier}
                                             </span>
@@ -334,20 +371,30 @@ export default function AdminUsersPage() {
 
                                                 {/* Ban/Unban */}
                                                 {u.role !== "ADMIN" && (
-                                                    <button
-                                                        onClick={() => toggleBan(u)}
-                                                        className={`px-1.5 py-1 rounded text-[10px] font-bold ${u.bannedAt ? "text-green-400 hover:text-green-300 hover:bg-green-500/10" : "text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"}`}
-                                                        title={u.bannedAt ? "Unban User" : "Ban User"}
-                                                    >
-                                                        {u.bannedAt ? "UNBAN" : "BAN"}
-                                                    </button>
+                                                    u.bannedAt ? (
+                                                        <button
+                                                            onClick={() => handleUnban(u)}
+                                                            className="px-1.5 py-1 rounded text-[10px] font-bold text-green-400 hover:text-green-300 hover:bg-green-500/10"
+                                                            title="Unban User"
+                                                        >
+                                                            <ShieldCheck className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => openBanModal(u)}
+                                                            className="px-1.5 py-1 rounded text-[10px] font-bold text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
+                                                            title="Ban User"
+                                                        >
+                                                            <ShieldBan className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    )
                                                 )}
 
                                                 {/* Delete */}
                                                 {u.role !== "ADMIN" && (
                                                     <Button
                                                         size="icon" variant="ghost"
-                                                        onClick={() => handleDeleteUser(u)}
+                                                        onClick={() => openDeleteModal(u)}
                                                         className="h-7 w-7 text-gray-500 hover:text-red-400 hover:bg-red-500/10"
                                                         title="Delete User"
                                                     >
@@ -540,7 +587,7 @@ export default function AdminUsersPage() {
                                 <Button
                                     size="sm" variant="outline"
                                     className="text-red-400 border-red-500/30 hover:bg-red-500/10 ml-auto"
-                                    onClick={() => { setIsDetailModalOpen(false); handleDeleteUser(detailUser as any); }}
+                                    onClick={() => { setIsDetailModalOpen(false); openDeleteModal(detailUser as any); }}
                                 >
                                     <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
                                 </Button>
@@ -548,6 +595,104 @@ export default function AdminUsersPage() {
                         </div>
                     </div>
                 ) : null}
+            </Modal>
+
+            {/* Ban Reason Modal */}
+            <Modal
+                isOpen={isBanModalOpen}
+                onClose={() => setIsBanModalOpen(false)}
+                title={`Ban ${banTarget?.email || ""}`}
+            >
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">Lý do ban</label>
+                        <select
+                            value={banReason}
+                            onChange={(e) => setBanReason(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500"
+                        >
+                            <option value="">Chọn lý do...</option>
+                            <option value="Vi phạm TOS">Vi phạm TOS</option>
+                            <option value="Spam">Spam</option>
+                            <option value="Gian lận">Gian lận</option>
+                            <option value="Lạm dụng hệ thống">Lạm dụng hệ thống</option>
+                            <option value="Nội dung không phù hợp">Nội dung không phù hợp</option>
+                            <option value="OTHER">Khác (nhập lý do)...</option>
+                        </select>
+                    </div>
+                    {banReason === "OTHER" && (
+                        <div>
+                            <input
+                                type="text"
+                                placeholder="Nhập lý do..."
+                                value={banCustomReason}
+                                onChange={(e) => setBanCustomReason(e.target.value)}
+                                className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500"
+                            />
+                        </div>
+                    )}
+                    <div className="pt-2 flex justify-end gap-3">
+                        <Button variant="ghost" onClick={() => setIsBanModalOpen(false)}>Hủy</Button>
+                        <Button
+                            onClick={handleBan}
+                            disabled={!banReason || (banReason === "OTHER" && !banCustomReason.trim())}
+                            className="bg-red-500 hover:bg-red-600 text-white disabled:opacity-50"
+                        >
+                            Ban User
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Delete User Modal */}
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                title={`Xóa ${deleteTarget?.email || ""}`}
+            >
+                <div className="space-y-4">
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-300">
+                        ⚠️ Hành động này <strong>KHÔNG THỂ HOÀN TÁC</strong>. Toàn bộ dữ liệu của user sẽ bị xóa vĩnh viễn.
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                            Chuyển QR Codes sang tài khoản khác (tùy chọn)
+                        </label>
+                        <input
+                            type="email"
+                            placeholder="email người nhận QR..."
+                            value={transferEmail}
+                            onChange={(e) => setTransferEmail(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:border-yellow-500 placeholder:text-gray-600"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Để trống nếu muốn xóa toàn bộ QR codes</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                            Gõ <code className="text-red-400 bg-red-500/10 px-1 rounded">DELETE</code> để xác nhận
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="DELETE"
+                            value={deleteConfirmText}
+                            onChange={(e) => setDeleteConfirmText(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:outline-none focus:border-red-500"
+                        />
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-3">
+                        <Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>Hủy</Button>
+                        <Button
+                            onClick={handleDeleteUser}
+                            disabled={deleteConfirmText !== "DELETE"}
+                            className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+                        >
+                            Xóa vĩnh viễn
+                        </Button>
+                    </div>
+                </div>
             </Modal>
         </div>
     );

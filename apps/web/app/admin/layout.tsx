@@ -9,11 +9,11 @@ import {
     ShoppingCart,
     QrCode,
     BadgePercent,
-    Settings,
     ArrowLeft,
     Menu,
     X,
     Shield,
+    ClipboardList,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ const adminNavItems = [
     { label: "Đơn hàng", href: "/admin/orders", icon: ShoppingCart },
     { label: "QR Codes", href: "/admin/qrcodes", icon: QrCode },
     { label: "Affiliates", href: "/admin/affiliates", icon: BadgePercent },
+    { label: "Lịch sử hệ thống", href: "/admin/audit-logs", icon: ClipboardList },
 ];
 
 export default function AdminLayout({

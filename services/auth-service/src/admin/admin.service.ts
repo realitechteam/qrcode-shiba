@@ -146,24 +146,36 @@ export class AdminService {
         });
     }
 
-    async banUser(id: string) {
+    async banUser(id: string, reason?: string, adminId?: string) {
         // Prevent banning other admins
         const user = await this.prisma.user.findUnique({ where: { id } });
         if (user?.role === "ADMIN") {
             throw new Error("Cannot ban an admin");
         }
 
-        return this.prisma.user.update({
+        const updated = await this.prisma.user.update({
             where: { id },
-            data: { bannedAt: new Date() },
+            data: { bannedAt: new Date(), banReason: reason || null },
         });
+
+        if (adminId) {
+            await this.logAction(adminId, "BAN_USER", "USER", id, { reason });
+        }
+
+        return updated;
     }
 
-    async unbanUser(id: string) {
-        return this.prisma.user.update({
+    async unbanUser(id: string, adminId?: string) {
+        const updated = await this.prisma.user.update({
             where: { id },
-            data: { bannedAt: null },
+            data: { bannedAt: null, banReason: null },
         });
+
+        if (adminId) {
+            await this.logAction(adminId, "UNBAN_USER", "USER", id);
+        }
+
+        return updated;
     }
 
     async impersonateUser(userId: string) {
@@ -203,7 +215,7 @@ export class AdminService {
         return user;
     }
 
-    async deleteUser(userId: string) {
+    async deleteUser(userId: string, transferToUserId?: string, adminId?: string) {
         // Prevent deleting admins
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (!user) {
@@ -213,11 +225,23 @@ export class AdminService {
             throw new Error("Cannot delete an admin user");
         }
 
+        // If transferToUserId is provided, transfer QR codes first
+        if (transferToUserId) {
+            const targetUser = await this.prisma.user.findUnique({ where: { id: transferToUserId } });
+            if (!targetUser) {
+                throw new Error("Transfer target user not found");
+            }
+            await this.prisma.qRCode.updateMany({
+                where: { userId },
+                data: { userId: transferToUserId },
+            });
+        }
+
         // Cascade delete all associated data
         await this.prisma.$transaction([
             this.prisma.refreshToken.deleteMany({ where: { userId } }),
             this.prisma.magicLink.deleteMany({ where: { email: user.email } }),
-            this.prisma.qRCode.deleteMany({ where: { userId } }),
+            ...(transferToUserId ? [] : [this.prisma.qRCode.deleteMany({ where: { userId } })]),
             this.prisma.order.deleteMany({ where: { userId } }),
             this.prisma.subscription.deleteMany({ where: { userId } }),
             this.prisma.apiKey.deleteMany({ where: { userId } }),
@@ -225,6 +249,13 @@ export class AdminService {
             this.prisma.teamMember.deleteMany({ where: { userId } }),
             this.prisma.user.delete({ where: { id: userId } }),
         ]);
+
+        if (adminId) {
+            await this.logAction(adminId, "DELETE_USER", "USER", userId, {
+                email: user.email,
+                transferToUserId,
+            });
+        }
 
         return { message: "User deleted successfully" };
     }
@@ -248,9 +279,14 @@ export class AdminService {
                     status: true,
                     paymentProvider: true,
                     planId: true,
+                    billingCycle: true,
+                    currency: true,
+                    transactionId: true,
+                    paidAt: true,
                     createdAt: true,
+                    updatedAt: true,
                     user: {
-                        select: { email: true, name: true },
+                        select: { id: true, email: true, name: true },
                     },
                 },
                 orderBy: { createdAt: "desc" },
@@ -269,6 +305,28 @@ export class AdminService {
                 totalPages: Math.ceil(total / limit),
             },
         };
+    }
+
+    async updateOrder(orderId: string, data: { status?: string; amount?: number; paidAt?: Date | null }, adminId?: string): Promise<any> {
+        const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) {
+            throw new Error("Order not found");
+        }
+
+        const updated = await this.prisma.order.update({
+            where: { id: orderId },
+            data: data as any,
+            include: { user: { select: { email: true } } },
+        });
+
+        if (adminId) {
+            await this.logAction(adminId, "UPDATE_ORDER", "ORDER", orderId, {
+                changes: data,
+                previousStatus: order.status,
+            });
+        }
+
+        return updated;
     }
 
     // ==========================================
@@ -456,5 +514,116 @@ export class AdminService {
             update: { value },
             create: { key, value },
         });
+    }
+
+    // ==========================================
+    // AFFILIATE MANAGEMENT
+    // ==========================================
+
+    async createAffiliate(userId: string, adminId?: string) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // Check if affiliate already exists
+        const existing = await this.prisma.affiliateAccount.findUnique({ where: { userId } });
+        if (existing) {
+            throw new Error("User already has an affiliate account");
+        }
+
+        const affiliate = await this.prisma.affiliateAccount.create({
+            data: { userId },
+            include: { user: { select: { email: true, name: true } } },
+        });
+
+        if (adminId) {
+            await this.logAction(adminId, "CREATE_AFFILIATE", "AFFILIATE", affiliate.id, { userId, email: user.email });
+        }
+
+        return affiliate;
+    }
+
+    async updateAffiliate(affiliateId: string, data: { status?: string; bankName?: string; bankAccount?: string; bankHolder?: string }, adminId?: string) {
+        const updated = await this.prisma.affiliateAccount.update({
+            where: { id: affiliateId },
+            data: data as any,
+            include: { user: { select: { email: true, name: true } } },
+        });
+
+        if (adminId) {
+            await this.logAction(adminId, "UPDATE_AFFILIATE", "AFFILIATE", affiliateId, { changes: data });
+        }
+
+        return updated;
+    }
+
+    async updateAffiliateLink(linkId: string, data: { commissionRate?: number; discountRate?: number; label?: string; isActive?: boolean }, adminId?: string) {
+        const updated = await this.prisma.affiliateLink.update({
+            where: { id: linkId },
+            data: data as any,
+        });
+
+        if (adminId) {
+            await this.logAction(adminId, "UPDATE_AFFILIATE_LINK", "AFFILIATE_LINK", linkId, { changes: data });
+        }
+
+        return updated;
+    }
+
+    // ==========================================
+    // AUDIT LOG
+    // ==========================================
+
+    async logAction(adminId: string, action: string, targetType: string, targetId: string, details?: any) {
+        try {
+            await this.prisma.adminAuditLog.create({
+                data: {
+                    adminId,
+                    action,
+                    targetType,
+                    targetId,
+                    details: details || undefined,
+                },
+            });
+        } catch (e) {
+            console.error("Failed to log admin action:", e);
+        }
+    }
+
+    async getAuditLogs(page = 1, limit = 50, action?: string): Promise<any> {
+        const where: any = {};
+        if (action) where.action = action;
+
+        const [logs, total] = await Promise.all([
+            this.prisma.adminAuditLog.findMany({
+                where,
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * limit,
+                take: limit,
+            }),
+            this.prisma.adminAuditLog.count({ where }),
+        ]);
+
+        // Resolve admin emails
+        const adminIds = [...new Set(logs.map(l => l.adminId))];
+        const admins = await this.prisma.user.findMany({
+            where: { id: { in: adminIds } },
+            select: { id: true, email: true, name: true },
+        });
+        const adminMap = Object.fromEntries(admins.map(a => [a.id, a]));
+
+        return {
+            logs: logs.map(l => ({
+                ...l,
+                admin: adminMap[l.adminId] || { email: "unknown", name: null },
+            })),
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
 }

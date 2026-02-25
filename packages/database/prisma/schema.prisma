@@ -22,6 +22,7 @@ model User {
   referredBy    String?
   role          UserRole          @default(USER)
   bannedAt      DateTime?
+  banReason     String?
   affiliate     AffiliateAccount?
   apiKeys       ApiKey[]
   folders       Folder[]
@@ -40,6 +41,20 @@ model SystemConfig {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  action     String
+  targetType String
+  targetId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
 }
 
 model RefreshToken {

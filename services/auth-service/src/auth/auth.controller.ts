@@ -43,14 +43,14 @@ export class AuthController {
     @Post("logout")
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
-    async logout(@CurrentUser("id") userId: string) {
-        return this.authService.logout(userId);
+    async logout(@CurrentUser() user: any) {
+        return this.authService.logout(user.sub || user.id);
     }
 
     @Get("me")
     @UseGuards(JwtAuthGuard)
     async getMe(@CurrentUser() user: any) {
-        return this.authService.getProfile(user.id);
+        return this.authService.getProfile(user.sub || user.id);
     }
 
     // Google OAuth

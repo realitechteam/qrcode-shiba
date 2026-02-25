@@ -10,6 +10,7 @@ import {
     HttpCode,
     HttpStatus,
     Post,
+    Req,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { AdminGuard } from "./admin.guard";
@@ -56,28 +57,36 @@ export class AdminController {
     @HttpCode(HttpStatus.OK)
     async updateUser(
         @Param("id") id: string,
-        @Body() data: { tier?: string; role?: "USER" | "ADMIN" }
+        @Body() data: { tier?: string; role?: "USER" | "ADMIN" },
+        @Req() req: any
     ) {
-        return this.adminService.updateUser(id, data);
+        const result = await this.adminService.updateUser(id, data);
+        await this.adminService.logAction(req.user.sub, "UPDATE_USER", "USER", id, { changes: data });
+        return result;
     }
 
     @Patch("users/:id/ban")
     @HttpCode(HttpStatus.OK)
-    async banUser(@Param("id") id: string) {
-        return this.adminService.banUser(id);
+    async banUser(
+        @Param("id") id: string,
+        @Body() body: { reason?: string },
+        @Req() req: any
+    ) {
+        return this.adminService.banUser(id, body.reason, req.user.sub);
     }
 
     @Patch("users/:id/unban")
     @HttpCode(HttpStatus.OK)
-    async unbanUser(@Param("id") id: string) {
-        return this.adminService.unbanUser(id);
+    async unbanUser(@Param("id") id: string, @Req() req: any) {
+        return this.adminService.unbanUser(id, req.user.sub);
     }
 
     @Post("users/:id/impersonate")
     @HttpCode(HttpStatus.OK)
-    async impersonateUser(@Param("id") id: string) {
+    async impersonateUser(@Param("id") id: string, @Req() req: any) {
         const user = await this.adminService.impersonateUser(id);
-        return this.authService.login(user); // Generate tokens for this user
+        await this.adminService.logAction(req.user.sub, "IMPERSONATE_USER", "USER", id);
+        return this.authService.login(user);
     }
 
     @Get("users/:id")
@@ -87,8 +96,12 @@ export class AdminController {
 
     @Delete("users/:id")
     @HttpCode(HttpStatus.OK)
-    async deleteUser(@Param("id") id: string) {
-        return this.adminService.deleteUser(id);
+    async deleteUser(
+        @Param("id") id: string,
+        @Body() body: { transferToUserId?: string },
+        @Req() req: any
+    ) {
+        return this.adminService.deleteUser(id, body?.transferToUserId, req.user.sub);
     }
 
     // ==========================================
@@ -102,6 +115,18 @@ export class AdminController {
         @Query("status") status?: string
     ): Promise<{ orders: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
         return this.adminService.getOrders(page || 1, limit || 20, status);
+    }
+
+    @Patch("orders/:id")
+    @HttpCode(HttpStatus.OK)
+    async updateOrder(
+        @Param("id") id: string,
+        @Body() data: { status?: string; amount?: number; paidAt?: string | null },
+        @Req() req: any
+    ) {
+        const parsedData: any = { ...data };
+        if (data.paidAt) parsedData.paidAt = new Date(data.paidAt);
+        return this.adminService.updateOrder(id, parsedData, req.user.sub);
     }
 
     // ==========================================
@@ -135,6 +160,35 @@ export class AdminController {
         return this.adminService.getAffiliates(page || 1, limit || 20);
     }
 
+    @Post("affiliates")
+    @HttpCode(HttpStatus.CREATED)
+    async createAffiliate(
+        @Body() body: { userId: string },
+        @Req() req: any
+    ) {
+        return this.adminService.createAffiliate(body.userId, req.user.sub);
+    }
+
+    @Patch("affiliates/:id")
+    @HttpCode(HttpStatus.OK)
+    async updateAffiliate(
+        @Param("id") id: string,
+        @Body() data: { status?: string; bankName?: string; bankAccount?: string; bankHolder?: string },
+        @Req() req: any
+    ) {
+        return this.adminService.updateAffiliate(id, data, req.user.sub);
+    }
+
+    @Patch("affiliates/links/:id")
+    @HttpCode(HttpStatus.OK)
+    async updateAffiliateLink(
+        @Param("id") id: string,
+        @Body() data: { commissionRate?: number; discountRate?: number; label?: string; isActive?: boolean },
+        @Req() req: any
+    ) {
+        return this.adminService.updateAffiliateLink(id, data, req.user.sub);
+    }
+
     @Get("affiliates/payouts")
     async getPendingPayouts(
         @Query("page") page?: number,
@@ -165,5 +219,18 @@ export class AdminController {
     @HttpCode(HttpStatus.OK)
     async updateConfig(@Body() data: { key: string; value: string }) {
         return this.adminService.updateConfig(data.key, data.value);
+    }
+
+    // ==========================================
+    // AUDIT LOGS
+    // ==========================================
+
+    @Get("audit-logs")
+    async getAuditLogs(
+        @Query("page") page?: number,
+        @Query("limit") limit?: number,
+        @Query("action") action?: string
+    ) {
+        return this.adminService.getAuditLogs(page || 1, limit || 50, action);
     }
 }

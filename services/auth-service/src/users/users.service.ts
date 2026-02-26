@@ -6,6 +6,16 @@ import { User, Prisma } from "@qrcode-shiba/database";
 export class UsersService {
     constructor(private readonly prisma: PrismaService) { }
 
+    /** Standard include for user queries — subscription + latest completed order */
+    private static readonly USER_INCLUDE = {
+        subscription: true,
+        orders: {
+            where: { status: 'COMPLETED' as const },
+            orderBy: { createdAt: 'desc' as const },
+            take: 1,
+        },
+    } as const;
+
     async create(data: Prisma.UserCreateInput) {
         // Ensure email is lowercase
         if (data.email) {
@@ -14,27 +24,21 @@ export class UsersService {
 
         return this.prisma.user.create({
             data,
-            include: {
-                subscription: true,
-            },
+            include: UsersService.USER_INCLUDE,
         });
     }
 
     async findById(id: string) {
         return this.prisma.user.findUnique({
             where: { id },
-            include: {
-                subscription: true,
-            },
+            include: UsersService.USER_INCLUDE,
         });
     }
 
     async findByEmail(email: string) {
         return this.prisma.user.findUnique({
             where: { email: email.toLowerCase() },
-            include: {
-                subscription: true,
-            },
+            include: UsersService.USER_INCLUDE,
         });
     }
 
@@ -47,9 +51,7 @@ export class UsersService {
         return this.prisma.user.update({
             where: { id },
             data,
-            include: {
-                subscription: true,
-            },
+            include: UsersService.USER_INCLUDE,
         });
     }
 

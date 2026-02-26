@@ -30,8 +30,13 @@ export class AdminController {
     // ==========================================
 
     @Get("stats")
-    async getStats() {
-        return this.adminService.getStats();
+    async getStats(
+        @Query("startDate") startDate?: string,
+        @Query("endDate") endDate?: string
+    ) {
+        const start = startDate ? new Date(startDate) : undefined;
+        const end = endDate ? new Date(endDate) : undefined;
+        return this.adminService.getStats(start, end);
     }
 
     // ==========================================
@@ -127,6 +132,15 @@ export class AdminController {
         const parsedData: any = { ...data };
         if (data.paidAt) parsedData.paidAt = new Date(data.paidAt);
         return this.adminService.updateOrder(id, parsedData, req.user.sub);
+    }
+
+    @Delete("orders/:id")
+    @HttpCode(HttpStatus.OK)
+    async deleteOrder(
+        @Param("id") id: string,
+        @Req() req: any
+    ) {
+        return this.adminService.deleteOrder(id, req.user.sub);
     }
 
     // ==========================================

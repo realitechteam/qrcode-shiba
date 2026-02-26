@@ -2,10 +2,6 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://auth-service-production-431d.up.railway.app/api/v1";
 
-if (typeof window !== "undefined") {
-    console.log("🚀 Auth API URL:", API_URL);
-}
-
 export const api = axios.create({
     baseURL: API_URL,
     headers: {

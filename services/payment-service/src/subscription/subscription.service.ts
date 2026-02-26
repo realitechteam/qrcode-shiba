@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Logger } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface PlanDetails {
@@ -22,6 +23,8 @@ export interface PlanDetails {
 
 @Injectable()
 export class SubscriptionService {
+    private readonly logger = new Logger(SubscriptionService.name);
+
     constructor(private readonly prisma: PrismaService) { }
 
     /**
@@ -266,5 +269,30 @@ export class SubscriptionService {
                         : Math.max(0, plan.limits.scansPerMonth - scanCount),
             },
         };
+    }
+
+    /**
+     * Auto-cancel PENDING orders older than 24 hours
+     */
+    @Cron(CronExpression.EVERY_HOUR)
+    async handleTimeoutOrders() {
+        this.logger.debug("Running Cron: Auto-cancel timeout pending orders");
+        const timeoutDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
+
+        const result = await this.prisma.order.updateMany({
+            where: {
+                status: "PENDING",
+                createdAt: {
+                    lt: timeoutDate,
+                },
+            },
+            data: {
+                status: "CANCELLED",
+            },
+        });
+
+        if (result.count > 0) {
+            this.logger.log(`Auto-cancelled ${result.count} timeout orders`);
+        }
     }
 }

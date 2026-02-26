@@ -129,7 +129,7 @@ export default function BillingPage() {
     const subscription = user?.subscription;
     const expiresAt = subscription?.expiresAt ? new Date(subscription.expiresAt) : null;
     const now = new Date();
-    
+
     const getDaysRemaining = () => {
         if (!expiresAt) return null;
         const diffTime = expiresAt.getTime() - now.getTime();
@@ -138,7 +138,7 @@ export default function BillingPage() {
     };
 
     const daysRemaining = getDaysRemaining();
-    const isExpiringSoon = daysRemaining !== null && daysRemaining <= 5 && daysRemaining > 0;
+    const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0;
     const isExpired = daysRemaining !== null && daysRemaining <= 0;
     const isPaidPlan = currentPlan !== 'free';
 
@@ -224,7 +224,7 @@ export default function BillingPage() {
         setIsCreatingOrder(true);
         try {
             const response = await paymentService.createPayment(selectedPlan.id, billingCycle);
-            
+
             if (response.success) {
                 setOrderId(response.data.orderId);
                 setQrData({
@@ -260,16 +260,16 @@ export default function BillingPage() {
                 if (response.success && response.data.status === "COMPLETED") {
                     // Payment successful
                     if (pollingInterval.current) clearInterval(pollingInterval.current);
-                    
+
                     // Refresh user data immediately
                     await useAuthStore.getState().fetchUser();
-                    
+
                     // Show success toast
                     toast({
                         title: "Thanh toán thành công!",
                         description: `Đã nâng cấp lên gói ${selectedPlan?.name}`,
                     });
-                    
+
                     setShowPaymentModal(false);
                 }
             } catch (error) {
@@ -311,11 +311,10 @@ export default function BillingPage() {
             <div className="rounded-xl border bg-card p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
-                            isPaidPlan 
-                                ? 'bg-gradient-to-br from-shiba-500 to-orange-500' 
+                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${isPaidPlan
+                                ? 'bg-gradient-to-br from-shiba-500 to-orange-500'
                                 : 'bg-muted'
-                        }`}>
+                            }`}>
                             {currentPlan === 'business' ? (
                                 <Building2 className="h-6 w-6 text-white" />
                             ) : currentPlan === 'pro' ? (
@@ -331,7 +330,7 @@ export default function BillingPage() {
                             </p>
                         </div>
                     </div>
-                    
+
                     {/* Expiry Info */}
                     <div className="flex flex-col items-end gap-1">
                         {isPaidPlan && expiresAt ? (
@@ -342,10 +341,17 @@ export default function BillingPage() {
                                         Hết hạn: {formatExpiryDate()}
                                     </span>
                                 </div>
+                                {subscription?.orderId && (
+                                    <div className="flex items-center gap-2">
+                                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm text-muted-foreground">
+                                            Mã đơn: {subscription.orderId.slice(0, 12)}...
+                                        </span>
+                                    </div>
+                                )}
                                 {daysRemaining !== null && daysRemaining > 0 && (
-                                    <span className={`text-sm font-medium ${
-                                        isExpiringSoon ? 'text-orange-500' : 'text-green-500'
-                                    }`}>
+                                    <span className={`text-sm font-medium ${isExpiringSoon ? 'text-orange-500' : 'text-green-500'
+                                        }`}>
                                         Còn {daysRemaining} ngày
                                     </span>
                                 )}
@@ -378,8 +384,8 @@ export default function BillingPage() {
                                 Còn {daysRemaining} ngày. Gia hạn ngay để không bị gián đoạn dịch vụ.
                             </p>
                         </div>
-                        <Button 
-                            size="sm" 
+                        <Button
+                            size="sm"
                             className="bg-orange-500 hover:bg-orange-600 text-white"
                             onClick={() => {
                                 const plan = plans.find(p => p.id === currentPlan);
@@ -403,8 +409,8 @@ export default function BillingPage() {
                                 Tính năng Pro đã bị giới hạn. Gia hạn để tiếp tục sử dụng.
                             </p>
                         </div>
-                        <Button 
-                            size="sm" 
+                        <Button
+                            size="sm"
                             className="bg-red-500 hover:bg-red-600 text-white"
                             onClick={() => {
                                 const plan = plans.find(p => p.id === currentPlan);
@@ -498,13 +504,12 @@ export default function BillingPage() {
                                 className="flex items-center justify-between p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                                        order.status === "COMPLETED" 
-                                            ? "bg-green-100 dark:bg-green-900/30" 
+                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${order.status === "COMPLETED"
+                                            ? "bg-green-100 dark:bg-green-900/30"
                                             : order.status === "PENDING"
-                                            ? "bg-yellow-100 dark:bg-yellow-900/30"
-                                            : "bg-red-100 dark:bg-red-900/30"
-                                    }`}>
+                                                ? "bg-yellow-100 dark:bg-yellow-900/30"
+                                                : "bg-red-100 dark:bg-red-900/30"
+                                        }`}>
                                         {order.status === "COMPLETED" ? (
                                             <CheckCircle2 className="h-5 w-5 text-green-600" />
                                         ) : order.status === "PENDING" ? (
@@ -532,13 +537,12 @@ export default function BillingPage() {
                                     <p className="font-semibold text-shiba-600">
                                         {order.amount.toLocaleString()}đ
                                     </p>
-                                    <p className={`text-xs font-medium ${
-                                        order.status === "COMPLETED" 
-                                            ? "text-green-600" 
+                                    <p className={`text-xs font-medium ${order.status === "COMPLETED"
+                                            ? "text-green-600"
                                             : order.status === "PENDING"
-                                            ? "text-yellow-600"
-                                            : "text-red-600"
-                                    }`}>
+                                                ? "text-yellow-600"
+                                                : "text-red-600"
+                                        }`}>
                                         {order.status === "COMPLETED" ? "Thành công" : order.status === "PENDING" ? "Chờ thanh toán" : "Thất bại"}
                                     </p>
                                 </div>
@@ -605,8 +609,8 @@ export default function BillingPage() {
                                     <button
                                         onClick={() => setBillingCycle("monthly")}
                                         className={`w-full p-4 rounded-xl border-2 text-left transition-all ${billingCycle === "monthly"
-                                                ? "border-shiba-500 bg-shiba-50 dark:bg-shiba-900/20"
-                                                : "border-muted hover:border-shiba-300"
+                                            ? "border-shiba-500 bg-shiba-50 dark:bg-shiba-900/20"
+                                            : "border-muted hover:border-shiba-300"
                                             }`}
                                     >
                                         <div className="flex items-center justify-between">
@@ -625,8 +629,8 @@ export default function BillingPage() {
                                     <button
                                         onClick={() => setBillingCycle("yearly")}
                                         className={`w-full p-4 rounded-xl border-2 text-left transition-all relative ${billingCycle === "yearly"
-                                                ? "border-shiba-500 bg-shiba-50 dark:bg-shiba-900/20"
-                                                : "border-muted hover:border-shiba-300"
+                                            ? "border-shiba-500 bg-shiba-50 dark:bg-shiba-900/20"
+                                            : "border-muted hover:border-shiba-300"
                                             }`}
                                     >
                                         <div className="absolute -top-2 right-4">

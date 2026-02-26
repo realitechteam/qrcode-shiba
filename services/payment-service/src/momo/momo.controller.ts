@@ -4,15 +4,18 @@ import {
     Body,
     Headers,
     BadRequestException,
+    Logger,
 } from "@nestjs/common";
 import { MomoService, MomoCallbackData } from "./momo.service";
-import { PrismaService } from "../prisma/prisma.service";
+import { PaymentOrchestrationService } from "../shared/payment-orchestration.service";
 
 @Controller("momo")
 export class MomoController {
+    private readonly logger = new Logger(MomoController.name);
+
     constructor(
         private readonly momoService: MomoService,
-        private readonly prisma: PrismaService
+        private readonly paymentOrchestration: PaymentOrchestrationService,
     ) { }
 
     /**
@@ -27,19 +30,15 @@ export class MomoController {
             throw new BadRequestException("User ID required");
         }
 
-        const pricing = this.getPlanPricing(body.planId, body.billingCycle);
+        const { amount } = this.paymentOrchestration.getPlanPricing(body.planId, body.billingCycle);
 
         // Create order
-        const order = await this.prisma.order.create({
-            data: {
-                userId,
-                planId: body.planId,
-                billingCycle: body.billingCycle,
-                amount: pricing.amount,
-                currency: "VND",
-                status: "PENDING",
-                paymentProvider: "MOMO",
-            },
+        const order = await this.paymentOrchestration.createOrder({
+            userId,
+            planId: body.planId,
+            billingCycle: body.billingCycle,
+            amount,
+            paymentProvider: "MOMO",
         });
 
         const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
@@ -47,7 +46,7 @@ export class MomoController {
 
         const result = await this.momoService.createPayment({
             orderId: order.id,
-            amount: pricing.amount,
+            amount,
             orderInfo: `QRCode-Shiba ${body.planId} ${body.billingCycle}`,
             returnUrl: `${frontendUrl}/payment/result`,
             notifyUrl: `${paymentUrl}/api/v1/momo/ipn`,
@@ -74,102 +73,23 @@ export class MomoController {
     async handleIpn(@Body() data: MomoCallbackData) {
         // Verify signature
         if (!this.momoService.verifySignature(data)) {
+            this.logger.warn(`Invalid MoMo signature for order ${data.orderId}`);
             return { resultCode: 97, message: "Invalid signature" };
-        }
-
-        const orderId = data.orderId;
-        const order = await this.prisma.order.findUnique({
-            where: { id: orderId },
-        });
-
-        if (!order) {
-            return { resultCode: 1, message: "Order not found" };
-        }
-
-        if (order.status === "COMPLETED") {
-            return { resultCode: 0, message: "Already processed" };
         }
 
         const isSuccess = this.momoService.isPaymentSuccessful(data.resultCode);
 
-        await this.prisma.order.update({
-            where: { id: orderId },
-            data: {
-                status: isSuccess ? "COMPLETED" : "FAILED",
-                transactionId: data.transId.toString(),
-                paidAt: isSuccess ? new Date() : null,
-                metadata: data as any,
-            },
-        });
-
-        if (isSuccess) {
-            await this.activateSubscription(orderId);
+        try {
+            if (isSuccess) {
+                await this.paymentOrchestration.activateSubscription(data.orderId, data.transId.toString());
+            } else {
+                await this.paymentOrchestration.failOrder(data.orderId, data.transId.toString(), data);
+            }
+        } catch (error) {
+            this.logger.error(`Error processing MoMo IPN for order ${data.orderId}`, error instanceof Error ? error.stack : String(error));
+            return { resultCode: 1, message: "Processing error" };
         }
 
         return { resultCode: 0, message: "Success" };
-    }
-
-    /**
-     * Get plan pricing
-     */
-    private getPlanPricing(
-        planId: string,
-        billingCycle: "monthly" | "yearly"
-    ): { amount: number } {
-        const pricing: Record<string, { monthly: number; yearly: number }> = {
-            pro: { monthly: 99000, yearly: 990000 },
-            business: { monthly: 299000, yearly: 2990000 },
-            enterprise: { monthly: 999000, yearly: 9990000 },
-        };
-
-        const plan = pricing[planId.toLowerCase()];
-        if (!plan) {
-            throw new BadRequestException("Invalid plan");
-        }
-
-        return { amount: plan[billingCycle] };
-    }
-
-    /**
-     * Activate subscription
-     */
-    private async activateSubscription(orderId: string): Promise<void> {
-        const order = await this.prisma.order.findUnique({
-            where: { id: orderId },
-            select: { userId: true, planId: true, billingCycle: true },
-        });
-
-        if (!order) return;
-
-        const endDate = new Date();
-        if (order.billingCycle === "yearly") {
-            endDate.setFullYear(endDate.getFullYear() + 1);
-        } else {
-            endDate.setMonth(endDate.getMonth() + 1);
-        }
-
-        await this.prisma.subscription.upsert({
-            where: { userId: order.userId },
-            create: {
-                userId: order.userId,
-                planId: order.planId,
-                status: "ACTIVE",
-                startDate: new Date(),
-                endDate,
-                billingCycle: order.billingCycle,
-            },
-            update: {
-                planId: order.planId,
-                status: "ACTIVE",
-                startDate: new Date(),
-                endDate,
-                billingCycle: order.billingCycle,
-            },
-        });
-
-        await this.prisma.user.update({
-            where: { id: order.userId },
-            data: { tier: order.planId.toUpperCase() as any },
-        });
     }
 }

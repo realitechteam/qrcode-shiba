@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Modal } from "@/components/ui/modal";
@@ -43,10 +43,13 @@ export default function AdminOrdersPage() {
     const [statusFilter, setStatusFilter] = useState("");
     const [loading, setLoading] = useState(true);
 
-    // Edit Modal
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editOrder, setEditOrder] = useState<OrderItem | null>(null);
     const [editStatus, setEditStatus] = useState("");
+
+    // Delete Modal
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [deleteOrderObj, setDeleteOrderObj] = useState<OrderItem | null>(null);
 
     const loadOrders = useCallback(async (page = 1) => {
         setLoading(true);
@@ -80,9 +83,22 @@ export default function AdminOrdersPage() {
             setIsEditOpen(false);
             setEditOrder(null);
             loadOrders(pagination.page);
-            toast({ title: "Success", description: "Order updated" });
+            toast({ title: "Thành công", description: "Đã cập nhật đơn hàng" });
         } catch (error: any) {
-            toast({ title: "Error", description: error.response?.data?.message || "Failed", variant: "destructive" });
+            toast({ title: "Lỗi", description: error.response?.data?.message || "Cập nhật thất bại", variant: "destructive" });
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteOrderObj) return;
+        try {
+            await api.delete(`/admin/orders/${deleteOrderObj.id}`);
+            setIsDeleteOpen(false);
+            setDeleteOrderObj(null);
+            loadOrders(pagination.page);
+            toast({ title: "Thành công", description: "Đã xoá đơn hàng vĩnh viễn" });
+        } catch (error: any) {
+            toast({ title: "Lỗi", description: error.response?.data?.message || "Xoá thất bại", variant: "destructive" });
         }
     };
 
@@ -150,13 +166,22 @@ export default function AdminOrdersPage() {
                                         <td className="px-4 py-3 text-gray-400 text-xs">{o.paymentProvider || "—"}</td>
                                         <td className="px-4 py-3 text-gray-400 text-xs">{new Date(o.createdAt).toLocaleDateString("vi-VN")}</td>
                                         <td className="px-4 py-3 text-right">
-                                            <button
-                                                onClick={() => openEdit(o)}
-                                                className="p-1.5 rounded text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10"
-                                                title="Edit Order"
-                                            >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                            </button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => openEdit(o)}
+                                                    className="p-1.5 rounded text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition-colors"
+                                                    title="Sửa đơn hàng"
+                                                >
+                                                    <Pencil className="h-3.5 w-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => { setDeleteOrderObj(o); setIsDeleteOpen(true); }}
+                                                    className="p-1.5 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                                    title="Xoá vĩnh viễn"
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -226,6 +251,30 @@ export default function AdminOrdersPage() {
                             >
                                 Lưu thay đổi
                             </Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            {/* Delete Order Modal */}
+            <Modal
+                isOpen={isDeleteOpen}
+                onClose={() => setIsDeleteOpen(false)}
+                title="Xoá đơn hàng vĩnh viễn"
+            >
+                {deleteOrderObj && (
+                    <div className="space-y-4">
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                            <h4 className="text-red-400 font-medium mb-1">Cảnh báo xoá vĩnh viễn</h4>
+                            <p className="text-sm text-red-400/80">
+                                Bạn có chắc chắn muốn xoá đơn hàng <span className="font-mono text-red-300">{deleteOrderObj.id}</span> không?
+                                Hành động này không thể hoàn tác và đơn hàng sẽ bị mất hoàn toàn khỏi cơ sở dữ liệu.
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
+                            <Button variant="ghost" onClick={() => setIsDeleteOpen(false)} className="text-gray-400 hover:text-white hover:bg-gray-800">Huỷ bỏ</Button>
+                            <Button onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white">Xác nhận xoá</Button>
                         </div>
                     </div>
                 )}

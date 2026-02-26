@@ -8,16 +8,19 @@ import {
     Headers,
     Res,
     BadRequestException,
+    Logger,
 } from "@nestjs/common";
 import { Request, Response } from "express";
 import { VnpayService, VnpayReturnParams } from "./vnpay.service";
-import { PrismaService } from "../prisma/prisma.service";
+import { PaymentOrchestrationService } from "../shared/payment-orchestration.service";
 
 @Controller("vnpay")
 export class VnpayController {
+    private readonly logger = new Logger(VnpayController.name);
+
     constructor(
         private readonly vnpayService: VnpayService,
-        private readonly prisma: PrismaService
+        private readonly paymentOrchestration: PaymentOrchestrationService,
     ) { }
 
     /**
@@ -33,20 +36,15 @@ export class VnpayController {
             throw new BadRequestException("User ID required");
         }
 
-        // Get plan pricing
-        const pricing = this.getPlanPricing(body.planId, body.billingCycle);
+        const { amount } = this.paymentOrchestration.getPlanPricing(body.planId, body.billingCycle);
 
         // Create order
-        const order = await this.prisma.order.create({
-            data: {
-                userId,
-                planId: body.planId,
-                billingCycle: body.billingCycle,
-                amount: pricing.amount,
-                currency: "VND",
-                status: "PENDING",
-                paymentProvider: "VNPAY",
-            },
+        const order = await this.paymentOrchestration.createOrder({
+            userId,
+            planId: body.planId,
+            billingCycle: body.billingCycle,
+            amount,
+            paymentProvider: "VNPAY",
         });
 
         const ipAddr =
@@ -56,7 +54,7 @@ export class VnpayController {
 
         const paymentUrl = this.vnpayService.createPaymentUrl({
             orderId: order.id,
-            amount: pricing.amount,
+            amount,
             orderInfo: `QRCode-Shiba ${body.planId} ${body.billingCycle}`,
             returnUrl: `${process.env.FRONTEND_URL}/payment/result`,
             ipAddr,
@@ -77,27 +75,22 @@ export class VnpayController {
 
         // Verify signature
         if (!this.vnpayService.verifyReturnUrl(query)) {
+            this.logger.warn(`Invalid VNPay return signature for order ${query.vnp_TxnRef}`);
             return res.redirect(`${frontendUrl}/payment/result?status=invalid`);
         }
 
         const orderId = query.vnp_TxnRef;
         const isSuccess = this.vnpayService.isPaymentSuccessful(query);
 
-        // Update order status
-        await this.prisma.order.update({
-            where: { id: orderId },
-            data: {
-                status: isSuccess ? "COMPLETED" : "FAILED",
-                transactionId: query.vnp_TransactionNo,
-                paidAt: isSuccess ? new Date() : null,
-                metadata: query as any,
-            },
-        });
-
-        if (isSuccess) {
-            // Activate subscription
-            await this.activateSubscription(orderId);
-            return res.redirect(`${frontendUrl}/payment/result?status=success&orderId=${orderId}`);
+        try {
+            if (isSuccess) {
+                await this.paymentOrchestration.activateSubscription(orderId, query.vnp_TransactionNo);
+                return res.redirect(`${frontendUrl}/payment/result?status=success&orderId=${orderId}`);
+            } else {
+                await this.paymentOrchestration.failOrder(orderId, query.vnp_TransactionNo, query);
+            }
+        } catch (error) {
+            this.logger.error(`Error processing VNPay return for order ${orderId}`, error instanceof Error ? error.stack : String(error));
         }
 
         const message = this.vnpayService.getResponseMessage(query.vnp_ResponseCode);
@@ -113,104 +106,24 @@ export class VnpayController {
     async handleIpn(@Query() query: VnpayReturnParams) {
         // Verify signature
         if (!this.vnpayService.verifyReturnUrl(query)) {
+            this.logger.warn(`Invalid VNPay IPN signature for order ${query.vnp_TxnRef}`);
             return { RspCode: "97", Message: "Invalid signature" };
         }
 
         const orderId = query.vnp_TxnRef;
-        const order = await this.prisma.order.findUnique({
-            where: { id: orderId },
-        });
-
-        if (!order) {
-            return { RspCode: "01", Message: "Order not found" };
-        }
-
-        if (order.status === "COMPLETED") {
-            return { RspCode: "02", Message: "Order already processed" };
-        }
-
         const isSuccess = this.vnpayService.isPaymentSuccessful(query);
 
-        await this.prisma.order.update({
-            where: { id: orderId },
-            data: {
-                status: isSuccess ? "COMPLETED" : "FAILED",
-                transactionId: query.vnp_TransactionNo,
-                paidAt: isSuccess ? new Date() : null,
-                metadata: query as any,
-            },
-        });
-
-        if (isSuccess) {
-            await this.activateSubscription(orderId);
+        try {
+            if (isSuccess) {
+                await this.paymentOrchestration.activateSubscription(orderId, query.vnp_TransactionNo);
+            } else {
+                await this.paymentOrchestration.failOrder(orderId, query.vnp_TransactionNo, query);
+            }
+        } catch (error) {
+            this.logger.error(`Error processing VNPay IPN for order ${orderId}`, error instanceof Error ? error.stack : String(error));
+            return { RspCode: "99", Message: "Processing error" };
         }
 
         return { RspCode: "00", Message: "Success" };
-    }
-
-    /**
-     * Get plan pricing
-     */
-    private getPlanPricing(
-        planId: string,
-        billingCycle: "monthly" | "yearly"
-    ): { amount: number } {
-        const pricing: Record<string, { monthly: number; yearly: number }> = {
-            pro: { monthly: 99000, yearly: 990000 },
-            business: { monthly: 299000, yearly: 2990000 },
-            enterprise: { monthly: 999000, yearly: 9990000 },
-        };
-
-        const plan = pricing[planId.toLowerCase()];
-        if (!plan) {
-            throw new BadRequestException("Invalid plan");
-        }
-
-        return { amount: plan[billingCycle] };
-    }
-
-    /**
-     * Activate user subscription
-     */
-    private async activateSubscription(orderId: string): Promise<void> {
-        const order = await this.prisma.order.findUnique({
-            where: { id: orderId },
-            select: { userId: true, planId: true, billingCycle: true },
-        });
-
-        if (!order) return;
-
-        const endDate = new Date();
-        if (order.billingCycle === "yearly") {
-            endDate.setFullYear(endDate.getFullYear() + 1);
-        } else {
-            endDate.setMonth(endDate.getMonth() + 1);
-        }
-
-        // Upsert subscription
-        await this.prisma.subscription.upsert({
-            where: { userId: order.userId },
-            create: {
-                userId: order.userId,
-                planId: order.planId,
-                status: "ACTIVE",
-                startDate: new Date(),
-                endDate,
-                billingCycle: order.billingCycle,
-            },
-            update: {
-                planId: order.planId,
-                status: "ACTIVE",
-                startDate: new Date(),
-                endDate,
-                billingCycle: order.billingCycle,
-            },
-        });
-
-        // Update user tier
-        await this.prisma.user.update({
-            where: { id: order.userId },
-            data: { tier: order.planId.toUpperCase() as any },
-        });
     }
 }

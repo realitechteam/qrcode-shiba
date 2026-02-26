@@ -9,70 +9,211 @@ export class AdminService {
     // DASHBOARD STATS
     // ==========================================
 
-    async getStats() {
-        const [
-            totalUsers,
-            totalQRCodes,
-            totalScans,
-            totalOrders,
-            totalRevenue,
-            activeSubscriptions,
-            totalAffiliates,
-            pendingPayouts,
-        ] = await Promise.all([
-            this.prisma.user.count(),
-            this.prisma.qRCode.count(),
-            this.prisma.scan.count(),
-            this.prisma.order.count(),
-            this.prisma.order.aggregate({
-                _sum: { amount: true },
-                where: { status: "COMPLETED" },
+    async getStats(startDate?: Date, endDate?: Date) {
+        const now = new Date();
+        const dateFilter = startDate && endDate ? { gte: startDate, lte: endDate } : undefined;
+        const dateWhere = dateFilter ? { createdAt: dateFilter } : {};
+        const scanWhere = dateFilter ? { scannedAt: dateFilter } : {};
+
+        // ==========================================
+        // SECTION 1: WEBSITE OVERVIEW
+        // ==========================================
+        const [totalUsers, totalQRCodes, activeSubscriptions] = await Promise.all([
+            this.prisma.user.count({ where: dateWhere }),
+            this.prisma.qRCode.count({ where: dateWhere }),
+            this.prisma.subscription.count({ where: { status: "ACTIVE" } }),
+        ]);
+
+        // ==========================================
+        // SECTION 2: REVENUE (only COMPLETED orders, by createdAt)
+        // ==========================================
+        const completedFilter = { status: "COMPLETED" as const, ...dateWhere };
+
+        // Total revenue
+        const totalRevenueAgg = await this.prisma.order.aggregate({
+            _sum: { amount: true },
+            _count: true,
+            where: completedFilter,
+        });
+
+        // Revenue today
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(now);
+        todayEnd.setHours(23, 59, 59, 999);
+        const revenueTodayAgg = await this.prisma.order.aggregate({
+            _sum: { amount: true },
+            _count: true,
+            where: { status: "COMPLETED", createdAt: { gte: todayStart, lte: todayEnd } },
+        });
+
+        // Revenue this month
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        const revenueMonthAgg = await this.prisma.order.aggregate({
+            _sum: { amount: true },
+            _count: true,
+            where: { status: "COMPLETED", createdAt: { gte: monthStart, lte: monthEnd } },
+        });
+
+        // Revenue this year
+        const yearStart = new Date(now.getFullYear(), 0, 1);
+        const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        const revenueYearAgg = await this.prisma.order.aggregate({
+            _sum: { amount: true },
+            _count: true,
+            where: { status: "COMPLETED", createdAt: { gte: yearStart, lte: yearEnd } },
+        });
+
+        // Order counts by status
+        const [totalOrders, pendingOrders, completedOrders, cancelledOrders, failedOrders] = await Promise.all([
+            this.prisma.order.count({ where: dateWhere }),
+            this.prisma.order.count({ where: { status: "PENDING", ...dateWhere } }),
+            this.prisma.order.count({ where: { status: "COMPLETED", ...dateWhere } }),
+            this.prisma.order.count({ where: { status: "CANCELLED", ...dateWhere } }),
+            this.prisma.order.count({ where: { status: "FAILED", ...dateWhere } }),
+        ]);
+
+        // ==========================================
+        // SECTION 3: QR & SCANS
+        // ==========================================
+        const [totalScans, scansToday, scansMonth] = await Promise.all([
+            this.prisma.scan.count({ where: scanWhere }),
+            this.prisma.scan.count({
+                where: { scannedAt: { gte: todayStart, lte: todayEnd } },
             }),
-            this.prisma.subscription.count({
-                where: { status: "ACTIVE" },
-            }),
-            this.prisma.affiliateAccount.count(),
-            this.prisma.affiliatePayout.count({
-                where: { status: "PENDING" },
+            this.prisma.scan.count({
+                where: { scannedAt: { gte: monthStart, lte: monthEnd } },
             }),
         ]);
 
-        // Monthly growth
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const [newUsersThisMonth, newOrdersThisMonth, revenueThisMonth] =
-            await Promise.all([
-                this.prisma.user.count({
-                    where: { createdAt: { gte: thirtyDaysAgo } },
-                }),
-                this.prisma.order.count({
-                    where: {
-                        createdAt: { gte: thirtyDaysAgo },
-                        status: "COMPLETED",
-                    },
-                }),
-                this.prisma.order.aggregate({
-                    _sum: { amount: true },
-                    where: {
-                        createdAt: { gte: thirtyDaysAgo },
-                        status: "COMPLETED",
-                    },
-                }),
-            ]);
+        // ==========================================
+        // SECTION 4: AFFILIATE
+        // ==========================================
+        const [
+            totalAffiliates,
+            activeAffiliates,
+            totalReferrals,
+            totalCommissionAgg,
+            pendingPayouts,
+            totalClicks,
+        ] = await Promise.all([
+            this.prisma.affiliateAccount.count(),
+            this.prisma.affiliateAccount.count({ where: { status: "ACTIVE" } }),
+            this.prisma.affiliateReferral.count({ where: dateWhere }),
+            this.prisma.affiliateCommission.aggregate({
+                _sum: { amount: true },
+                where: dateWhere,
+            }),
+            this.prisma.affiliatePayout.count({ where: { status: "PENDING" } }),
+            this.prisma.affiliateLink.aggregate({ _sum: { clickCount: true } }),
+        ]);
+
+        // ==========================================
+        // CHART DATA: Daily Revenue + Scans
+        // ==========================================
+        const chartStart = startDate || new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const chartEnd = endDate || now;
+
+        const [ordersForChart, scansForChart] = await Promise.all([
+            this.prisma.order.findMany({
+                where: { createdAt: { gte: chartStart, lte: chartEnd }, status: "COMPLETED" },
+                select: { createdAt: true, amount: true },
+            }),
+            this.prisma.scan.findMany({
+                where: { scannedAt: { gte: chartStart, lte: chartEnd } },
+                select: { scannedAt: true },
+            }),
+        ]);
+
+        const chartDataMap = new Map<string, { date: string; revenue: number; scans: number }>();
+        for (let d = new Date(chartStart); d <= chartEnd; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split("T")[0];
+            chartDataMap.set(dateStr, { date: dateStr, revenue: 0, scans: 0 });
+        }
+
+        ordersForChart.forEach((order) => {
+            const dateStr = order.createdAt.toISOString().split("T")[0];
+            if (chartDataMap.has(dateStr)) {
+                chartDataMap.get(dateStr)!.revenue += order.amount;
+            }
+        });
+
+        scansForChart.forEach((scan) => {
+            const dateStr = scan.scannedAt.toISOString().split("T")[0];
+            if (chartDataMap.has(dateStr)) {
+                chartDataMap.get(dateStr)!.scans += 1;
+            }
+        });
+
+        const chartData = Array.from(chartDataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+        // ==========================================
+        // MONTHLY REVENUE CHART (last 12 months)
+        // ==========================================
+        const monthlyRevenue: { month: string; revenue: number; orders: number }[] = [];
+        for (let i = 11; i >= 0; i--) {
+            const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
+            const label = `${mStart.getFullYear()}-${String(mStart.getMonth() + 1).padStart(2, "0")}`;
+            monthlyRevenue.push({ month: label, revenue: 0, orders: 0 });
+        }
+
+        // Fetch all completed orders for the last 12 months
+        const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+        const ordersLast12 = await this.prisma.order.findMany({
+            where: { status: "COMPLETED", createdAt: { gte: twelveMonthsAgo } },
+            select: { createdAt: true, amount: true },
+        });
+
+        ordersLast12.forEach((order) => {
+            const label = `${order.createdAt.getFullYear()}-${String(order.createdAt.getMonth() + 1).padStart(2, "0")}`;
+            const entry = monthlyRevenue.find((m) => m.month === label);
+            if (entry) {
+                entry.revenue += order.amount;
+                entry.orders += 1;
+            }
+        });
 
         return {
-            totalUsers,
-            totalQRCodes,
-            totalScans,
-            totalOrders,
-            totalRevenue: totalRevenue._sum.amount || 0,
-            activeSubscriptions,
-            totalAffiliates,
-            pendingPayouts,
-            monthly: {
-                newUsers: newUsersThisMonth,
-                newOrders: newOrdersThisMonth,
-                revenue: revenueThisMonth._sum.amount || 0,
+            overview: {
+                totalUsers,
+                totalQRCodes,
+                activeSubscriptions,
             },
+            revenue: {
+                total: totalRevenueAgg._sum.amount || 0,
+                totalOrders: totalRevenueAgg._count,
+                today: revenueTodayAgg._sum.amount || 0,
+                todayOrders: revenueTodayAgg._count,
+                thisMonth: revenueMonthAgg._sum.amount || 0,
+                thisMonthOrders: revenueMonthAgg._count,
+                thisYear: revenueYearAgg._sum.amount || 0,
+                thisYearOrders: revenueYearAgg._count,
+            },
+            orders: {
+                total: totalOrders,
+                pending: pendingOrders,
+                completed: completedOrders,
+                cancelled: cancelledOrders,
+                failed: failedOrders,
+            },
+            scans: {
+                total: totalScans,
+                today: scansToday,
+                thisMonth: scansMonth,
+                totalQRCodes,
+            },
+            affiliate: {
+                totalAffiliates,
+                activeAffiliates,
+                totalReferrals,
+                totalCommission: totalCommissionAgg._sum.amount || 0,
+                pendingPayouts,
+                totalClicks: totalClicks._sum.clickCount || 0,
+            },
+            chartData,
+            monthlyRevenue,
         };
     }
 
@@ -327,6 +468,27 @@ export class AdminService {
         }
 
         return updated;
+    }
+
+    async deleteOrder(orderId: string, adminId?: string): Promise<any> {
+        const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) {
+            throw new Error("Order not found");
+        }
+
+        await this.prisma.order.delete({
+            where: { id: orderId }
+        });
+
+        if (adminId) {
+            await this.logAction(adminId, "DELETE_ORDER", "ORDER", orderId, {
+                amount: order.amount,
+                status: order.status,
+                planId: order.planId,
+            });
+        }
+
+        return { message: "Order deleted successfully" };
     }
 
     // ==========================================

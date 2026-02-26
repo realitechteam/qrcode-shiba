@@ -370,7 +370,7 @@ export class AuthService {
     }
 
     private sanitizeUser(user: any) {
-        const { passwordHash, subscription, tier, role, ...rest } = user;
+        const { passwordHash, subscription, tier, role, orders, ...rest } = user;
 
         // Format subscription data for frontend
         // Frontend expects: { subscription: { plan: 'pro', expiresAt: ... } }
@@ -379,11 +379,13 @@ export class AuthService {
                 plan: subscription.planId?.toLowerCase() || tier?.toLowerCase() || 'free',
                 expiresAt: subscription.endDate || null,
                 status: subscription.status,
+                orderId: orders && orders.length > 0 ? orders[0].id : null,
             }
             : {
                 plan: tier?.toLowerCase() || 'free',
                 expiresAt: null,
                 status: null,
+                orderId: orders && orders.length > 0 ? orders[0].id : null,
             };
 
         return {

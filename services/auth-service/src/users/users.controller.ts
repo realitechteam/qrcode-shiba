@@ -18,7 +18,7 @@ export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
     @Get("me")
-    async getMe(@CurrentUser() currentUser: any) {
+    async getMe(@CurrentUser() currentUser: any): Promise<any> {
         const userId = currentUser.sub || currentUser.id;
         const user = await this.usersService.findById(userId);
         if (user) {
@@ -32,7 +32,7 @@ export class UsersController {
     async updateMe(
         @CurrentUser() currentUser: any,
         @Body() updateUserDto: UpdateUserDto
-    ) {
+    ): Promise<any> {
         const userId = currentUser.sub || currentUser.id;
         const user = await this.usersService.update(userId, updateUserDto);
         const { passwordHash, ...result } = user;
@@ -40,7 +40,7 @@ export class UsersController {
     }
 
     @Delete("me")
-    async deleteMe(@CurrentUser() currentUser: any) {
+    async deleteMe(@CurrentUser() currentUser: any): Promise<any> {
         const userId = currentUser.sub || currentUser.id;
         await this.usersService.delete(userId);
         return { message: "Account deleted successfully" };

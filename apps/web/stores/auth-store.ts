@@ -7,6 +7,8 @@ export type PlanType = 'free' | 'pro' | 'business';
 interface Subscription {
     plan: PlanType;
     expiresAt: string | null;
+    status?: string | null;
+    orderId?: string | null;
 }
 
 interface User {

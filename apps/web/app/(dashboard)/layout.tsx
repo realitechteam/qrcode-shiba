@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { processPendingQR } from "@/lib/pending-qr";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useTranslation } from "@/lib/i18n";
+import { ExpirationWarningModal } from "@/components/ExpirationWarningModal";
 
 const navigationItems = [
     { key: "dashboard.sidebar.qrCodes", href: "/dashboard/qr", icon: QrCode },
@@ -109,6 +110,7 @@ export default function DashboardLayout({
 
     return (
         <div className="min-h-screen bg-muted/30">
+            <ExpirationWarningModal />
             {/* Mobile sidebar overlay */}
             {sidebarOpen && (
                 <div

@@ -11,30 +11,18 @@ import {
     Auth,
 } from "firebase/auth";
 
-// Firebase configuration from environment variables only (no hardcoded secrets)
+// Firebase configuration — these are public client-side identifiers (not secrets).
+// Security is enforced by Firebase Security Rules and domain restrictions, not by hiding these values.
+// Environment variables take precedence if set.
 function getFirebaseConfig() {
-    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-    const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-
-    if (!apiKey || !authDomain || !projectId) {
-        throw new Error(
-            "Missing required Firebase environment variables: " +
-            [!apiKey && "apiKey", !authDomain && "authDomain", !projectId && "projectId"]
-                .filter(Boolean)
-                .join(", ") +
-            ". Set NEXT_PUBLIC_FIREBASE_* variables in your .env file."
-        );
-    }
-
     return {
-        apiKey,
-        authDomain,
-        projectId,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
-        measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCA1Bbe27Y4t9sjD_Z4zcCJ6kFhyXOwybw",
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "realitech-qrshiba.firebaseapp.com",
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "realitech-qrshiba",
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "realitech-qrshiba.firebasestorage.app",
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "889212525805",
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:889212525805:web:2e3114d1cd7dc0a8bdc0e4",
+        measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-VDLYVWT9CE",
     };
 }
 

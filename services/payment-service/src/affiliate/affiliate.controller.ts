@@ -11,6 +11,7 @@ import {
     BadRequestException,
     ForbiddenException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AffiliateService } from './affiliate.service';
 import { RegisterAffiliateDto, CreateLinkDto, UpdateLinkDto, UpdateBankInfoDto, RequestPayoutDto } from './affiliate.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -156,24 +157,30 @@ export class AffiliateController {
     }
 
     /**
-     * Track a referral (called by frontend after user signup)
+     * Track a referral (called by frontend after user signup — authenticated)
      */
     @Post('track-referral')
+    @UseGuards(JwtAuthGuard)
     async trackReferral(
-        @Body() body: { referralCode: string; referredUserId: string },
+        @CurrentUser('id') userId: string,
+        @Body() body: { referralCode: string },
     ) {
-        if (!body.referralCode || !body.referredUserId) {
-            throw new BadRequestException('referralCode and referredUserId are required');
+        if (!body.referralCode) {
+            throw new BadRequestException('referralCode is required');
         }
-        await this.affiliateService.trackReferral(body.referralCode, body.referredUserId);
+        await this.affiliateService.trackReferral(body.referralCode, userId);
         return { success: true };
     }
 
     /**
-     * Track a click (called by /ref/[code] page)
+     * Track a click (called by /ref/[code] page — public, rate limited)
      */
     @Post('track-click')
+    @Throttle({ default: { ttl: 60000, limit: 30 } })
     async trackClick(@Body() body: { referralCode: string }) {
+        if (!body.referralCode || typeof body.referralCode !== 'string' || body.referralCode.length > 50) {
+            throw new BadRequestException('Valid referralCode is required');
+        }
         await this.affiliateService.trackClick(body.referralCode);
         return { success: true };
     }

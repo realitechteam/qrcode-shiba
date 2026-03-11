@@ -2,6 +2,16 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { TrackingService, ParsedTrackingData } from "./tracking.service";
 
+/** Only allow safe URL protocols for redirects */
+function isSafeUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === "https:" || parsed.protocol === "http:";
+    } catch {
+        return false;
+    }
+}
+
 @Injectable()
 export class RedirectService {
     constructor(
@@ -36,12 +46,18 @@ export class RedirectService {
 
         // For dynamic QR codes, use the current destination URL
         if (qr.isDynamic && qr.destinationUrl) {
+            if (!isSafeUrl(qr.destinationUrl)) {
+                throw new NotFoundException("Invalid destination URL");
+            }
             return qr.destinationUrl;
         }
 
         // For static QR codes, extract URL from content
         const content = qr.content?.data as Record<string, any>;
         if (content?.url) {
+            if (!isSafeUrl(content.url)) {
+                throw new NotFoundException("Invalid destination URL");
+            }
             return content.url;
         }
 

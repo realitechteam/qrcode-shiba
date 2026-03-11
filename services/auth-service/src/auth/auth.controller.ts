@@ -39,6 +39,7 @@ export class AuthController {
 
     @Post("refresh")
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { ttl: 60000, limit: 10 } })
     async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
         return this.authService.refreshTokens(refreshTokenDto.refreshToken);
     }
@@ -104,6 +105,7 @@ export class AuthController {
 
     @Post("verify-magic-link")
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { ttl: 60000, limit: 5 } })
     async verifyMagicLink(@Body("token") token: string) {
         return this.authService.verifyMagicLink(token);
     }
@@ -111,6 +113,7 @@ export class AuthController {
     // Firebase Auth - sync user with backend database (verifies Firebase ID token)
     @Post("firebase/sync")
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { ttl: 60000, limit: 5 } })
     async firebaseSync(
         @Body("idToken") idToken: string
     ) {

@@ -189,14 +189,19 @@ export class SubscriptionService {
     }
 
     /**
-     * Get single order by ID
+     * Get single order by ID (with ownership check)
      */
-    async getOrderById(orderId: string): Promise<any> {
+    async getOrderById(orderId: string, userId: string): Promise<any> {
         const order = await this.prisma.order.findUnique({
             where: { id: orderId },
         });
 
         if (!order) {
+            throw new NotFoundException("Order not found");
+        }
+
+        // Ownership check — prevent IDOR
+        if (order.userId !== userId) {
             throw new NotFoundException("Order not found");
         }
 

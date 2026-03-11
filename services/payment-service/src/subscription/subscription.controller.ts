@@ -49,12 +49,15 @@ export class SubscriptionController {
     }
 
     /**
-     * Get single order
+     * Get single order (scoped to authenticated user)
      */
     @Get("orders/:id")
     @UseGuards(JwtAuthGuard)
-    async getOrder(@Param("id") id: string) {
-        const order = await this.subscriptionService.getOrderById(id);
+    async getOrder(
+        @Param("id") id: string,
+        @CurrentUser("id") userId: string
+    ) {
+        const order = await this.subscriptionService.getOrderById(id, userId);
         return {
             success: true,
             data: order,

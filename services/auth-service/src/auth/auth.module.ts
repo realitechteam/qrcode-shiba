@@ -8,7 +8,7 @@ import { EmailModule } from "./email.module";
 import { FirebaseAdminService } from "./firebase-admin.service";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { LocalStrategy } from "./strategies/local.strategy";
-import { GoogleStrategy } from "./strategies/google.strategy";
+import { createGoogleStrategyProvider } from "./strategies/google.strategy";
 import { UsersModule } from "../users/users.module";
 
 @Module({
@@ -34,7 +34,7 @@ import { UsersModule } from "../users/users.module";
         EmailModule,
     ],
     controllers: [AuthController],
-    providers: [AuthService, FirebaseAdminService, JwtStrategy, LocalStrategy, GoogleStrategy],
+    providers: [AuthService, FirebaseAdminService, JwtStrategy, LocalStrategy, createGoogleStrategyProvider()],
     exports: [AuthService],
 })
 export class AuthModule { }

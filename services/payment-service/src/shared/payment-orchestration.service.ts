@@ -54,6 +54,37 @@ export class PaymentOrchestrationService {
     }
 
     /**
+     * Verify that the received payment amount matches the order amount.
+     * Returns true if valid, false if mismatch.
+     */
+    async verifyOrderAmount(orderId: string, receivedAmount: number): Promise<boolean> {
+        const order = await this.prisma.order.findUnique({
+            where: { id: orderId },
+            select: { amount: true, status: true },
+        });
+
+        if (!order) {
+            this.logger.warn(`verifyOrderAmount: order ${orderId} not found`);
+            return false;
+        }
+
+        if (order.status === "COMPLETED") {
+            this.logger.debug(`verifyOrderAmount: order ${orderId} already completed`);
+            return true; // Allow idempotent webhook calls
+        }
+
+        // Amount must be >= expected (allow overpayment, reject underpayment)
+        if (receivedAmount < order.amount) {
+            this.logger.warn(
+                `verifyOrderAmount: order ${orderId} expected ${order.amount} VND but received ${receivedAmount} VND`
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Activate a subscription after successful payment.
      * Handles order status update, subscription upsert, and user tier update.
      */

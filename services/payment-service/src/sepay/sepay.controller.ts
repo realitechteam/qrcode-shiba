@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Headers, HttpCode, HttpStatus, UseGuards, UnauthorizedException, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { timingSafeEqual } from "crypto";
 import { SepayService, SepayWebhookPayload } from "./sepay.service";
 import { PaymentOrchestrationService } from "../shared/payment-orchestration.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
@@ -70,11 +71,11 @@ export class SepayController {
     ) {
         this.logger.debug(`Webhook received: transferType=${payload.transferType}, amount=${payload.transferAmount}`);
 
-        // Verify API Key
+        // Verify API Key with timing-safe comparison
         const webhookSecret = this.configService.get<string>("SEPAY_WEBHOOK_SECRET");
         const expectedAuth = `Apikey ${webhookSecret}`;
 
-        if (!authHeader || authHeader !== expectedAuth) {
+        if (!authHeader || !this.timingSafeCompare(authHeader, expectedAuth)) {
             this.logger.warn("Webhook API key mismatch — rejecting request");
             throw new UnauthorizedException("Invalid API key");
         }
@@ -96,6 +97,21 @@ export class SepayController {
         this.logger.log(`Payment received for order ${orderId}: ${payload.transferAmount} VND`);
 
         try {
+            // Verify payment amount matches the order before activating
+            const amountValid = await this.paymentOrchestration.verifyOrderAmount(
+                orderId,
+                payload.transferAmount
+            );
+            if (!amountValid) {
+                this.logger.warn(
+                    `Amount mismatch for order ${orderId}: received ${payload.transferAmount} VND`
+                );
+                return {
+                    success: false,
+                    message: "Payment amount does not match order",
+                };
+            }
+
             await this.paymentOrchestration.activateSubscription(orderId, payload.transactionDate);
 
             return {
@@ -110,6 +126,24 @@ export class SepayController {
                 success: false,
                 message: "Error processing webhook",
             };
+        }
+    }
+
+    /**
+     * Timing-safe string comparison to prevent timing attacks on webhook secrets
+     */
+    private timingSafeCompare(a: string, b: string): boolean {
+        try {
+            const bufA = Buffer.from(a, "utf-8");
+            const bufB = Buffer.from(b, "utf-8");
+            if (bufA.length !== bufB.length) {
+                // Still do a comparison to avoid leaking length info through timing
+                timingSafeEqual(bufA, bufA);
+                return false;
+            }
+            return timingSafeEqual(bufA, bufB);
+        } catch {
+            return false;
         }
     }
 }

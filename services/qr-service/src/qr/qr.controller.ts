@@ -12,6 +12,7 @@ import {
     HttpCode,
     HttpStatus,
     BadRequestException,
+    ForbiddenException,
 } from "@nestjs/common";
 import { Response } from "express";
 import { QrService } from "./qr.service";
@@ -138,7 +139,7 @@ export class QrController {
     @UseGuards(JwtAuthGuard)
     async regenerateAllImages(@CurrentUser() user: any) {
         if (user.role !== "ADMIN") {
-            throw new BadRequestException("Admin access required");
+            throw new ForbiddenException("Admin access required");
         }
         return this.qrService.regenerateAllImages();
     }

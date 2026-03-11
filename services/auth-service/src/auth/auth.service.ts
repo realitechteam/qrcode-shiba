@@ -270,8 +270,8 @@ export class AuthService {
             if (error instanceof BadRequestException || error instanceof NotFoundException) {
                 throw error;
             }
-            // Return specific DB error if possible, otherwise generic
-            throw new BadRequestException(`Login failed: ${error.message || 'Unknown error'}`);
+            // Sanitize — don't leak internal error messages to client
+            throw new BadRequestException("Login failed. Please try again.");
         }
     }
 
@@ -301,7 +301,17 @@ export class AuthService {
                     avatarUrl: photoUrl || undefined,
                 });
             } else {
-                // Always update Firebase info to link providers (merge accounts)
+                // Prevent account takeover: only allow merge if same provider or no provider set
+                if (
+                    user.authProvider !== AuthProvider.GOOGLE &&
+                    user.authProvider !== AuthProvider.FACEBOOK
+                ) {
+                    throw new ConflictException(
+                        `Email already registered with ${user.authProvider}. Use that login method instead.`
+                    );
+                }
+
+                // Update Firebase info for existing OAuth users
                 const updateData: any = {
                     avatarUrl: photoUrl || user.avatarUrl,
                     name: name || user.name,
@@ -323,9 +333,9 @@ export class AuthService {
             };
         } catch (error: any) {
             console.error("Sync Firebase User Error:", error);
-            // Re-throw appropriate exception
-            if (error instanceof ConflictException) throw error;
-            throw new BadRequestException(`Failed to sync user: ${error.message}`);
+            // Re-throw known exceptions, sanitize unknown errors
+            if (error instanceof ConflictException || error instanceof BadRequestException) throw error;
+            throw new BadRequestException("Failed to sync user. Please try again.");
         }
     }
 

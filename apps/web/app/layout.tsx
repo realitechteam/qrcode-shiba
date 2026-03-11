@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { LanguageProvider } from "@/lib/i18n/index";
 import { Toaster } from "@/components/ui/toaster";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { LoadingBar } from "@/components/loading-bar";
 
@@ -71,6 +72,7 @@ export default function RootLayout({
                             </Suspense>
                             {children}
                             <Toaster />
+                            <SpeedInsights />
                         </LanguageProvider>
                     </QueryProvider>
                 </ThemeProvider>

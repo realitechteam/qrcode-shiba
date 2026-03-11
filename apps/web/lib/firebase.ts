@@ -11,19 +11,29 @@ import {
     Auth,
 } from "firebase/auth";
 
-// Firebase configuration — these are public client-side identifiers (not secrets).
-// Security is enforced by Firebase Security Rules and domain restrictions, not by hiding these values.
-// Environment variables take precedence if set.
+// Firebase configuration from environment variables.
+// Set NEXT_PUBLIC_FIREBASE_* variables in Vercel (or .env.local for local dev).
+// These are public client-side identifiers embedded at build time by Next.js.
 function getFirebaseConfig() {
-    return {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCA1Bbe27Y4t9sjD_Z4zcCJ6kFhyXOwybw",
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "realitech-qrshiba.firebaseapp.com",
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "realitech-qrshiba",
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "realitech-qrshiba.firebasestorage.app",
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "889212525805",
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:889212525805:web:2e3114d1cd7dc0a8bdc0e4",
-        measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-VDLYVWT9CE",
+    const config = {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+        measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
     };
+
+    if (!config.apiKey || !config.authDomain || !config.projectId) {
+        console.error(
+            "[Firebase] Missing required env vars: NEXT_PUBLIC_FIREBASE_API_KEY, " +
+            "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, NEXT_PUBLIC_FIREBASE_PROJECT_ID. " +
+            "Google login will not work."
+        );
+    }
+
+    return config;
 }
 
 // Lazy initialization — only runs on client side

@@ -4,6 +4,14 @@ import { useAuthStore } from "@/stores/auth-store";
 // Use the payment service URL
 const API_URL = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "https://payment-service-production.up.railway.app/api/v1";
 
+function getAuthHeaders(): Record<string, string> {
+    const { accessToken } = useAuthStore.getState();
+    if (accessToken) {
+        return { Authorization: `Bearer ${accessToken}` };
+    }
+    return {};
+}
+
 export interface CreatePaymentResponse {
     success: boolean;
     data: {
@@ -41,9 +49,10 @@ export const paymentService = {
         }
 
         const response = await axios.post(`${API_URL}/sepay/create-payment`, {
-            userId: user.id,
             planId,
             billingCycle,
+        }, {
+            headers: getAuthHeaders(),
         });
 
         return response.data;
@@ -53,7 +62,9 @@ export const paymentService = {
      * Check the status of an order
      */
     async checkOrderStatus(orderId: string): Promise<OrderStatusResponse> {
-        const response = await axios.get(`${API_URL}/subscription/orders/${orderId}`);
+        const response = await axios.get(`${API_URL}/subscription/orders/${orderId}`, {
+            headers: getAuthHeaders(),
+        });
         return response.data;
     },
 
@@ -82,7 +93,7 @@ export const paymentService = {
 
         const response = await axios.get(`${API_URL}/subscription/orders`, {
             params: { page, limit },
-            headers: { "x-user-id": user.id },
+            headers: getAuthHeaders(),
         });
         return response.data;
     }

@@ -11,16 +11,16 @@ export const paymentApi = axios.create({
     },
 });
 
-// Add user ID from auth storage
+// Add auth token from auth storage
 paymentApi.interceptors.request.use((config) => {
     if (typeof window !== "undefined") {
         const authStorage = localStorage.getItem("auth-storage");
         if (authStorage) {
             try {
                 const parsed = JSON.parse(authStorage);
-                const userId = parsed?.state?.user?.id;
-                if (userId) {
-                    config.headers["x-user-id"] = userId;
+                const accessToken = parsed?.state?.accessToken;
+                if (accessToken) {
+                    config.headers.Authorization = `Bearer ${accessToken}`;
                 }
             } catch {
                 // Ignore parse errors

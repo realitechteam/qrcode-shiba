@@ -10,6 +10,7 @@ import {
     HttpStatus,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { Throttle } from "@nestjs/throttler";
 import { Response } from "express";
 import { AuthService } from "./auth.service";
 import { RegisterDto } from "./dto/register.dto";
@@ -23,12 +24,14 @@ export class AuthController {
     constructor(private readonly authService: AuthService) { }
 
     @Post("register")
+    @Throttle({ default: { ttl: 60000, limit: 3 } })
     async register(@Body() registerDto: RegisterDto) {
         return this.authService.register(registerDto);
     }
 
     @Post("login")
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { ttl: 60000, limit: 5 } })
     @UseGuards(AuthGuard("local"))
     async login(@Body() loginDto: LoginDto, @Req() req: any) {
         return this.authService.login(req.user);
@@ -91,16 +94,10 @@ export class AuthController {
         return this.authService.verifyEmail(token);
     }
 
-    // Dev Login - bypass auth for development only
-    @Post("dev-login")
-    @HttpCode(HttpStatus.OK)
-    async devLogin(@Body("email") email: string) {
-        return this.authService.devLogin(email);
-    }
-
     // Magic Link
     @Post("magic-link")
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { ttl: 60000, limit: 3 } })
     async requestMagicLink(@Body("email") email: string) {
         return this.authService.requestMagicLink(email);
     }
@@ -111,15 +108,12 @@ export class AuthController {
         return this.authService.verifyMagicLink(token);
     }
 
-    // Firebase Auth - sync user with backend database
+    // Firebase Auth - sync user with backend database (verifies Firebase ID token)
     @Post("firebase/sync")
     @HttpCode(HttpStatus.OK)
     async firebaseSync(
-        @Body("email") email: string,
-        @Body("name") name: string | null,
-        @Body("firebaseUid") firebaseUid: string,
-        @Body("photoUrl") photoUrl: string | null
+        @Body("idToken") idToken: string
     ) {
-        return this.authService.syncFirebaseUser(email, name, firebaseUid, photoUrl);
+        return this.authService.syncFirebaseUser(idToken);
     }
 }

@@ -5,6 +5,7 @@ import { UsersService } from "../users/users.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { EmailService } from "./email.service";
+import { FirebaseAdminService } from "./firebase-admin.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { User } from "@prisma/client";
 
@@ -17,6 +18,7 @@ describe("AuthService", () => {
     let service: AuthService;
     let usersService: Partial<UsersService>;
     let emailService: Partial<EmailService>;
+    let firebaseAdminService: Partial<FirebaseAdminService>;
     let prismaService: Partial<PrismaService>;
 
     beforeEach(async () => {
@@ -28,6 +30,14 @@ describe("AuthService", () => {
         };
         emailService = {
             sendMagicLink: jest.fn().mockResolvedValue(true),
+        };
+        firebaseAdminService = {
+            verifyIdToken: jest.fn().mockResolvedValue({
+                uid: "firebase-uid",
+                email: "test@example.com",
+                name: "Test User",
+                picture: null,
+            }),
         };
         prismaService = {
             magicLink: {
@@ -48,8 +58,16 @@ describe("AuthService", () => {
                 AuthService,
                 { provide: UsersService, useValue: usersService },
                 { provide: JwtService, useValue: { sign: jest.fn(() => "token"), verify: jest.fn() } },
-                { provide: ConfigService, useValue: { get: jest.fn() } },
+                {
+                    provide: ConfigService, useValue: {
+                        get: jest.fn((key: string) => {
+                            if (key === "JWT_REFRESH_SECRET") return "test-refresh-secret";
+                            return undefined;
+                        }),
+                    },
+                },
                 { provide: EmailService, useValue: emailService },
+                { provide: FirebaseAdminService, useValue: firebaseAdminService },
                 { provide: PrismaService, useValue: prismaService },
             ],
         }).compile();

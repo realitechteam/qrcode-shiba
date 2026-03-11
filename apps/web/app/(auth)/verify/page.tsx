@@ -44,7 +44,7 @@ function VerifyContent() {
                             const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "https://pay.shiba.pw/api/v1";
                             await fetch(`${paymentApiUrl}/affiliate/track-referral`, {
                                 method: "POST",
-                                headers: { "Content-Type": "application/json", "x-user-id": userId },
+                                headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ referralCode: affiliateRef, referredUserId: userId }),
                             });
                             localStorage.removeItem("affiliate_ref");

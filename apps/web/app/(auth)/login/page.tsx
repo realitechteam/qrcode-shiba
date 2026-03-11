@@ -10,7 +10,7 @@ import { QrCode, Loader2, Mail, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/auth-store";
-import { signInWithGoogle, getGoogleRedirectResult } from "@/lib/firebase";
+import { signInWithGoogle, getGoogleRedirectResult, getIdToken } from "@/lib/firebase";
 import { useTranslation } from "@/lib/i18n/index";
 
 const loginSchema = z.object({
@@ -61,18 +61,18 @@ export default function LoginPage() {
 
     const syncUserWithBackend = async (firebaseUser: any) => {
         try {
-            // Sync Firebase user with backend to get database user ID
+            // Get the Firebase ID token to verify server-side
+            const idToken = await firebaseUser.getIdToken();
+            if (!idToken) {
+                throw new Error("Failed to get Firebase ID token");
+            }
+
             const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://auth-service-production-431d.up.railway.app/api/v1";
 
             const syncResponse = await fetch(`${API_URL}/auth/firebase/sync`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: firebaseUser.email,
-                    name: firebaseUser.displayName,
-                    firebaseUid: firebaseUser.uid,
-                    photoUrl: firebaseUser.photoURL,
-                }),
+                body: JSON.stringify({ idToken }),
             });
 
             if (!syncResponse.ok) {
@@ -103,7 +103,7 @@ export default function LoginPage() {
                     const paymentApiUrl = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "https://pay.shiba.pw/api/v1";
                     await fetch(`${paymentApiUrl}/affiliate/track-referral`, {
                         method: "POST",
-                        headers: { "Content-Type": "application/json", "x-user-id": data.user.id },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ referralCode: affiliateRef, referredUserId: data.user.id }),
                     });
                     localStorage.removeItem("affiliate_ref");
@@ -315,48 +315,6 @@ export default function LoginPage() {
                             )}
                             {isGoogleLoading ? t("auth.loggingIn") : t("auth.loginWithGoogle")}
                         </Button>
-
-                        {/* Dev Login - only in development */}
-                        {process.env.NEXT_PUBLIC_DEV_MODE === "true" && (
-                            <div className="mt-4 pt-4 border-t border-dashed border-yellow-500/30">
-                                <p className="text-xs text-yellow-500/70 mb-2 text-center">🛠 Dev Mode</p>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="w-full border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400"
-                                    disabled={isLoading || isGoogleLoading}
-                                    onClick={async () => {
-                                        try {
-                                            const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://auth-service-production-431d.up.railway.app/api/v1";
-                                            const res = await fetch(`${API_URL}/auth/dev-login`, {
-                                                method: "POST",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({ email: "partner@realitech.dev" }),
-                                            });
-                                            if (!res.ok) throw new Error("Dev login failed");
-                                            const data = await res.json();
-                                            setUser({
-                                                id: data.user.id,
-                                                email: data.user.email,
-                                                name: data.user.name,
-                                                avatarUrl: data.user.avatarUrl,
-                                                emailVerified: data.user.emailVerified,
-                                                role: data.user.role,
-                                                createdAt: data.user.createdAt,
-                                                subscription: data.user.subscription,
-                                            });
-                                            setTokens(data.accessToken, data.refreshToken);
-                                            toast({ title: "Dev Login", description: `Logged in as ${data.user.email}` });
-                                            router.push("/admin");
-                                        } catch (err: any) {
-                                            toast({ title: "Error", description: err.message, variant: "destructive" });
-                                        }
-                                    }}
-                                >
-                                    🔑 Dev Login (partner@realitech.dev)
-                                </Button>
-                            </div>
-                        )}
 
                     </div>
                 </div>

@@ -6,15 +6,17 @@ import {
     Delete,
     Body,
     Param,
-    Headers,
+    UseGuards,
     HttpCode,
     HttpStatus,
-    BadRequestException,
 } from "@nestjs/common";
 import { FolderService } from "./folder.service";
 import { CreateFolderDto, UpdateFolderDto, MoveQRToFolderDto } from "./dto/folder.dto";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentUser } from "../auth/current-user.decorator";
 
 @Controller("folders")
+@UseGuards(JwtAuthGuard)
 export class FolderController {
     constructor(private readonly folderService: FolderService) { }
 
@@ -24,11 +26,8 @@ export class FolderController {
     @Post()
     async create(
         @Body() dto: CreateFolderDto,
-        @Headers("x-user-id") userId: string
+        @CurrentUser("id") userId: string
     ): Promise<any> {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
         return this.folderService.create(userId, dto);
     }
 
@@ -36,10 +35,7 @@ export class FolderController {
      * Get all folders as tree
      */
     @Get()
-    async findAll(@Headers("x-user-id") userId: string): Promise<any> {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
+    async findAll(@CurrentUser("id") userId: string): Promise<any> {
         return this.folderService.findTree(userId);
     }
 
@@ -47,10 +43,7 @@ export class FolderController {
      * Get all folders as flat list
      */
     @Get("list")
-    async findList(@Headers("x-user-id") userId: string): Promise<any> {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
+    async findList(@CurrentUser("id") userId: string): Promise<any> {
         return this.folderService.findAll(userId);
     }
 
@@ -60,11 +53,8 @@ export class FolderController {
     @Get(":id")
     async findOne(
         @Param("id") id: string,
-        @Headers("x-user-id") userId: string
+        @CurrentUser("id") userId: string
     ): Promise<any> {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
         return this.folderService.findOne(id, userId);
     }
 
@@ -75,11 +65,8 @@ export class FolderController {
     async update(
         @Param("id") id: string,
         @Body() dto: UpdateFolderDto,
-        @Headers("x-user-id") userId: string
+        @CurrentUser("id") userId: string
     ): Promise<any> {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
         return this.folderService.update(id, userId, dto);
     }
 
@@ -90,11 +77,8 @@ export class FolderController {
     @HttpCode(HttpStatus.NO_CONTENT)
     async delete(
         @Param("id") id: string,
-        @Headers("x-user-id") userId: string
+        @CurrentUser("id") userId: string
     ): Promise<void> {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
         await this.folderService.delete(id, userId);
     }
 
@@ -105,11 +89,8 @@ export class FolderController {
     async moveQRToFolder(
         @Param("folderId") folderId: string,
         @Param("qrId") qrId: string,
-        @Headers("x-user-id") userId: string
+        @CurrentUser("id") userId: string
     ): Promise<any> {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
         return this.folderService.moveQR(qrId, folderId, userId);
     }
 
@@ -119,11 +100,8 @@ export class FolderController {
     @Patch("root/qr/:qrId")
     async moveQRToRoot(
         @Param("qrId") qrId: string,
-        @Headers("x-user-id") userId: string
+        @CurrentUser("id") userId: string
     ): Promise<any> {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
         return this.folderService.moveQR(qrId, null, userId);
     }
 }

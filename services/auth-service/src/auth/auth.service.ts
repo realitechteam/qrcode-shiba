@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import { UsersService } from "../users/users.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "./email.service";
+import { FirebaseAdminService } from "./firebase-admin.service";
 import { RegisterDto } from "./dto/register.dto";
 import { User, AuthProvider } from "@qrcode-shiba/database";
 
@@ -22,7 +23,8 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly prisma: PrismaService,
-        private readonly emailService: EmailService
+        private readonly emailService: EmailService,
+        private readonly firebaseAdmin: FirebaseAdminService
     ) { }
 
     async register(registerDto: RegisterDto) {
@@ -75,7 +77,7 @@ export class AuthService {
     async refreshTokens(refreshToken: string) {
         try {
             const payload = this.jwtService.verify(refreshToken, {
-                secret: this.configService.get<string>("JWT_REFRESH_SECRET") || "dev-refresh-secret-change-in-production",
+                secret: this.getRefreshSecret(),
             });
 
             // Check if refresh token exists in database
@@ -273,14 +275,17 @@ export class AuthService {
         }
     }
 
-    // Sync Firebase user with backend database
-    async syncFirebaseUser(
-        email: string,
-        name: string | null,
-        firebaseUid: string,
-        photoUrl: string | null
-    ) {
+    // Sync Firebase user with backend database (verifies ID token server-side)
+    async syncFirebaseUser(idToken: string) {
         try {
+            // Verify the Firebase ID token
+            const decodedToken = await this.firebaseAdmin.verifyIdToken(idToken);
+            const { email, name, picture: photoUrl, uid: firebaseUid } = decodedToken;
+
+            if (!email) {
+                throw new BadRequestException("Firebase token does not contain an email");
+            }
+
             const lowerEmail = email.toLowerCase();
             // Try to find existing user by email
             let user = await this.usersService.findByEmail(lowerEmail);
@@ -324,33 +329,13 @@ export class AuthService {
         }
     }
 
-    // Dev login - bypass all auth for development only
-    async devLogin(email: string) {
-        if (process.env.NODE_ENV === 'production') {
-            throw new NotFoundException('Not found');
-        }
-
-        const lowerEmail = email.toLowerCase();
-        const user = await this.usersService.findByEmail(lowerEmail);
-
-        if (!user) {
-            throw new NotFoundException(`User with email ${lowerEmail} not found`);
-        }
-
-        const tokens = await this.generateTokens(user);
-        return {
-            user: this.sanitizeUser(user),
-            ...tokens,
-        };
-    }
-
     private async generateTokens(user: User) {
         const payload = { sub: user.id, email: user.email, role: (user as any).role || 'USER' };
 
         const accessToken = this.jwtService.sign(payload);
 
         const refreshToken = this.jwtService.sign(payload, {
-            secret: this.configService.get<string>("JWT_REFRESH_SECRET") || "dev-refresh-secret-change-in-production",
+            secret: this.getRefreshSecret(),
             expiresIn: "7d",
         });
 
@@ -367,6 +352,14 @@ export class AuthService {
             accessToken,
             refreshToken,
         };
+    }
+
+    private getRefreshSecret(): string {
+        const secret = this.configService.get<string>("JWT_REFRESH_SECRET");
+        if (!secret) {
+            throw new Error("JWT_REFRESH_SECRET environment variable is required");
+        }
+        return secret;
     }
 
     private sanitizeUser(user: any) {

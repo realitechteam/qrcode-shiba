@@ -115,7 +115,7 @@
             },
             "integration": {
                 "title": "Vietnam integration",
-                "description": "VNPay, MoMo, Zalo and local services"
+                "description": "VietQR, Zalo and local services"
             }
         },
         "cta": {

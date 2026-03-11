@@ -11,40 +11,74 @@ import {
     Auth,
 } from "firebase/auth";
 
-// Firebase configuration from environment or directly embedded
-const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCA1Bbe27Y4t9sjD_Z4zcCJ6kFhyXOwybw",
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "realitech-qrshiba.firebaseapp.com",
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "realitech-qrshiba",
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "realitech-qrshiba.firebasestorage.app",
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "889212525805",
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:889212525805:web:2e3114d1cd7dc0a8bdc0e4",
-    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-VDLYVWT9CE",
-};
+// Firebase configuration from environment variables only (no hardcoded secrets)
+function getFirebaseConfig() {
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+    const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
-// Initialize Firebase (prevent multiple instances)
-let app: FirebaseApp;
-let auth: Auth;
+    if (!apiKey || !authDomain || !projectId) {
+        throw new Error(
+            "Missing required Firebase environment variables: " +
+            [!apiKey && "apiKey", !authDomain && "authDomain", !projectId && "projectId"]
+                .filter(Boolean)
+                .join(", ") +
+            ". Set NEXT_PUBLIC_FIREBASE_* variables in your .env file."
+        );
+    }
 
-if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-} else {
-    app = getApps()[0]!;
+    return {
+        apiKey,
+        authDomain,
+        projectId,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+        measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
+    };
 }
 
-auth = getAuth(app);
+// Lazy initialization — only runs on client side
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let googleProvider: GoogleAuthProvider | undefined;
 
-// Google Provider
-const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({
-    prompt: "select_account",
-});
+function getFirebaseApp(): FirebaseApp {
+    if (!app) {
+        if (!getApps().length) {
+            app = initializeApp(getFirebaseConfig());
+        } else {
+            app = getApps()[0]!;
+        }
+    }
+    return app;
+}
+
+function getFirebaseAuth(): Auth {
+    if (!auth) {
+        auth = getAuth(getFirebaseApp());
+    }
+    return auth;
+}
+
+function getGoogleProvider(): GoogleAuthProvider {
+    if (!googleProvider) {
+        googleProvider = new GoogleAuthProvider();
+        googleProvider.setCustomParameters({
+            prompt: "select_account",
+        });
+    }
+    return googleProvider;
+}
 
 // Sign in with Google - try popup first, fallback to redirect
 export const signInWithGoogle = async (): Promise<User> => {
+    const firebaseAuth = getFirebaseAuth();
+    const provider = getGoogleProvider();
+
     try {
         // Try popup first (works on most browsers)
-        const result = await signInWithPopup(auth, googleProvider);
+        const result = await signInWithPopup(firebaseAuth, provider);
         return result.user;
     } catch (error: any) {
         // If popup blocked by COOP or browser policy, use redirect
@@ -55,7 +89,7 @@ export const signInWithGoogle = async (): Promise<User> => {
             error.code === "auth/internal-error"
         ) {
             console.log("Popup blocked, falling back to redirect...");
-            await signInWithRedirect(auth, googleProvider);
+            await signInWithRedirect(firebaseAuth, provider);
             // This line won't execute - page will redirect
             throw new Error("REDIRECT_IN_PROGRESS");
         }
@@ -66,7 +100,7 @@ export const signInWithGoogle = async (): Promise<User> => {
 // Get redirect result (call on page load to handle redirect-based auth)
 export const getGoogleRedirectResult = async (): Promise<User | null> => {
     try {
-        const result = await getRedirectResult(auth);
+        const result = await getRedirectResult(getFirebaseAuth());
         return result?.user || null;
     } catch (error) {
         console.error("Error getting redirect result:", error);
@@ -76,27 +110,27 @@ export const getGoogleRedirectResult = async (): Promise<User | null> => {
 
 // Sign out
 export const firebaseSignOut = async (): Promise<void> => {
-    await signOut(auth);
+    await signOut(getFirebaseAuth());
 };
 
 // Get current user
 export const getCurrentUser = (): User | null => {
-    return auth.currentUser;
+    return getFirebaseAuth().currentUser;
 };
 
 // Subscribe to auth state changes
 export const onAuthChange = (callback: (user: User | null) => void) => {
-    return onAuthStateChanged(auth, callback);
+    return onAuthStateChanged(getFirebaseAuth(), callback);
 };
 
 // Get ID token for backend authentication
 export const getIdToken = async (): Promise<string | null> => {
-    const user = auth.currentUser;
+    const user = getFirebaseAuth().currentUser;
     if (user) {
         return await user.getIdToken();
     }
     return null;
 };
 
-export { auth, app };
+export { getFirebaseApp as app, getFirebaseAuth as auth };
 export type { User };

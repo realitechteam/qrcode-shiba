@@ -2,12 +2,13 @@ import {
     Controller,
     Get,
     Post,
-    Headers,
+    UseGuards,
     Query,
-    BadRequestException,
     Param,
 } from "@nestjs/common";
 import { SubscriptionService } from "./subscription.service";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentUser } from "../auth/current-user.decorator";
 
 @Controller("subscription")
 export class SubscriptionController {
@@ -25,10 +26,8 @@ export class SubscriptionController {
      * Get user's current subscription
      */
     @Get("current")
-    async getCurrentSubscription(@Headers("x-user-id") userId: string) {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
+    @UseGuards(JwtAuthGuard)
+    async getCurrentSubscription(@CurrentUser("id") userId: string) {
         return this.subscriptionService.getUserSubscription(userId);
     }
 
@@ -36,14 +35,12 @@ export class SubscriptionController {
      * Get user's order history
      */
     @Get("orders")
+    @UseGuards(JwtAuthGuard)
     async getOrders(
-        @Headers("x-user-id") userId: string,
+        @CurrentUser("id") userId: string,
         @Query("page") page?: number,
         @Query("limit") limit?: number
     ): Promise<any> {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
         return this.subscriptionService.getOrderHistory(
             userId,
             page || 1,
@@ -55,6 +52,7 @@ export class SubscriptionController {
      * Get single order
      */
     @Get("orders/:id")
+    @UseGuards(JwtAuthGuard)
     async getOrder(@Param("id") id: string) {
         const order = await this.subscriptionService.getOrderById(id);
         return {
@@ -67,10 +65,8 @@ export class SubscriptionController {
      * Check usage limits
      */
     @Get("limits")
-    async checkLimits(@Headers("x-user-id") userId: string) {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
+    @UseGuards(JwtAuthGuard)
+    async checkLimits(@CurrentUser("id") userId: string) {
         return this.subscriptionService.checkLimits(userId);
     }
 
@@ -78,10 +74,8 @@ export class SubscriptionController {
      * Cancel subscription
      */
     @Post("cancel")
-    async cancel(@Headers("x-user-id") userId: string) {
-        if (!userId) {
-            throw new BadRequestException("User ID required");
-        }
+    @UseGuards(JwtAuthGuard)
+    async cancel(@CurrentUser("id") userId: string) {
         return this.subscriptionService.cancelSubscription(userId);
     }
 }

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { RedirectModule } from "./redirect/redirect.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { NotificationModule } from "./notification/notification.module";
@@ -15,6 +16,10 @@ import { NotificationModule } from "./notification/notification.module";
                 ".env"
             ],
         }),
+        ThrottlerModule.forRoot([{
+            ttl: 60000,
+            limit: 100,
+        }]),
         PrismaModule,
         RedirectModule,
         NotificationModule,

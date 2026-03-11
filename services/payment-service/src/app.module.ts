@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { PrismaModule } from "./prisma/prisma.module";
+import { AuthModule } from "./auth/auth.module";
 import { SharedModule } from "./shared/shared.module";
-import { VnpayModule } from "./vnpay/vnpay.module";
-import { MomoModule } from "./momo/momo.module";
 import { SepayModule } from "./sepay/sepay.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
 import { AffiliateModule } from "./affiliate/affiliate.module";
@@ -21,10 +21,13 @@ import { AffiliateModule } from "./affiliate/affiliate.module";
             ],
         }),
         ScheduleModule.forRoot(),
+        ThrottlerModule.forRoot([{
+            ttl: 60000,
+            limit: 100,
+        }]),
         PrismaModule,
+        AuthModule,
         SharedModule,
-        VnpayModule,
-        MomoModule,
         SepayModule,
         SubscriptionModule,
         AffiliateModule,

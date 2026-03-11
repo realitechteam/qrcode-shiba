@@ -25,16 +25,7 @@ function PaymentResultContent() {
             setStatus("invalid");
             setMessage("Giao dịch không hợp lệ");
         } else {
-            // Handle VNPay direct return
-            const vnpResponseCode = searchParams.get("vnp_ResponseCode");
-            if (vnpResponseCode === "00") {
-                setStatus("success");
-            } else if (vnpResponseCode) {
-                setStatus("failed");
-                setMessage("Giao dịch không thành công");
-            } else {
-                setStatus("invalid");
-            }
+            setStatus("invalid");
         }
     }, [searchParams]);
 

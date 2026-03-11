@@ -115,7 +115,7 @@
             },
             "integration": {
                 "title": "ベトナム連携",
-                "description": "VNPay、MoMo、Zaloなどのローカルサービス"
+                "description": "VietQR、Zaloなどのローカルサービス"
             }
         },
         "cta": {

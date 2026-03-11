@@ -2,35 +2,46 @@ import {
     Controller,
     Get,
     Query,
-    UseGuards,
     Req,
+    UnauthorizedException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Request } from "express";
+import * as jwt from "jsonwebtoken";
 import { AnalyticsService } from "./analytics.service";
-
-// Simple JWT extraction (since this service might not have full auth module)
-function extractUserIdFromToken(req: Request): string | null {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-        return null;
-    }
-    
-    try {
-        const token = authHeader.substring(7);
-        // Decode JWT payload (without verification - just for extracting user ID)
-        const parts = token.split(".");
-        if (parts.length !== 3) return null;
-        
-        const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
-        return payload.sub || null;
-    } catch {
-        return null;
-    }
-}
 
 @Controller("analytics")
 export class AnalyticsController {
-    constructor(private readonly analyticsService: AnalyticsService) {}
+    private readonly jwtSecret: string;
+
+    constructor(
+        private readonly analyticsService: AnalyticsService,
+        private readonly configService: ConfigService,
+    ) {
+        const secret = this.configService.get<string>("JWT_ACCESS_SECRET");
+        if (!secret) {
+            throw new Error("JWT_ACCESS_SECRET environment variable is required");
+        }
+        this.jwtSecret = secret;
+    }
+
+    private extractAndVerifyToken(req: Request): string {
+        const authHeader = req.headers.authorization;
+        if (!authHeader?.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Missing or invalid authorization header");
+        }
+
+        try {
+            const token = authHeader.substring(7);
+            const payload = jwt.verify(token, this.jwtSecret) as { sub: string };
+            if (!payload.sub) {
+                throw new UnauthorizedException("Invalid token payload");
+            }
+            return payload.sub;
+        } catch (error) {
+            throw new UnauthorizedException("Invalid or expired token");
+        }
+    }
 
     /**
      * Get scans over time for charts
@@ -40,11 +51,7 @@ export class AnalyticsController {
         @Req() req: Request,
         @Query("period") period: string = "30d"
     ) {
-        const userId = extractUserIdFromToken(req);
-        if (!userId) {
-            return { error: "Unauthorized", data: [] };
-        }
-        
+        const userId = this.extractAndVerifyToken(req);
         const data = await this.analyticsService.getScansOverTime(userId, period);
         return { data };
     }
@@ -57,11 +64,7 @@ export class AnalyticsController {
         @Req() req: Request,
         @Query("period") period: string = "30d"
     ) {
-        const userId = extractUserIdFromToken(req);
-        if (!userId) {
-            return { error: "Unauthorized", data: [] };
-        }
-        
+        const userId = this.extractAndVerifyToken(req);
         const data = await this.analyticsService.getDeviceBreakdown(userId, period);
         return { data };
     }
@@ -74,11 +77,7 @@ export class AnalyticsController {
         @Req() req: Request,
         @Query("period") period: string = "30d"
     ) {
-        const userId = extractUserIdFromToken(req);
-        if (!userId) {
-            return { error: "Unauthorized", data: [] };
-        }
-        
+        const userId = this.extractAndVerifyToken(req);
         const data = await this.analyticsService.getCountryBreakdown(userId, period);
         return { data };
     }
@@ -91,11 +90,7 @@ export class AnalyticsController {
         @Req() req: Request,
         @Query("period") period: string = "30d"
     ) {
-        const userId = extractUserIdFromToken(req);
-        if (!userId) {
-            return { error: "Unauthorized", data: null };
-        }
-        
+        const userId = this.extractAndVerifyToken(req);
         const data = await this.analyticsService.getStats(userId, period);
         return { data };
     }

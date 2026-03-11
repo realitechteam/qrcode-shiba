@@ -1,7 +1,9 @@
-import { Controller, Post, Body, Headers, HttpCode, HttpStatus, BadRequestException, UnauthorizedException, Logger } from "@nestjs/common";
+import { Controller, Post, Body, Headers, HttpCode, HttpStatus, UseGuards, UnauthorizedException, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { SepayService, SepayWebhookPayload } from "./sepay.service";
 import { PaymentOrchestrationService } from "../shared/payment-orchestration.service";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentUser } from "../auth/current-user.decorator";
 
 @Controller("sepay")
 export class SepayController {
@@ -17,10 +19,12 @@ export class SepayController {
      * Generate VietQR payment code for plan upgrade
      */
     @Post("create-payment")
+    @UseGuards(JwtAuthGuard)
     async createPayment(
-        @Body() body: { userId: string; planId: string; billingCycle: "monthly" | "yearly" }
+        @CurrentUser("id") userId: string,
+        @Body() body: { planId: string; billingCycle: "monthly" | "yearly" }
     ) {
-        const { userId, planId, billingCycle } = body;
+        const { planId, billingCycle } = body;
 
         const { amount } = this.paymentOrchestration.getPlanPricing(planId, billingCycle);
         const orderId = `ORD${Date.now()}${userId.slice(0, 8)}`;
@@ -56,6 +60,7 @@ export class SepayController {
 
     /**
      * SePay webhook handler - receives payment confirmation
+     * NOTE: No JWT guard - called by SePay payment provider
      */
     @Post("webhook")
     @HttpCode(HttpStatus.OK)
@@ -69,7 +74,7 @@ export class SepayController {
         const webhookSecret = this.configService.get<string>("SEPAY_WEBHOOK_SECRET");
         const expectedAuth = `Apikey ${webhookSecret}`;
 
-        if (authHeader && authHeader !== expectedAuth) {
+        if (!authHeader || authHeader !== expectedAuth) {
             this.logger.warn("Webhook API key mismatch — rejecting request");
             throw new UnauthorizedException("Invalid API key");
         }

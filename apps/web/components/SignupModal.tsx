@@ -32,18 +32,17 @@ export function SignupModal({ isOpen, onClose, qrPreview }: SignupModalProps) {
             // 1. Sign in with Firebase
             const firebaseUser = await signInWithGoogle();
 
-            // 2. Sync Firebase user with backend to get database user ID and tokens
+            // 2. Get the Firebase ID token and sync with backend
+            const idToken = await firebaseUser.getIdToken();
+            if (!idToken) {
+                throw new Error("Failed to get Firebase ID token");
+            }
+
             const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://auth-service-production-431d.up.railway.app/api/v1";
-            console.log("🚀 Sync API URL (Signup):", API_URL);
             const syncResponse = await fetch(`${API_URL}/auth/firebase/sync`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: firebaseUser.email,
-                    name: firebaseUser.displayName,
-                    firebaseUid: firebaseUser.uid,
-                    photoUrl: firebaseUser.photoURL,
-                }),
+                body: JSON.stringify({ idToken }),
             });
 
             if (!syncResponse.ok) {

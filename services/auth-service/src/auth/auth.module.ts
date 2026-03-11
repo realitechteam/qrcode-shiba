@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { EmailModule } from "./email.module";
+import { FirebaseAdminService } from "./firebase-admin.service";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { LocalStrategy } from "./strategies/local.strategy";
 import { GoogleStrategy } from "./strategies/google.strategy";
@@ -16,18 +17,24 @@ import { UsersModule } from "../users/users.module";
         PassportModule.register({ defaultStrategy: "jwt" }),
         JwtModule.registerAsync({
             imports: [ConfigModule],
-            useFactory: async (configService: ConfigService) => ({
-                secret: configService.get<string>("JWT_ACCESS_SECRET") || "dev-access-secret-change-in-production",
-                signOptions: {
-                    expiresIn: "15m",
-                },
-            }),
+            useFactory: async (configService: ConfigService) => {
+                const secret = configService.get<string>("JWT_ACCESS_SECRET");
+                if (!secret) {
+                    throw new Error("JWT_ACCESS_SECRET environment variable is required");
+                }
+                return {
+                    secret,
+                    signOptions: {
+                        expiresIn: "15m",
+                    },
+                };
+            },
             inject: [ConfigService],
         }),
         EmailModule,
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, LocalStrategy, GoogleStrategy],
+    providers: [AuthService, FirebaseAdminService, JwtStrategy, LocalStrategy, GoogleStrategy],
     exports: [AuthService],
 })
 export class AuthModule { }

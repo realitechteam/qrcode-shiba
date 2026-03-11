@@ -1,5 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
+import helmet from "helmet";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -7,6 +8,9 @@ async function bootstrap() {
 
     const configService = app.get(ConfigService);
     const port = configService.get<number>("PORT", 3003);
+
+    // Security headers
+    app.use(helmet());
 
     // CORS - allow from anywhere since this is a public redirect service
     app.enableCors({

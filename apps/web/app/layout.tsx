@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/lib/i18n/index";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { LoadingBar } from "@/components/loading-bar";
+import { Analytics } from "@vercel/analytics/next";
 
 
 const inter = Inter({ subsets: ["latin", "vietnamese"] });
@@ -74,6 +75,7 @@ export default function RootLayout({
                         </LanguageProvider>
                     </QueryProvider>
                 </ThemeProvider>
+                <Analytics />
             </body>
         </html>
     );

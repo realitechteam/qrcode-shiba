@@ -43,7 +43,20 @@ export class AuthService {
             authProvider: AuthProvider.EMAIL,
         });
 
-        // TODO: Send verification email
+        // Send verification email
+        try {
+            const token = uuidv4();
+            const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+            await this.prisma.verificationToken.create({
+                data: { email, token, expiresAt },
+            });
+
+            await this.emailService.sendVerificationEmail(email, token);
+        } catch (error) {
+            console.error("Failed to send verification email:", error);
+            // Don't block registration if email fails
+        }
 
         const tokens = await this.generateTokens(user);
         return {
@@ -156,24 +169,108 @@ export class AuthService {
 
     async forgotPassword(email: string) {
         const user = await this.usersService.findByEmail(email.toLowerCase());
+
+        // Always return same message to prevent email enumeration
+        const successMessage = { message: "If email exists, reset link will be sent" };
+
         if (!user) {
-            // Don't reveal if user exists
-            return { message: "If email exists, reset link will be sent" };
+            return successMessage;
         }
 
-        // TODO: Generate reset token and send email
+        // Skip if user is OAuth-only (no password to reset)
+        if (user.authProvider !== AuthProvider.EMAIL) {
+            return successMessage;
+        }
 
-        return { message: "If email exists, reset link will be sent" };
+        try {
+            // Delete old reset tokens for this user
+            await this.prisma.passwordResetToken.deleteMany({
+                where: { userId: user.id },
+            });
+
+            // Create new reset token (1 hour expiry)
+            const token = uuidv4();
+            const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+            await this.prisma.passwordResetToken.create({
+                data: { userId: user.id, token, expiresAt },
+            });
+
+            await this.emailService.sendPasswordResetEmail(email.toLowerCase(), token);
+        } catch (error) {
+            console.error("Failed to send password reset email:", error);
+        }
+
+        return successMessage;
     }
 
     async resetPassword(token: string, newPassword: string) {
-        // TODO: Validate token and update password
-        throw new BadRequestException("Not implemented");
+        if (!token) {
+            throw new BadRequestException("Token is required");
+        }
+
+        if (!newPassword || newPassword.length < 8) {
+            throw new BadRequestException("Password must be at least 8 characters");
+        }
+
+        const resetToken = await this.prisma.passwordResetToken.findUnique({
+            where: { token },
+        });
+
+        if (!resetToken) {
+            throw new BadRequestException("Invalid or expired reset link");
+        }
+
+        if (resetToken.expiresAt < new Date()) {
+            await this.prisma.passwordResetToken.delete({ where: { token } });
+            throw new BadRequestException("Reset link has expired");
+        }
+
+        // Hash new password and update user
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        await this.usersService.update(resetToken.userId, {
+            passwordHash: hashedPassword,
+        });
+
+        // Delete used token
+        await this.prisma.passwordResetToken.delete({ where: { token } });
+
+        // Invalidate all refresh tokens for security
+        await this.prisma.refreshToken.deleteMany({
+            where: { userId: resetToken.userId },
+        });
+
+        return { message: "Password has been reset successfully" };
     }
 
     async verifyEmail(token: string) {
-        // TODO: Validate token and mark email as verified
-        throw new BadRequestException("Not implemented");
+        if (!token) {
+            throw new BadRequestException("Token is required");
+        }
+
+        const verificationToken = await this.prisma.verificationToken.findUnique({
+            where: { token },
+        });
+
+        if (!verificationToken) {
+            throw new BadRequestException("Invalid or expired verification link");
+        }
+
+        if (verificationToken.expiresAt < new Date()) {
+            await this.prisma.verificationToken.delete({ where: { token } });
+            throw new BadRequestException("Verification link has expired");
+        }
+
+        // Find user and mark as verified
+        const user = await this.usersService.findByEmail(verificationToken.email);
+        if (user) {
+            await this.usersService.update(user.id, { emailVerified: true });
+        }
+
+        // Delete used token
+        await this.prisma.verificationToken.delete({ where: { token } });
+
+        return { message: "Email verified successfully" };
     }
 
     /**

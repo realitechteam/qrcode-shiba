@@ -30,6 +30,8 @@ describe("AuthService", () => {
         };
         emailService = {
             sendMagicLink: jest.fn().mockResolvedValue(true),
+            sendVerificationEmail: jest.fn().mockResolvedValue(true),
+            sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
         };
         firebaseAdminService = {
             verifyIdToken: jest.fn().mockResolvedValue({
@@ -49,6 +51,18 @@ describe("AuthService", () => {
                 create: jest.fn(),
                 delete: jest.fn(),
                 findFirst: jest.fn(),
+                deleteMany: jest.fn(),
+            } as any,
+            verificationToken: {
+                create: jest.fn(),
+                findUnique: jest.fn(),
+                delete: jest.fn(),
+                deleteMany: jest.fn(),
+            } as any,
+            passwordResetToken: {
+                create: jest.fn(),
+                findUnique: jest.fn(),
+                delete: jest.fn(),
                 deleteMany: jest.fn(),
             } as any,
         };

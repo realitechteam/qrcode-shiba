@@ -224,6 +224,14 @@ export default function NewQRPage() {
                     return !!formData.phone;
                 case "LOCATION":
                     return formData.latitude !== undefined && formData.longitude !== undefined;
+                case "SOCIAL_LINKS":
+                    const socialPlatforms = [
+                        "facebook", "instagram", "tiktok", "youtube", "twitter",
+                        "linkedin", "github", "website", "telegram", "zalo",
+                    ];
+                    return socialPlatforms.some((p) => !!formData[p]);
+                case "EVENT":
+                    return !!formData.title && !!formData.startDate;
                 default:
                     return true;
             }

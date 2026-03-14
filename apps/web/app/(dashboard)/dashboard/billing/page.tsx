@@ -156,8 +156,10 @@ export default function BillingPage() {
     const [modalStep, setModalStep] = useState<1 | 2>(1); // Step 1: Select plan/cycle, Step 2: Show QR
     const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
     const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+    const [paymentMethod, setPaymentMethod] = useState<"sepay" | "cryptomus">("sepay");
     const [orderId, setOrderId] = useState("");
     const [qrData, setQrData] = useState<{ qrUrl: string; amount: number; bankCode: string; accountNo: string; content: string } | null>(null);
+    const [cryptoData, setCryptoData] = useState<{ paymentUrl: string; amount: number; amountUsd: number; orderId: string } | null>(null);
 
     // Order history state
     const [orders, setOrders] = useState<Array<{
@@ -223,21 +225,42 @@ export default function BillingPage() {
 
         setIsCreatingOrder(true);
         try {
-            const response = await paymentService.createPayment(selectedPlan.id, billingCycle);
+            if (paymentMethod === "cryptomus") {
+                const response = await paymentService.createCryptoPayment(selectedPlan.id, billingCycle);
 
-            if (response.success) {
-                setOrderId(response.data.orderId);
-                setQrData({
-                    qrUrl: response.data.qrUrl,
-                    amount: response.data.amount,
-                    bankCode: response.data.bankCode,
-                    accountNo: response.data.accountNo,
-                    content: response.data.content,
-                });
-                setModalStep(2);
+                if (response.success) {
+                    setOrderId(response.data.orderId);
+                    setCryptoData({
+                        paymentUrl: response.data.paymentUrl,
+                        amount: response.data.amount,
+                        amountUsd: response.data.amountUsd,
+                        orderId: response.data.orderId,
+                    });
+                    setModalStep(2);
 
-                // Start polling
-                startPolling(response.data.orderId);
+                    // Open Cryptomus payment page
+                    window.open(response.data.paymentUrl, "_blank");
+
+                    // Start polling for payment status
+                    startPolling(response.data.orderId);
+                }
+            } else {
+                const response = await paymentService.createPayment(selectedPlan.id, billingCycle);
+
+                if (response.success) {
+                    setOrderId(response.data.orderId);
+                    setQrData({
+                        qrUrl: response.data.qrUrl,
+                        amount: response.data.amount,
+                        bankCode: response.data.bankCode,
+                        accountNo: response.data.accountNo,
+                        content: response.data.content,
+                    });
+                    setModalStep(2);
+
+                    // Start polling
+                    startPolling(response.data.orderId);
+                }
             }
         } catch (error: any) {
             console.error("Failed to create order:", error);
@@ -283,6 +306,8 @@ export default function BillingPage() {
         setSelectedPlan(null);
         setModalStep(1);
         setQrData(null);
+        setCryptoData(null);
+        setPaymentMethod("sepay");
         if (pollingInterval.current) {
             clearInterval(pollingInterval.current);
             pollingInterval.current = null;
@@ -653,6 +678,35 @@ export default function BillingPage() {
                                     </button>
                                 </div>
 
+                                {/* Payment Method Selection */}
+                                <div className="space-y-3">
+                                    <p className="font-medium">Phương thức thanh toán:</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => setPaymentMethod("sepay")}
+                                            className={`p-3 rounded-xl border-2 text-center transition-all ${paymentMethod === "sepay"
+                                                ? "border-shiba-500 bg-shiba-50 dark:bg-shiba-900/20"
+                                                : "border-muted hover:border-shiba-300"
+                                                }`}
+                                        >
+                                            <Smartphone className="h-5 w-5 mx-auto mb-1 text-shiba-500" />
+                                            <p className="text-sm font-medium">Chuyển khoản</p>
+                                            <p className="text-xs text-muted-foreground">(VietQR)</p>
+                                        </button>
+                                        <button
+                                            onClick={() => setPaymentMethod("cryptomus")}
+                                            className={`p-3 rounded-xl border-2 text-center transition-all ${paymentMethod === "cryptomus"
+                                                ? "border-shiba-500 bg-shiba-50 dark:bg-shiba-900/20"
+                                                : "border-muted hover:border-shiba-300"
+                                                }`}
+                                        >
+                                            <CreditCard className="h-5 w-5 mx-auto mb-1 text-shiba-500" />
+                                            <p className="text-sm font-medium">Tiền điện tử</p>
+                                            <p className="text-xs text-muted-foreground">(Crypto)</p>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 {/* Confirm Button */}
                                 <Button
                                     onClick={handleConfirmPlan}
@@ -674,8 +728,8 @@ export default function BillingPage() {
                             </div>
                         )}
 
-                        {/* Step 2: Show QR Code */}
-                        {modalStep === 2 && qrData && (
+                        {/* Step 2: Show Payment */}
+                        {modalStep === 2 && (paymentMethod === "sepay" ? qrData : cryptoData) && (
                             <div className="p-5 space-y-4">
                                 {/* Order Summary */}
                                 <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
@@ -683,49 +737,100 @@ export default function BillingPage() {
                                         <p className="font-medium">Gói {selectedPlan.name} - {billingCycle === "monthly" ? "Tháng" : "Năm"}</p>
                                         <p className="text-xs text-muted-foreground">Mã đơn: {orderId}</p>
                                     </div>
-                                    <p className="text-xl font-bold text-shiba-600">{qrData.amount.toLocaleString()}đ</p>
+                                    <p className="text-xl font-bold text-shiba-600">
+                                        {paymentMethod === "cryptomus" && cryptoData
+                                            ? `$${cryptoData.amountUsd}`
+                                            : `${qrData?.amount.toLocaleString()}đ`
+                                        }
+                                    </p>
                                 </div>
 
                                 {/* Timer */}
                                 <CountdownTimer onExpire={handleCloseModal} />
 
-                                {/* QR Code */}
-                                <div className="bg-white rounded-xl p-4 mx-auto w-fit shadow-sm relative">
-                                    <Image
-                                        src={qrData.qrUrl}
-                                        alt="VietQR"
-                                        width={200}
-                                        height={200}
-                                        className="rounded-lg"
-                                        unoptimized
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-white/80 rounded-lg">
-                                        <p className="text-sm font-medium text-black">Đang chờ thanh toán...</p>
-                                    </div>
-                                </div>
-                                <p className="text-center text-xs text-muted-foreground animate-pulse">
-                                    Đang chờ thanh toán...
-                                </p>
+                                {paymentMethod === "sepay" && qrData ? (
+                                    <>
+                                        {/* QR Code */}
+                                        <div className="bg-white rounded-xl p-4 mx-auto w-fit shadow-sm relative">
+                                            <Image
+                                                src={qrData.qrUrl}
+                                                alt="VietQR"
+                                                width={200}
+                                                height={200}
+                                                className="rounded-lg"
+                                                unoptimized
+                                            />
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-white/80 rounded-lg">
+                                                <p className="text-sm font-medium text-black">Đang chờ thanh toán...</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-center text-xs text-muted-foreground animate-pulse">
+                                            Đang chờ thanh toán...
+                                        </p>
 
-                                {/* Bank info */}
-                                <div className="text-center">
-                                    <p className="font-semibold text-foreground">NGUYEN PHAM QUOC DAT</p>
-                                    <p className="text-sm text-muted-foreground">{qrData.bankCode} • {qrData.accountNo}</p>
-                                </div>
+                                        {/* Bank info */}
+                                        <div className="text-center">
+                                            <p className="font-semibold text-foreground">NGUYEN PHAM QUOC DAT</p>
+                                            <p className="text-sm text-muted-foreground">{qrData.bankCode} • {qrData.accountNo}</p>
+                                        </div>
 
-                                {/* Instructions */}
-                                <div className="flex items-start gap-3 text-sm text-muted-foreground bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                                    <Smartphone className="h-5 w-5 flex-shrink-0 text-blue-500 mt-0.5" />
-                                    <div>
-                                        <p className="font-medium text-blue-700 dark:text-blue-300">Hướng dẫn thanh toán:</p>
-                                        <ol className="list-decimal list-inside mt-1 space-y-1 text-blue-600 dark:text-blue-400">
-                                            <li>Mở app ngân hàng bất kỳ</li>
-                                            <li>Chọn "Quét QR" và quét mã trên</li>
-                                            <li>Kiểm tra thông tin và xác nhận chuyển</li>
-                                            <li>Gói sẽ được kích hoạt tự động sau 1-2 phút</li>
-                                        </ol>
-                                    </div>
-                                </div>
+                                        {/* Instructions */}
+                                        <div className="flex items-start gap-3 text-sm text-muted-foreground bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                                            <Smartphone className="h-5 w-5 flex-shrink-0 text-blue-500 mt-0.5" />
+                                            <div>
+                                                <p className="font-medium text-blue-700 dark:text-blue-300">Hướng dẫn thanh toán:</p>
+                                                <ol className="list-decimal list-inside mt-1 space-y-1 text-blue-600 dark:text-blue-400">
+                                                    <li>Mở app ngân hàng bất kỳ</li>
+                                                    <li>Chọn "Quét QR" và quét mã trên</li>
+                                                    <li>Kiểm tra thông tin và xác nhận chuyển</li>
+                                                    <li>Gói sẽ được kích hoạt tự động sau 1-2 phút</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : cryptoData ? (
+                                    <>
+                                        {/* Crypto payment waiting state */}
+                                        <div className="text-center py-6">
+                                            <div className="mx-auto w-16 h-16 bg-shiba-100 rounded-full flex items-center justify-center mb-4">
+                                                <Loader2 className="w-8 h-8 text-shiba-600 animate-spin" />
+                                            </div>
+                                            <h3 className="font-semibold text-lg mb-1">Đang chờ thanh toán...</h3>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                Hoàn tất thanh toán trên trang Cryptomus
+                                            </p>
+                                            <p className="text-2xl font-bold text-shiba-600 mb-1">
+                                                ${cryptoData.amountUsd} USD
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                (~{cryptoData.amount.toLocaleString()}đ)
+                                            </p>
+                                        </div>
+
+                                        {/* Reopen payment page button */}
+                                        <Button
+                                            onClick={() => window.open(cryptoData.paymentUrl, "_blank")}
+                                            className="w-full bg-shiba-500 hover:bg-shiba-600 gap-2"
+                                        >
+                                            <ArrowRight className="h-4 w-4" />
+                                            Mở lại trang thanh toán
+                                        </Button>
+
+                                        {/* Instructions */}
+                                        <div className="flex items-start gap-3 text-sm text-muted-foreground bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                                            <CreditCard className="h-5 w-5 flex-shrink-0 text-purple-500 mt-0.5" />
+                                            <div>
+                                                <p className="font-medium text-purple-700 dark:text-purple-300">Hướng dẫn thanh toán Crypto:</p>
+                                                <ol className="list-decimal list-inside mt-1 space-y-1 text-purple-600 dark:text-purple-400">
+                                                    <li>Chọn loại tiền điện tử bạn muốn thanh toán</li>
+                                                    <li>Chuyển đúng số tiền đến địa chỉ ví</li>
+                                                    <li>Đợi xác nhận blockchain (1-10 phút)</li>
+                                                    <li>Gói sẽ được kích hoạt tự động</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : null}
                             </div>
                         )}
                     </div>

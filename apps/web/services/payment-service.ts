@@ -37,9 +37,20 @@ export interface OrderStatusResponse {
     };
 }
 
+export interface CreateCryptoPaymentResponse {
+    success: boolean;
+    data: {
+        orderId: string;
+        amount: number;
+        amountUsd: number;
+        paymentUrl: string;
+        paymentId: string;
+    };
+}
+
 export const paymentService = {
     /**
-     * Create a payment order and get QR code data
+     * Create a payment order and get QR code data (SePay/VietQR)
      */
     async createPayment(planId: string, billingCycle: "monthly" | "yearly"): Promise<CreatePaymentResponse> {
         const { user } = useAuthStore.getState();
@@ -49,6 +60,26 @@ export const paymentService = {
         }
 
         const response = await axios.post(`${API_URL}/sepay/create-payment`, {
+            planId,
+            billingCycle,
+        }, {
+            headers: getAuthHeaders(),
+        });
+
+        return response.data;
+    },
+
+    /**
+     * Create a crypto payment order via Cryptomus
+     */
+    async createCryptoPayment(planId: string, billingCycle: "monthly" | "yearly"): Promise<CreateCryptoPaymentResponse> {
+        const { user } = useAuthStore.getState();
+
+        if (!user?.id) {
+            throw new Error("User not found");
+        }
+
+        const response = await axios.post(`${API_URL}/cryptomus/create-payment`, {
             planId,
             billingCycle,
         }, {

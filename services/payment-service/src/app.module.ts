@@ -7,6 +7,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./auth/auth.module";
 import { SharedModule } from "./shared/shared.module";
 import { SepayModule } from "./sepay/sepay.module";
+import { CryptomusModule } from "./cryptomus/cryptomus.module";
 import { SubscriptionModule } from "./subscription/subscription.module";
 import { AffiliateModule } from "./affiliate/affiliate.module";
 
@@ -30,6 +31,7 @@ import { AffiliateModule } from "./affiliate/affiliate.module";
         AuthModule,
         SharedModule,
         SepayModule,
+        CryptomusModule,
         SubscriptionModule,
         AffiliateModule,
     ],

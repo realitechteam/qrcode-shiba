@@ -49,6 +49,12 @@ export class GeneratorService {
             case "location":
                 return `geo:${data.latitude},${data.longitude}`;
 
+            case "social_links":
+                return this.generateSocialLinksData(data);
+
+            case "event":
+                return this.generateEvent(data);
+
             default:
                 return data.content || JSON.stringify(data);
         }
@@ -78,6 +84,69 @@ export class GeneratorService {
         }
 
         lines.push("END:VCARD");
+        return lines.join("\n");
+    }
+
+    /**
+     * Generate social links data string (JSON for dynamic QR redirect page)
+     */
+    private generateSocialLinksData(data: Record<string, any>): string {
+        const links: Record<string, string> = {};
+        const platforms = [
+            "facebook", "instagram", "tiktok", "youtube", "twitter",
+            "linkedin", "github", "website", "telegram", "zalo",
+        ];
+
+        for (const platform of platforms) {
+            if (data[platform]) {
+                links[platform] = data[platform];
+            }
+        }
+
+        return JSON.stringify({
+            type: "social_links",
+            name: data.name || "",
+            links,
+        });
+    }
+
+    /**
+     * Generate iCalendar (ICS) event string
+     */
+    private generateEvent(data: Record<string, any>): string {
+        const formatDate = (date: string, time?: string): string => {
+            // Convert date (YYYY-MM-DD) and optional time (HH:mm) to ICS format (YYYYMMDDTHHMMSS)
+            const d = date.replace(/-/g, "");
+            const t = time ? time.replace(/:/g, "") + "00" : "000000";
+            return `${d}T${t}`;
+        };
+
+        const lines = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//QRCode-Shiba//Event//EN",
+            "BEGIN:VEVENT",
+        ];
+
+        if (data.startDate) {
+            lines.push(`DTSTART:${formatDate(data.startDate, data.startTime)}`);
+        }
+        if (data.endDate) {
+            lines.push(`DTEND:${formatDate(data.endDate, data.endTime)}`);
+        } else if (data.startDate) {
+            // Default: 1 hour event
+            lines.push(`DTEND:${formatDate(data.startDate, data.startTime)}`);
+        }
+
+        if (data.title) lines.push(`SUMMARY:${data.title}`);
+        if (data.description) lines.push(`DESCRIPTION:${data.description.replace(/\n/g, "\\n")}`);
+        if (data.location) lines.push(`LOCATION:${data.location}`);
+        if (data.organizer) lines.push(`ORGANIZER:${data.organizer}`);
+        if (data.url) lines.push(`URL:${data.url}`);
+
+        lines.push("END:VEVENT");
+        lines.push("END:VCALENDAR");
+
         return lines.join("\n");
     }
 

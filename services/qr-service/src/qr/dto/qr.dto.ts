@@ -17,6 +17,8 @@ export enum QRTypeEnum {
     SMS = "SMS",
     PHONE = "PHONE",
     LOCATION = "LOCATION",
+    SOCIAL_LINKS = "SOCIAL_LINKS",
+    EVENT = "EVENT",
 }
 
 export class StylingDto {

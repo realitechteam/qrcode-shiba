@@ -84,7 +84,7 @@ export default function SettingsPage() {
     const handleDeleteAccount = async () => {
         setIsDeleting(true);
         try {
-            await api.delete("/auth/account");
+            await api.delete("/users/me");
             window.location.href = "/login";
         } catch (err: any) {
             toast({

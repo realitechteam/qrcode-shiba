@@ -1,0 +1,114 @@
+"use client";
+
+import { useEffect, useState, Suspense, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { api } from "@/lib/api";
+
+function VerifyEmailContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const token = searchParams.get("token");
+
+    const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const verifyingRef = useRef(false);
+
+    useEffect(() => {
+        if (!token) {
+            setStatus("error");
+            setErrorMessage("Link không hợp lệ hoặc bị thiếu");
+            return;
+        }
+
+        // Prevent double verification (React Strict Mode)
+        if (verifyingRef.current) return;
+        verifyingRef.current = true;
+
+        const verify = async () => {
+            try {
+                await api.post("/auth/verify-email", { token });
+                setStatus("success");
+
+                // Redirect after short delay
+                setTimeout(() => {
+                    router.push("/dashboard/qr");
+                }, 2000);
+            } catch (error: any) {
+                setStatus("error");
+                setErrorMessage(
+                    error.response?.data?.message || "Link đã hết hạn hoặc không hợp lệ"
+                );
+            }
+        };
+
+        verify();
+    }, [token, router]);
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+            <div className="w-full max-w-md bg-card rounded-2xl border shadow-lg p-8 text-center animate-scale-in">
+                {status === "verifying" && (
+                    <>
+                        <div className="mx-auto w-16 h-16 bg-shiba-100 rounded-full flex items-center justify-center mb-6">
+                            <Loader2 className="w-8 h-8 text-shiba-600 animate-spin" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">Đang xác thực email...</h2>
+                        <p className="text-muted-foreground">
+                            Vui lòng đợi trong giây lát.
+                        </p>
+                    </>
+                )}
+
+                {status === "success" && (
+                    <>
+                        <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                            <CheckCircle2 className="w-8 h-8 text-green-600 animate-bounce-in" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">Email đã được xác thực!</h2>
+                        <p className="text-muted-foreground">
+                            Đang chuyển hướng đến Dashboard...
+                        </p>
+                    </>
+                )}
+
+                {status === "error" && (
+                    <>
+                        <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                            <XCircle className="w-8 h-8 text-red-600 animate-shake" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">Xác thực thất bại</h2>
+                        <p className="text-muted-foreground mb-6">
+                            {errorMessage}
+                        </p>
+                        <Link href="/login">
+                            <Button className="w-full bg-shiba-500 hover:bg-shiba-600">
+                                Quay lại đăng nhập
+                            </Button>
+                        </Link>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function VerifyEmailPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+                <div className="w-full max-w-md bg-card rounded-2xl border shadow-lg p-8 text-center">
+                    <div className="mx-auto w-16 h-16 bg-shiba-100 rounded-full flex items-center justify-center mb-6">
+                        <Loader2 className="w-8 h-8 text-shiba-600 animate-spin" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-2">Đang tải...</h2>
+                </div>
+            </div>
+        }>
+            <VerifyEmailContent />
+        </Suspense>
+    );
+}

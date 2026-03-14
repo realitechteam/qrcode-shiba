@@ -7,6 +7,8 @@ import {
     Phone,
     MessageSquare,
     MapPin,
+    Share2,
+    CalendarDays,
 } from "lucide-react";
 
 export const qrTypes = [
@@ -18,6 +20,8 @@ export const qrTypes = [
     { id: "PHONE", name: "Điện thoại", icon: Phone, description: "Gọi điện thoại", supportsTracking: true },
     { id: "SMS", name: "SMS", icon: MessageSquare, description: "Gửi tin nhắn", supportsTracking: true },
     { id: "LOCATION", name: "Vị trí", icon: MapPin, description: "Google Maps", supportsTracking: true },
+    { id: "SOCIAL_LINKS", name: "Mạng xã hội", icon: Share2, description: "Tất cả link mạng xã hội", supportsTracking: true },
+    { id: "EVENT", name: "Sự kiện", icon: CalendarDays, description: "Thêm sự kiện vào lịch", supportsTracking: true },
 ];
 
 export const steps = [

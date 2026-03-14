@@ -212,59 +212,7 @@ export default function DashboardLayout({
                         })}
                     </div>
 
-                    {/* User section */}
-                    <div className="p-4 border-t">
-                        <div className="relative">
-                            <button
-                                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted transition-colors"
-                            >
-                                {user?.avatarUrl ? (
-                                    <img
-                                        src={user.avatarUrl}
-                                        alt={user.name || "User"}
-                                        className="h-9 w-9 rounded-full object-cover border"
-                                    />
-                                ) : (
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-shiba-500 to-shiba-600 text-white font-semibold shadow-sm">
-                                        {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
-                                    </div>
-                                )}
-                                <div className="flex-1 text-left">
-                                    <p className="text-sm font-medium truncate">
-                                        {user?.name || "User"}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground truncate">
-                                        {user?.email}
-                                    </p>
-                                </div>
-                                <ChevronDown className={cn(
-                                    "h-4 w-4 text-muted-foreground transition-transform",
-                                    userMenuOpen && "rotate-180"
-                                )} />
-                            </button>
-
-                            {userMenuOpen && (
-                                <div className="absolute bottom-full left-0 right-0 mb-2 bg-card rounded-lg border shadow-lg py-1">
-                                    <Link
-                                        href="/dashboard/profile"
-                                        className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted"
-                                        onClick={() => setUserMenuOpen(false)}
-                                    >
-                                        <User className="h-4 w-4" />
-                                        Hồ sơ
-                                    </Link>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="flex items-center gap-3 px-4 py-2 text-sm text-destructive hover:bg-muted w-full"
-                                    >
-                                        <LogOut className="h-4 w-4" />
-                                        Đăng xuất
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    {/* User section - removed from sidebar bottom, moved to top bar */}
                 </div>
             </aside>
 
@@ -322,12 +270,63 @@ export default function DashboardLayout({
                             )}
                         </div>
 
-                        <Link href="/dashboard/qr/new">
-                            <Button size="sm" className="bg-shiba-500 hover:bg-shiba-600 gap-2">
-                                <Plus className="h-4 w-4" />
-                                <span className="hidden sm:inline">{t("dashboard.qr.createQR")}</span>
-                            </Button>
-                        </Link>
+                        {/* User profile dropdown */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                className="flex items-center gap-2 p-1.5 pr-3 rounded-lg hover:bg-muted transition-colors"
+                            >
+                                {user?.avatarUrl ? (
+                                    <img
+                                        src={user.avatarUrl}
+                                        alt={user.name || "User"}
+                                        className="h-8 w-8 rounded-full object-cover border"
+                                    />
+                                ) : (
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-shiba-500 to-shiba-600 text-white text-sm font-semibold shadow-sm">
+                                        {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                                    </div>
+                                )}
+                                <div className="hidden sm:block text-left">
+                                    <p className="text-sm font-medium truncate max-w-[120px]">
+                                        {user?.name || "User"}
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground truncate max-w-[120px]">
+                                        {user?.email}
+                                    </p>
+                                </div>
+                                <ChevronDown className={cn(
+                                    "h-4 w-4 text-muted-foreground transition-transform hidden sm:block",
+                                    userMenuOpen && "rotate-180"
+                                )} />
+                            </button>
+
+                            {userMenuOpen && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setUserMenuOpen(false)}
+                                    />
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-card rounded-lg border shadow-lg py-1 z-50">
+                                        <Link
+                                            href="/dashboard/profile"
+                                            className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-muted"
+                                            onClick={() => setUserMenuOpen(false)}
+                                        >
+                                            <User className="h-4 w-4" />
+                                            Hồ sơ
+                                        </Link>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="flex items-center gap-3 px-4 py-2 text-sm text-destructive hover:bg-muted w-full"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                            Đăng xuất
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </header>
 

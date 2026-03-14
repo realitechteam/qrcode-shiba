@@ -295,6 +295,150 @@ export function QRDataForm({ type, data, onChange }: QRDataFormProps) {
                     </div>
                 );
 
+            case "SOCIAL_LINKS":
+                return (
+                    <div className="space-y-4">
+                        <h2 className="font-semibold text-lg">Link mạng xã hội</h2>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Tên hiển thị</label>
+                            <input
+                                type="text"
+                                value={data.name || ""}
+                                onChange={(e) => updateField("name", e.target.value)}
+                                placeholder="Tên của bạn hoặc doanh nghiệp"
+                                className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                            />
+                        </div>
+                        {[
+                            { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/username" },
+                            { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/username" },
+                            { key: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@username" },
+                            { key: "youtube", label: "YouTube", placeholder: "https://youtube.com/@channel" },
+                            { key: "twitter", label: "X (Twitter)", placeholder: "https://x.com/username" },
+                            { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/in/username" },
+                            { key: "github", label: "GitHub", placeholder: "https://github.com/username" },
+                            { key: "website", label: "Website", placeholder: "https://example.com" },
+                            { key: "telegram", label: "Telegram", placeholder: "https://t.me/username" },
+                            { key: "zalo", label: "Zalo", placeholder: "https://zalo.me/phone" },
+                        ].map(({ key, label, placeholder }) => (
+                            <div key={key} className="space-y-2">
+                                <label className="text-sm font-medium">{label}</label>
+                                <input
+                                    type="url"
+                                    value={data[key] || ""}
+                                    onChange={(e) => updateField(key, e.target.value)}
+                                    placeholder={placeholder}
+                                    className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                                />
+                            </div>
+                        ))}
+                        <p className="text-xs text-muted-foreground">
+                            Điền ít nhất 1 link mạng xã hội
+                        </p>
+                    </div>
+                );
+
+            case "EVENT":
+                return (
+                    <div className="space-y-4">
+                        <h2 className="font-semibold text-lg">Thông tin sự kiện</h2>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                                Tên sự kiện <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={data.title || ""}
+                                onChange={(e) => updateField("title", e.target.value)}
+                                placeholder="Họp team hàng tuần"
+                                className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Mô tả</label>
+                            <textarea
+                                value={data.description || ""}
+                                onChange={(e) => updateField("description", e.target.value)}
+                                placeholder="Chi tiết về sự kiện..."
+                                rows={3}
+                                className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500 resize-none"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Địa điểm</label>
+                            <input
+                                type="text"
+                                value={data.location || ""}
+                                onChange={(e) => updateField("location", e.target.value)}
+                                placeholder="123 Nguyễn Huệ, Q1, TP.HCM"
+                                className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">
+                                    Ngày bắt đầu <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="date"
+                                    value={data.startDate || ""}
+                                    onChange={(e) => updateField("startDate", e.target.value)}
+                                    className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Giờ bắt đầu</label>
+                                <input
+                                    type="time"
+                                    value={data.startTime || ""}
+                                    onChange={(e) => updateField("startTime", e.target.value)}
+                                    className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Ngày kết thúc</label>
+                                <input
+                                    type="date"
+                                    value={data.endDate || ""}
+                                    onChange={(e) => updateField("endDate", e.target.value)}
+                                    className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Giờ kết thúc</label>
+                                <input
+                                    type="time"
+                                    value={data.endTime || ""}
+                                    onChange={(e) => updateField("endTime", e.target.value)}
+                                    className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Người tổ chức</label>
+                            <input
+                                type="text"
+                                value={data.organizer || ""}
+                                onChange={(e) => updateField("organizer", e.target.value)}
+                                placeholder="Tên người hoặc tổ chức"
+                                className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">URL sự kiện</label>
+                            <input
+                                type="url"
+                                value={data.url || ""}
+                                onChange={(e) => updateField("url", e.target.value)}
+                                placeholder="https://event.example.com"
+                                className="w-full rounded-lg border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-shiba-500"
+                            />
+                        </div>
+                    </div>
+                );
+
             default:
                 return <p>Loại QR không hỗ trợ</p>;
         }

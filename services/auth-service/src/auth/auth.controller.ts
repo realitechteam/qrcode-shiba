@@ -76,12 +76,14 @@ export class AuthController {
 
     @Post("forgot-password")
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { ttl: 60000, limit: 3 } })
     async forgotPassword(@Body("email") email: string) {
         return this.authService.forgotPassword(email);
     }
 
     @Post("reset-password")
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { ttl: 60000, limit: 5 } })
     async resetPassword(
         @Body("token") token: string,
         @Body("password") password: string
@@ -91,6 +93,7 @@ export class AuthController {
 
     @Post("verify-email")
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { ttl: 60000, limit: 5 } })
     async verifyEmail(@Body("token") token: string) {
         return this.authService.verifyEmail(token);
     }

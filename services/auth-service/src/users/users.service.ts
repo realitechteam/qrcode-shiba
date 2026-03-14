@@ -56,9 +56,34 @@ export class UsersService {
     }
 
     async delete(id: string): Promise<User> {
-        return this.prisma.user.delete({
-            where: { id },
-        });
+        // Get user email and QR code IDs for cleaning up related data
+        const user = await this.prisma.user.findUnique({ where: { id }, select: { email: true } });
+        const qrCodes = await this.prisma.qRCode.findMany({ where: { userId: id }, select: { id: true } });
+        const qrIds = qrCodes.map((qr) => qr.id);
+
+        // Clean up all related data before deleting the user
+        await this.prisma.$transaction([
+            this.prisma.refreshToken.deleteMany({ where: { userId: id } }),
+            ...(user ? [this.prisma.verificationToken.deleteMany({ where: { email: user.email } })] : []),
+            this.prisma.passwordResetToken.deleteMany({ where: { userId: id } }),
+            ...(user ? [this.prisma.magicLink.deleteMany({ where: { email: user.email } })] : []),
+            this.prisma.subscription.deleteMany({ where: { userId: id } }),
+            this.prisma.order.deleteMany({ where: { userId: id } }),
+            this.prisma.apiKey.deleteMany({ where: { userId: id } }),
+            // Delete scans and content for user's QR codes
+            ...(qrIds.length > 0
+                ? [
+                    this.prisma.scan.deleteMany({ where: { qrId: { in: qrIds } } }),
+                    this.prisma.qRContent.deleteMany({ where: { qrId: { in: qrIds } } }),
+                  ]
+                : []),
+            this.prisma.qRCode.deleteMany({ where: { userId: id } }),
+            this.prisma.folder.deleteMany({ where: { userId: id } }),
+            this.prisma.teamMember.deleteMany({ where: { userId: id } }),
+            this.prisma.user.delete({ where: { id } }),
+        ]);
+
+        return { id } as User;
     }
 
     async findAll(params: {

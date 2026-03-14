@@ -14,31 +14,38 @@ export class FirebaseAdminService implements OnModuleInit {
         }
 
         const projectId = this.configService.get<string>("FIREBASE_PROJECT_ID");
-        const clientEmail = this.configService.get<string>("FIREBASE_CLIENT_EMAIL");
-        const privateKey = this.configService.get<string>("FIREBASE_PRIVATE_KEY");
 
-        if (!projectId || !clientEmail || !privateKey) {
+        if (!projectId) {
             this.logger.warn(
-                "Firebase Admin SDK credentials not configured. " +
-                "Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY env vars."
+                "FIREBASE_PROJECT_ID not configured. Firebase token verification will not work."
             );
             return;
         }
 
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId,
-                clientEmail,
-                privateKey: privateKey.replace(/\\n/g, "\n"),
-            }),
-        });
+        const clientEmail = this.configService.get<string>("FIREBASE_CLIENT_EMAIL");
+        const privateKey = this.configService.get<string>("FIREBASE_PRIVATE_KEY");
 
-        this.logger.log("Firebase Admin SDK initialized");
+        if (clientEmail && privateKey) {
+            // Full credentials — enables all Firebase Admin features
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId,
+                    clientEmail,
+                    privateKey: privateKey.replace(/\\n/g, "\n"),
+                }),
+            });
+            this.logger.log("Firebase Admin SDK initialized with service account");
+        } else {
+            // Project ID only — sufficient for verifyIdToken()
+            // Token verification uses Google's public keys, no service account needed
+            admin.initializeApp({ projectId });
+            this.logger.log("Firebase Admin SDK initialized with project ID only (token verification mode)");
+        }
     }
 
     async verifyIdToken(idToken: string): Promise<admin.auth.DecodedIdToken> {
         if (admin.apps.length === 0) {
-            throw new Error("Firebase Admin SDK not initialized");
+            throw new Error("Firebase Admin SDK not initialized — set FIREBASE_PROJECT_ID env var");
         }
         return admin.auth().verifyIdToken(idToken);
     }
